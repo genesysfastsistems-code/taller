@@ -221,6 +221,13 @@ pre.code{background:var(--sunk);border:1px solid var(--line);border-radius:6px;p
   #printhost .sheet{transform:none!important}
   @page{size:A4;margin:0}
 }
+.plans{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.plan{border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:4px;background:var(--surface)}
+.plan.cur{border-color:var(--ink);box-shadow:inset 0 4px 0 var(--accent)}
+.plan b{font-family:var(--f-display);font-size:24px;font-variant-numeric:tabular-nums}
+.plan small{color:var(--muted)}
+.cred{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:10px 12px;font:500 13px/1.7 var(--f-mono);white-space:pre-wrap;word-break:break-all;margin:0}
+.devtag{background:var(--accent);color:var(--accent-ink);font:700 11px var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px}
 @media (max-width:520px){h1{font-size:25px}.kpi b{font-size:26px}.kpi b.m{font-size:19px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -356,81 +363,124 @@ function seed(){
 /* ---------- FIREBASE: CONFIGURACIÓN ---------- */
 // Pegá aquí la configuración de tu proyecto (Consola Firebase → Configuración del proyecto → Tus apps → SDK).
 const FIREBASE_CONFIG={
-  apiKey:"AIzaSyAMDUo7xu5Y2Sehz0M3wEOKMSHUjOKMyjA",
-  authDomain:"kevanix-taller.firebaseapp.com",
-  projectId:"kevanix-taller",
-  storageBucket:"kevanix-taller.firebasestorage.app",
-  messagingSenderId:"419879790482",
-  appId:"1:419879790482:web:e8274f6cab72acf3a2c34b"
+  apiKey:"PEGAR_API_KEY",
+  authDomain:"PEGAR.firebaseapp.com",
+  projectId:"PEGAR_PROJECT_ID",
+  storageBucket:"PEGAR.appspot.com",
+  messagingSenderId:"PEGAR",
+  appId:"PEGAR"
 };
+// Cuenta del desarrollador (dueño de la plataforma). Debe coincidir con firestore.rules.
+const DEV_EMAIL='genesysfastsistems@gmail.com';
+// Los usuarios creados con nombre de usuario ingresan con este dominio interno (no recibe correos).
+const USER_DOMAIN='usuarios.kevanix-taller.app';
 const COLS=['clientes','vehiculos','stock','movs','mecanicos','ots','sucursales','usuarios','mensajes','alertas'];
+const PLAT_DEF={marca:'KEVANIX Taller',diasPrueba:15,diasGracia:3,registroAbierto:true,waVentas:'',
+  datosPago:'Banco: \nCuenta Nº: \nTitular: \nRUC/CI: \nAlias / Giros Tigo: ',
+  planPrueba:{maxUsuarios:3,maxSucursales:1},
+  planes:[
+    {id:'mensual',nombre:'Mensual',tipo:'periodo',dias:30,precio:150000,maxUsuarios:5,maxSucursales:1,activo:true},
+    {id:'anual',nombre:'Anual',tipo:'periodo',dias:365,precio:1500000,maxUsuarios:10,maxSucursales:2,activo:true},
+    {id:'multitaller',nombre:'Multitaller mensual',tipo:'periodo',dias:30,precio:300000,maxUsuarios:30,maxSucursales:5,activo:true},
+    {id:'vitalicia',nombre:'Licencia de por vida',tipo:'unico',dias:0,precio:3500000,maxUsuarios:10,maxSucursales:2,activo:true}],
+  recordatorio:'Hola [Propietario], le recordamos que la membresía de *[Taller]* en KEVANIX Taller vence el [Vence] ([Dias]).\nPara renovar el plan [Plan] (Gs. [Precio]):\n[DatosPago]\nEnvíenos el comprobante por este medio. ¡Gracias!',
+  bienvenida:'¡Bienvenido a KEVANIX Taller, [Propietario]!\nYa está listo el sistema de *[Taller]*.\nIngrese en: [Link]\nUsuario: [Usuario]\nContraseña temporal: [Clave]\nAl primer ingreso le pediremos cambiarla.',
+  confirmacion:'Hola [Propietario], recibimos su pago de Gs. [Monto] por el plan [Plan] de *[Taller]*. Su membresía quedó activa [Hasta]. ¡Gracias por confiar en KEVANIX!'};
 function defCfg(){return {taller:'Mi taller',ruc:'',dir:'',tel:'',timbrado:'',vigDesde:'',bono:5,garantiaDef:90,diasEstancado:90,coberturaDias:30,elevadores:4,telCompras:'',urlPublica:'',ejemplo:false,
   autoWA:{ingreso:true,presupuesto:true,retiro:true},plantillas:{...TPL_DEF}}}
 const emptyDB=()=>({clientes:[],vehiculos:[],stock:[],movs:[],mecanicos:[],ots:[],sucursales:[],usuarios:[],mensajes:[],alertas:[],config:defCfg(),nextOT:1});
 const fbOK=()=>FIREBASE_CONFIG.apiKey&&!/^PEGAR/.test(FIREBASE_CONFIG.apiKey);
-let FS=null,AUTH=null,last={},lastCfg='',unsubs=[],listos=new Set(),pendRender=null;
+let FS=null,AUTH=null,SEC=null,last={},lastCfg='',unsubs=[],tUnsub=null,listos=new Set(),pendRender=null,plat=null,devUnsubs=[];
+const dv={talleres:[],pagos:[],usuarios:[]};
+const P=()=>Object.assign({},PLAT_DEF,plat||{});
 function stable(x){if(Array.isArray(x))return '['+x.map(v=>v===undefined?'null':stable(v)).join(',')+']';
   if(x&&typeof x==='object')return '{'+Object.keys(x).filter(k=>x[k]!==undefined).sort().map(k=>JSON.stringify(k)+':'+stable(x[k])).join(',')+'}';
   return JSON.stringify(x===undefined?null:x)}
 function initFB(){firebase.initializeApp(FIREBASE_CONFIG);AUTH=firebase.auth();FS=firebase.firestore();
-  try{FS.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}}
-function stopSync(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];listos=new Set();last={};lastCfg=''}
+  try{FS.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+  FS.collection('plataforma').doc('config').onSnapshot(d=>{plat=d.exists?d.data():null;if(st.fase!=='app'||st.view==='config')remoteRender()},()=>{})}
+const T=c=>FS.collection('talleres').doc(st.tid).collection(c);
+const ref=(c,id)=>c==='usuarios'?FS.collection('usuarios').doc(id):T(c).doc(id);
+const loginEmail=s=>{s=(s||'').trim().toLowerCase();return s.includes('@')?s:s.replace(/[^a-z0-9._-]/g,'')+'@'+USER_DOMAIN};
+const interno=e=>(e||'').toLowerCase().endsWith('@'+USER_DOMAIN);
+const userName=e=>interno(e)?e.split('@')[0]:(e||'');
+const tsDe=(fecha,mas=0)=>{const d=new Date(fecha+'T23:59:59');d.setDate(d.getDate()+mas);return firebase.firestore.Timestamp.fromDate(d)};
+const LEJOS='2100-01-01';
+const limiteDe=vence=>vence?tsDe(vence,P().diasGracia):tsDe(LEJOS);
+function planDe(id){if(id==='prueba')return Object.assign({id:'prueba',nombre:'Prueba gratis',tipo:'prueba',precio:0,dias:P().diasPrueba},P().planPrueba);
+  return P().planes.find(p=>p.id===id)||{id,nombre:id||'—',tipo:'periodo',dias:30,precio:0,maxUsuarios:99,maxSucursales:99}}
+const periodoTxt=p=>p.tipo==='unico'?'pago único':p.tipo==='prueba'?p.dias+' días':p.dias===30?'por mes':p.dias===365?'por año':'cada '+p.dias+' días';
+function memb(t){if(!t)return {ok:false,motivo:'sin'};
+  if(t.estado==='suspendido')return {ok:false,motivo:'suspendido'};
+  if(!t.vence)return {ok:true,dias:Infinity,motivo:''};
+  const d=dias(hoy(),t.vence),g=P().diasGracia;
+  return {ok:d>=-g,dias:d,motivo:d<-g?'vencido':d<0?'gracia':''}}
+const diasTxt=d=>d===Infinity?'sin vencimiento':d>1?`quedan ${d} días`:d===1?'vence mañana':d===0?'vence hoy':`venció hace ${-d} día${d<-1?'s':''}`;
+function stopData(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];listos=new Set();last={};lastCfg='';st.syncOn=false}
+function stopSync(){stopData();if(tUnsub){try{tUnsub()}catch(e){}tUnsub=null}devUnsubs.forEach(u=>{try{u()}catch(e){}});devUnsubs=[]}
 async function onAuth(u){
-  stopSync();db=emptyDB();st.user=null;st.perfil=null;
-  if(!u){st.fase='login';render();return}
-  st.fase='cargando';st.authUser=u;render();
+  stopSync();db=emptyDB();Object.assign(st,{user:null,perfil:null,tid:null,taller:null,esDev:false,soporte:false,misPagos:null});
+  if(!u){st.fase=st.fase==='alta'?'alta':'login';render();return}
+  st.authUser=u;st.fase='cargando';render();
   try{
-    const ref=FS.collection('usuarios').doc(u.uid);let p=await ref.get();
-    if(!p.exists){
-      const ini=await FS.collection('meta').doc('inicio').get();
-      if(!ini.exists){st.fase='inicio';render();return}
-      await ref.set({nombre:st.nombreNuevo||u.email.split('@')[0],email:u.email,rol:'pendiente',sucursalId:'',mecanicoId:'',activo:false,creado:new Date().toISOString()});
-      p=await ref.get();
-    }
+    if((u.email||'').toLowerCase()===DEV_EMAIL){st.esDev=true;st.user=u.uid;
+      const d=await FS.collection('plataforma').doc('dev').get();
+      if(!d.exists||!d.data().claveCambiada){st.fase='clave';render();return}
+      return abrirDev()}
+    const p=await FS.collection('usuarios').doc(u.uid).get();
+    if(!p.exists){st.fase='sinTaller';render();if(st.alta)crearTallerPrueba();return}
     const pf=p.data();st.perfil=pf;
-    if(!pf.activo){st.fase='espera';render();return}
-    st.user=u.uid;
-    let s=null;try{s=localStorage.getItem(KS)}catch(e){}
-    st.suc=pf.rol==='admin'&&s?s:(pf.sucursalId||'central');
-    startSync();
+    if(!pf.activo){st.fase='inactivo';render();return}
+    if(pf.cambiarClave){st.fase='clave';render();return}
+    entrarTaller(pf.tallerId);
   }catch(e){console.error(e);st.fase='error';st.err=e.code||e.message;render()}
 }
+function entrarTaller(tid){
+  st.tid=tid;st.user=st.authUser.uid;
+  let s=null;try{s=localStorage.getItem(KS+tid)}catch(e){}
+  st.suc=st.soporte?'*':st.perfil.rol==='admin'&&s?s:(st.perfil.sucursalId||'central');
+  st.fase='cargando';render();
+  tUnsub=FS.collection('talleres').doc(tid).onSnapshot(d=>{st.taller=d.exists?Object.assign(d.data(),{id:d.id}):null;
+    if(!st.soporte&&!memb(st.taller).ok){stopData();st.fase='bloqueado';closeM();render();return}
+    if(!st.syncOn)startSync();else remoteRender()},e=>syncErr('taller',e));
+}
 function startSync(){
-  const since=addD(hoy(),-150);
-  COLS.forEach(c=>{let q=FS.collection(c);if(c==='movs'||c==='mensajes')q=q.where('fecha','>=',since);
+  st.syncOn=true;st.fase='cargando';render();const since=addD(hoy(),-150);
+  COLS.forEach(c=>{let q=c==='usuarios'?FS.collection('usuarios').where('tallerId','==',st.tid):T(c);if(c==='movs'||c==='mensajes')q=q.where('fecha','>=',since);
     unsubs.push(q.onSnapshot(s=>{db[c]=s.docs.map(d=>Object.assign(d.data(),{id:d.id}));last[c]={};db[c].forEach(x=>last[c][x.id]=stable(x));llego(c)},e=>syncErr(c,e)))});
-  unsubs.push(FS.collection('meta').doc('config').onSnapshot(d=>{db.config=Object.assign(defCfg(),d.exists?d.data():{});lastCfg=stable(db.config);llego('config')},e=>syncErr('config',e)));
-  unsubs.push(FS.collection('meta').doc('contadores').onSnapshot(d=>{db.nextOT=(d.exists&&d.data().nextOT)||1;llego('contadores')},e=>syncErr('contadores',e)));
-  if(['admin','recepcion'].includes(st.perfil.rol))unsubs.push(FS.collection('publico').where('procesado','==',false).onSnapshot(s=>aplicarRespuestas(s.docs),e=>console.warn(e)));
+  unsubs.push(T('meta').doc('config').onSnapshot(d=>{db.config=Object.assign(defCfg(),d.exists?d.data():{});lastCfg=stable(db.config);llego('config')},e=>syncErr('config',e)));
+  unsubs.push(T('meta').doc('contadores').onSnapshot(d=>{db.nextOT=(d.exists&&d.data().nextOT)||1;llego('contadores')},e=>syncErr('contadores',e)));
+  if(['admin','recepcion'].includes(st.perfil.rol))unsubs.push(FS.collection('publico').where('tallerId','==',st.tid).where('procesado','==',false).onSnapshot(s=>aplicarRespuestas(s.docs),e=>console.warn(e)));
 }
 function syncErr(c,e){console.error(c,e);toast(e.code==='permission-denied'?'Sin permiso para leer '+c+'. Revisá las reglas de Firestore.':'Error de conexión: '+(e.code||e.message))}
-function llego(c){listos.add(c);
+function llego(c){if(!st.syncOn)return;listos.add(c);
   if(st.fase!=='app'){if(listos.size>=COLS.length+2){st.fase='app';
       if(st.pendOT&&db.ots.find(o=>o.id===st.pendOT)){const id=st.pendOT;st.pendOT=null;go('ot',id)}else go(NAVS[rol()][0][0]);
-      toast('Hola, '+(me().nombre||'').split(' ')[0])}
+      toast('Hola, '+((me()||{}).nombre||'').split(' ')[0])}
     return}
-  if(c==='usuarios'){const m=db.usuarios.find(u=>u.id===st.user);if(!m||!m.activo){toast('Tu acceso fue desactivado.');AUTH.signOut();return}st.perfil=m}
+  if(c==='usuarios'&&!st.soporte){const m=db.usuarios.find(u=>u.id===st.user);if(!m||!m.activo){toast('Tu acceso fue desactivado.');AUTH.signOut();return}st.perfil=m}
   remoteRender()}
 function remoteRender(){clearTimeout(pendRender);pendRender=setTimeout(()=>{const a=document.activeElement;
-  if(DR||st.view==='recepcion'||(a&&a.closest&&a.closest('#app')&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))){pendRender=setTimeout(remoteRender,1500);return}render()},300)}
+  if(DR||st.view==='recepcion'&&st.fase==='app'||(a&&a.closest&&(a.closest('#app')||a.closest('#modal'))&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))){pendRender=setTimeout(remoteRender,1500);return}render()},300)}
 function save(){
   if(!FS||st.fase!=='app')return;
+  if(!st.soporte&&!memb(st.taller).ok)return toast('La membresía no está activa. No se guardan cambios.');
   const ops=[];
   COLS.forEach(c=>{const cur={};(db[c]||[]).forEach(x=>{if(!x.id)x.id=uid();cur[x.id]=stable(x)});const prev=last[c]||{};
-    Object.keys(cur).forEach(id=>{if(cur[id]!==prev[id]){ops.push(['set',FS.collection(c).doc(id),JSON.parse(cur[id])]);
+    Object.keys(cur).forEach(id=>{if(cur[id]!==prev[id]){const d=JSON.parse(cur[id]);delete d.id;ops.push(['set',ref(c,id),d]);
       if(c==='ots'){const o=db.ots.find(x=>x.id===id);if(o.token)ops.push(['merge',FS.collection('publico').doc(o.token),pubDoc(o)])}}});
-    Object.keys(prev).forEach(id=>{if(!(id in cur))ops.push(['del',FS.collection(c).doc(id)])});
+    Object.keys(prev).forEach(id=>{if(!(id in cur))ops.push(['del',ref(c,id)])});
     last[c]=cur});
-  const cs=stable(db.config);if(cs!==lastCfg){ops.push(['set',FS.collection('meta').doc('config'),JSON.parse(cs)]);lastCfg=cs}
+  const cs=stable(db.config);if(cs!==lastCfg){ops.push(['set',T('meta').doc('config'),JSON.parse(cs)]);lastCfg=cs}
   for(let i=0;i<ops.length;i+=400){const b=FS.batch();ops.slice(i,i+400).forEach(([t,r,d])=>t==='set'?b.set(r,d):t==='merge'?b.set(r,d,{merge:true}):b.delete(r));
     b.commit().catch(e=>{console.error(e);toast(e.code==='permission-denied'?'Tu usuario no tiene permiso para ese cambio.':'No se pudo guardar en la nube ('+(e.code||e.message)+').')})}
 }
-function saveSes(){try{localStorage.setItem(KS,st.suc)}catch(e){}}
-async function nuevoNro(){const ref=FS.collection('meta').doc('contadores');
-  try{return await FS.runTransaction(async t=>{const d=await t.get(ref);const n=(d.exists&&d.data().nextOT)||1;t.set(ref,{nextOT:n+1},{merge:true});return n})}
-  catch(e){const n=db.nextOT||1;ref.set({nextOT:n+1},{merge:true}).catch(()=>{});return n}}
+function saveSes(){try{localStorage.setItem(KS+st.tid,st.suc)}catch(e){}}
+async function nuevoNro(){const r=T('meta').doc('contadores');
+  try{return await FS.runTransaction(async t=>{const d=await t.get(r);const n=(d.exists&&d.data().nextOT)||1;t.set(r,{nextOT:n+1},{merge:true});return n})}
+  catch(e){const n=db.nextOT||1;r.set({nextOT:n+1},{merge:true}).catch(()=>{});return n}}
 function pubDoc(o){const v=veh(o.vehiculoId),cf=db.config;
-  return {token:o.token,nro:o.nro,taller:{nombre:cf.taller||'',dir:cf.dir||'',tel:cf.tel||''},chapa:v.chapa||'',marca:v.marca||'',modelo:v.modelo||'',km:o.km||0,falla:o.falla||'',
+  return {tallerId:st.tid,token:o.token,nro:o.nro,taller:{nombre:cf.taller||'',dir:cf.dir||'',tel:cf.tel||''},chapa:v.chapa||'',marca:v.marca||'',modelo:v.modelo||'',km:o.km||0,falla:o.falla||'',
     estado:o.estado,estadoDesde:o.estadoDesde||'',aprob:o.aprob,aprobNota:o.aprobNota||'',items:o.items.map(i=>({desc:i.desc,cant:i.cant,precio:i.precio})),total:total(o),pagado:pagado(o),
     encuesta:{pedida:!!o.encuesta,nota:(o.encuesta&&o.encuesta.nota)||null,comentario:(o.encuesta&&o.encuesta.comentario)||''},actualizado:new Date().toISOString()}}
 function aplicarRespuestas(docs){
@@ -444,10 +494,14 @@ function aplicarRespuestas(docs){
     FS.collection('publico').doc(d.id).set({procesado:true},{merge:true}).catch(()=>{})});
   if(cambio){save();remoteRender()}
 }
+// Crea una cuenta de acceso sin cerrar la sesión actual (app secundaria de Firebase)
+async function crearCuentaAuth(login,clave){if(!SEC)SEC=firebase.initializeApp(FIREBASE_CONFIG,'sec');
+  const c=await SEC.auth().createUserWithEmailAndPassword(loginEmail(login),clave);const id=c.user.uid;await SEC.auth().signOut();return id}
+const claveTemp=()=>{const a='abcdefghjkmnpqrstuvwxyz23456789';let s='';const r=crypto.getRandomValues(new Uint32Array(8));r.forEach(n=>s+=a[n%a.length]);return s};
 function toast(t){const n=document.querySelectorAll('.toast').length,d=document.createElement('div');d.className='toast';d.textContent=t;d.style.bottom=`calc(${20+n*52}px + env(safe-area-inset-bottom,0px))`;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)}
 
 /* ---------- HELPERS ---------- */
-const me=()=>st.user?(db.usuarios.find(u=>u.id===st.user)||(st.perfil&&Object.assign({id:st.user},st.perfil))):null;
+const me=()=>st.user&&st.perfil?(db.usuarios.find(u=>u.id===st.user)||Object.assign({id:st.user},st.perfil)):null;
 const rol=()=>me()?.rol;
 const isA=()=>rol()==='admin', isM=()=>rol()==='mecanico';
 const cli=id=>db.clientes.find(c=>c.id===id)||{nombre:'—',ruc:'',tel:''};
@@ -484,60 +538,122 @@ function allowed(v){if(PUB.includes(v))return true;if(!me()||!NAVS[rol()])return
 function go(v,p){if(!allowed(v)){if(!NAVS[rol()])return;v=NAVS[rol()][0][0];p=null}st.view=v;st.param=p??null;render();window.scrollTo(0,0)}
 function render(){
   const pub=PUB.includes(st.view);
-  if(!pub&&st.fase!=='app'){$('#who').innerHTML=['espera','inicio','error'].includes(st.fase)?'<button class="out" onclick="salir()">Salir</button>':'';$('#nav').innerHTML='';$('#app').innerHTML=faseView();return}
+  if(!pub&&st.fase==='dev'){renderDev();return}
+  if(!pub&&st.fase!=='app'){$('#who').innerHTML=['inactivo','sinTaller','error','bloqueado','clave'].includes(st.fase)?'<button class="out" onclick="salir()">Salir</button>':'';$('#nav').innerHTML='';$('#app').innerHTML=faseView();return}
   if(me()&&!pub){
     const u=me();
-    $('#who').innerHTML=`${isA()?`<select aria-label="Sucursal" onchange="st.suc=this.value;saveSes();render()"><option value="*" ${st.suc==='*'?'selected':''}>Todas las sucursales</option>${db.sucursales.map(s=>`<option value="${s.id}" ${st.suc===s.id?'selected':''}>${esc(s.nombre)}</option>`).join('')}</select>`:`<span>${esc(sucN(u.sucursalId))}</span>`}
-      <span><b>${esc(u.nombre)}</b> · ${ROLES[u.rol]||''}</span><button class="out" onclick="salir()">Salir</button>`;
+    $('#who').innerHTML=`${st.soporte?`<span class="devtag">Soporte</span><button class="out" onclick="volverDev()">← Panel desarrollador</button>`:''}${isA()?`<select aria-label="Sucursal" onchange="st.suc=this.value;saveSes();render()"><option value="*" ${st.suc==='*'?'selected':''}>Todas las sucursales</option>${db.sucursales.map(s=>`<option value="${s.id}" ${st.suc===s.id?'selected':''}>${esc(s.nombre)}</option>`).join('')}</select>`:`<span>${esc(sucN(u.sucursalId))}</span>`}
+      <span><b>${esc(u.nombre)}</b> · ${ROLES[u.rol]||''}</span>${st.soporte?'':'<button class="out" onclick="cambiarClaveModal()">Clave</button>'}<button class="out" onclick="salir()">Salir</button>`;
     $('#nav').innerHTML=NAVS[u.rol].map(([k,l])=>`<button class="${st.view===k||(st.view==='ot'&&k==='ots')?'on':''}" onclick="go('${k}')">${l}${isM()?'':navBadge(k)}</button>`).join('');
   } else {$('#who').innerHTML='';$('#nav').innerHTML=''}
   const V={tablero,recepcion,ots:otsView,ot:otView,historial,stock:stockView,crm:crmView,reportes:reportesView,finanzas,config:configView,cliente:clienteView,encuesta:encuestaView,seguimiento:seguimientoView,mensajes:mensajesView}[st.view]||tablero;
-  $('#app').innerHTML=(db.config.ejemplo&&!pub&&isA()?`<div class="banner row between"><span>Hay datos de ejemplo cargados.</span><button class="btn sm" onclick="confirmLimpiar()">Borrar datos de ejemplo</button></div>`:'')+V();
+  $('#app').innerHTML=(pub?'':membBanner())+(db.config.ejemplo&&!pub&&isA()?`<div class="banner row between"><span>Hay datos de ejemplo cargados.</span><button class="btn sm" onclick="confirmLimpiar()">Borrar datos de ejemplo</button></div>`:'')+V();
   if(st.view==='recepcion') bindRec();
   if(st.view==='ots'&&me()&&!isM()) bindSem();
 }
 
 /* ---------- ACCESO ---------- */
 function faseView(){
-  const f=st.fase;
-  if(f==='setup')return `<div class="login"><h1>Falta conectar Firebase</h1><p>Abrí <span class="mono">index.html</span> en GitHub (ícono del lápiz), buscá <span class="mono">FIREBASE_CONFIG</span> y pegá los datos de tu proyecto. Los pasos completos están en el archivo <span class="mono">LEEME.md</span>.</p></div>`;
-  if(f==='cargando')return '<div class="login"><h1>Cargando…</h1><p class="sub">Conectando con la base de datos del taller.</p></div>';
+  const f=st.fase,p=P();
+  if(f==='setup')return `<div class="login"><h1>Falta conectar Firebase</h1><p>Abrí <span class="mono">index.html</span> en GitHub (ícono del lápiz), buscá <span class="mono">FIREBASE_CONFIG</span> y pegá los datos de tu proyecto. Los pasos completos están en <span class="mono">LEEME.md</span>.</p></div>`;
+  if(f==='cargando')return '<div class="login"><h1>Cargando…</h1><p class="sub">Conectando con la base de datos.</p></div>';
   if(f==='error')return `<div class="login"><h1>No se pudo conectar</h1><p>Error: <span class="mono">${esc(st.err)}</span></p><p class="note">Si dice <b>permission-denied</b>, publicá las reglas de Firestore (archivo firestore.rules).</p></div>`;
-  if(f==='espera')return `<div class="login"><h1>Cuenta pendiente</h1><p>Tu cuenta <b>${esc(st.authUser?.email)}</b> fue creada. El administrador del taller tiene que aprobarla y asignarte un rol.</p><p class="note">Cuando la apruebe, volvé a ingresar.</p><div class="row"><button class="btn" onclick="location.reload()">Ya me aprobaron</button></div></div>`;
-  if(f==='inicio')return `<div class="login"><div><h1>Configurar taller</h1><p class="sub" style="margin:4px 0 0">Sos el primer usuario: tu cuenta queda como <b>administrador</b>.</p></div>
-    <form class="grid" onsubmit="event.preventDefault();arrancar()"><div class="fields"><label class="field"><span>Nombre del taller</span><input id="i_t" required placeholder="Taller Mecánico …"></label><label class="field"><span>Tu nombre</span><input id="i_n" required></label></div>
-    <div class="row"><button class="btn pri">Crear taller</button></div></form></div>`;
-  const po=st.pendOT;
-  return `<div class="login"><div><h1>${st.modo==='alta'?'Crear cuenta':'Ingresar'}</h1><p class="sub" style="margin:4px 0 0">${po?'Código escaneado: ingresá para abrir la orden.':st.modo==='alta'?'El administrador aprobará tu acceso y te asignará un rol.':'Usá tu correo y contraseña del taller.'}</p></div>
-  <form class="grid" style="max-width:380px" onsubmit="event.preventDefault();${st.modo==='alta'?'crearCuenta()':'entrar()'}">
-    ${st.modo==='alta'?'<label class="field"><span>Nombre y apellido</span><input id="l_n" required autocomplete="name"></label>':''}
-    <label class="field"><span>Correo</span><input id="l_e" type="email" required autocomplete="email"></label>
-    <label class="field"><span>Contraseña</span><input id="l_p" type="password" required minlength="6" autocomplete="${st.modo==='alta'?'new-password':'current-password'}"></label>
-    <div class="row"><button class="btn pri">${st.modo==='alta'?'Crear cuenta':'Entrar'}</button>
-    <button type="button" class="btn" onclick="st.modo=st.modo==='alta'?'':'alta';render()">${st.modo==='alta'?'Ya tengo cuenta':'Crear cuenta nueva'}</button></div>
-    ${st.modo==='alta'?'':'<button type="button" class="btn sm" style="justify-self:start" onclick="recuperar()">Olvidé mi contraseña</button>'}</form>
-  <p class="note">Cada rol ve solo lo suyo: el mecánico sus tareas y el checklist; recepción crea OTs y presupuestos; el administrador accede a caja, costos y reportes.</p></div>`;
+  if(f==='inactivo')return `<div class="login"><h1>Usuario desactivado</h1><p>Tu usuario <b>${esc(userName(st.authUser?.email))}</b> no tiene acceso. Hablá con el administrador del taller.</p></div>`;
+  if(f==='clave')return `<div class="login"><div><h1>Cambiá tu contraseña</h1><p class="sub" style="margin:4px 0 0">${st.esDev?'Primer ingreso del desarrollador: reemplazá la contraseña temporal.':'Ingresaste con una contraseña temporal. Elegí una nueva para continuar.'}</p></div>
+    <form class="grid" style="max-width:380px" onsubmit="event.preventDefault();claveForzada()"><label class="field"><span>Nueva contraseña</span><input id="k_1" type="password" minlength="${st.esDev?10:6}" required autocomplete="new-password"></label>
+    <label class="field"><span>Repetir contraseña</span><input id="k_2" type="password" required autocomplete="new-password"></label><div class="row"><button class="btn pri">Guardar y continuar</button></div></form></div>`;
+  if(f==='bloqueado')return bloqueadoView();
+  if(f==='sinTaller'){if(!p.registroAbierto)return `<div class="login"><h1>Cuenta sin taller</h1><p>Tu cuenta no está asociada a ningún taller. Contactá a ${esc(p.marca)}${p.waVentas?` al <span class="mono">${esc(p.waVentas)}</span>`:''}.</p></div>`;
+    const a=st.alta||{};return `<div class="login"><div><h1>Crear tu taller</h1><p class="sub" style="margin:4px 0 0">Prueba gratis de ${p.diasPrueba} días. Sin tarjeta.</p></div>
+    <form class="grid" style="max-width:420px" onsubmit="event.preventDefault();st.alta={taller:$('#a_t').value.trim(),nombre:$('#a_n').value.trim(),tel:$('#a_w').value.trim()};crearTallerPrueba()">
+    <label class="field"><span>Nombre del taller</span><input id="a_t" required value="${esc(a.taller||'')}"></label><label class="field"><span>Tu nombre</span><input id="a_n" required value="${esc(a.nombre||'')}"></label>
+    <label class="field"><span>WhatsApp</span><input id="a_w" inputmode="tel" value="${esc(a.tel||'')}" placeholder="0981 000 000"></label><div class="row"><button class="btn pri">Crear taller</button></div></form></div>`}
+  if(f==='alta')return `<div class="login"><div><h1>Probá ${esc(p.marca)} gratis</h1><p class="sub" style="margin:4px 0 0">${p.diasPrueba} días con todas las funciones. Sin tarjeta.</p></div>
+    <form class="grid" style="max-width:420px" onsubmit="event.preventDefault();altaPrueba()">
+    <label class="field"><span>Nombre del taller</span><input id="a_t" required></label><label class="field"><span>Tu nombre</span><input id="a_n" required autocomplete="name"></label>
+    <label class="field"><span>WhatsApp</span><input id="a_w" inputmode="tel" placeholder="0981 000 000" required></label>
+    <label class="field"><span>Correo (para ingresar y recuperar la contraseña)</span><input id="a_e" type="email" required autocomplete="email"></label>
+    <label class="field"><span>Contraseña</span><input id="a_p" type="password" minlength="6" required autocomplete="new-password"></label>
+    <div class="row"><button class="btn pri">Crear mi taller</button><button type="button" class="btn" onclick="st.fase='login';render()">Ya tengo cuenta</button></div></form>
+    ${planesCards(null,true)}</div>`;
+  return `<div class="login"><div><h1>Ingresar</h1><p class="sub" style="margin:4px 0 0">${st.pendOT?'Código escaneado: ingresá para abrir la orden.':'Usá el usuario o correo que te dio el administrador.'}</p></div>
+  <form class="grid" style="max-width:380px" onsubmit="event.preventDefault();entrar()">
+    <label class="field"><span>Usuario o correo</span><input id="l_e" required autocomplete="username" autocapitalize="none"></label>
+    <label class="field"><span>Contraseña</span><input id="l_p" type="password" required autocomplete="current-password"></label>
+    <div class="row"><button class="btn pri">Entrar</button><button type="button" class="btn sm" onclick="recuperar()">Olvidé mi contraseña</button></div></form>
+  ${plat&&p.registroAbierto?`<div class="panel row between" style="max-width:520px"><span><b>¿Tenés un taller?</b><br><span class="sub">Probá el sistema gratis ${p.diasPrueba} días.</span></span><button class="btn pri" onclick="st.fase='alta';render()">Crear mi taller gratis</button></div>`:''}</div>`;
 }
-const AUTH_ERR={'auth/invalid-credential':'Correo o contraseña incorrectos.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/email-already-in-use':'Ese correo ya tiene cuenta. Usá “Ya tengo cuenta”.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.','auth/invalid-email':'El correo no es válido.','auth/too-many-requests':'Demasiados intentos. Esperá unos minutos.','auth/unauthorized-domain':'Este dominio no está autorizado en Firebase Authentication.','auth/network-request-failed':'Sin conexión a internet.'};
+const AUTH_ERR={'auth/invalid-credential':'Usuario o contraseña incorrectos.','auth/invalid-login-credentials':'Usuario o contraseña incorrectos.','auth/wrong-password':'Usuario o contraseña incorrectos.','auth/user-not-found':'Usuario o contraseña incorrectos.','auth/email-already-in-use':'Ese usuario o correo ya existe. Elegí otro.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.','auth/invalid-email':'El usuario o correo no es válido.','auth/too-many-requests':'Demasiados intentos. Esperá unos minutos.','auth/unauthorized-domain':'Este dominio no está autorizado en Firebase Authentication.','auth/network-request-failed':'Sin conexión a internet.','auth/requires-recent-login':'Por seguridad, salí y volvé a ingresar antes de cambiar la contraseña.'};
 const authMsg=e=>AUTH_ERR[e.code]||('Error: '+(e.code||e.message));
-function entrar(){AUTH.signInWithEmailAndPassword($('#l_e').value.trim(),$('#l_p').value).catch(e=>toast(authMsg(e)))}
-function crearCuenta(){st.nombreNuevo=$('#l_n').value.trim();AUTH.createUserWithEmailAndPassword($('#l_e').value.trim(),$('#l_p').value).catch(e=>toast(authMsg(e)))}
-function recuperar(){const e=$('#l_e').value.trim();if(!e)return toast('Escribí tu correo y tocá de nuevo “Olvidé mi contraseña”.');AUTH.sendPasswordResetEmail(e).then(()=>toast('Te enviamos un correo para cambiar la contraseña.'),x=>toast(authMsg(x)))}
-async function arrancar(){const u=AUTH.currentUser,t=$('#i_t').value.trim(),n=$('#i_n').value.trim();if(!t||!n)return;
-  const b=FS.batch(),ahora=new Date().toISOString();
-  b.set(FS.collection('meta').doc('inicio'),{por:u.uid,fecha:ahora});
-  b.set(FS.collection('usuarios').doc(u.uid),{nombre:n,email:u.email,rol:'admin',sucursalId:'central',mecanicoId:'',activo:true,creado:ahora});
-  b.set(FS.collection('sucursales').doc('central'),{id:'central',nombre:'Casa central',est:'001',pto:'001',nextFac:1});
-  b.set(FS.collection('meta').doc('config'),Object.assign(defCfg(),{taller:t}));
-  b.set(FS.collection('meta').doc('contadores'),{nextOT:1});
-  try{await b.commit();onAuth(u)}catch(e){toast('No se pudo crear el taller: '+(e.code||e.message))}}
-function salir(){closeM();st.view='tablero';if(AUTH)AUTH.signOut();else render()}
+function entrar(){AUTH.signInWithEmailAndPassword(loginEmail($('#l_e').value),$('#l_p').value).catch(e=>toast(authMsg(e)))}
+function recuperar(){const v=$('#l_e').value.trim();if(!v)return toast('Escribí tu correo y tocá de nuevo “Olvidé mi contraseña”.');
+  if(!v.includes('@'))return modalHTML(`<h2>Recuperar contraseña</h2><p>Los usuarios sin correo no pueden recuperar la contraseña solos. Pedile al administrador del taller que te cree un usuario nuevo.</p><div class="row"><button class="btn" onclick="closeM()">Entendido</button></div>`);
+  AUTH.sendPasswordResetEmail(v).then(()=>toast('Te enviamos un correo para cambiar la contraseña.'),x=>toast(authMsg(x)))}
+function altaPrueba(){st.alta={taller:$('#a_t').value.trim(),nombre:$('#a_n').value.trim(),tel:$('#a_w').value.trim()};
+  AUTH.createUserWithEmailAndPassword($('#a_e').value.trim(),$('#a_p').value).catch(e=>toast(authMsg(e)))}
+async function crearTallerPrueba(){const a=st.alta;if(!a||!a.taller||!a.nombre)return;
+  const u=AUTH.currentUser,tr=FS.collection('talleres').doc(),tid=tr.id,ahora=new Date().toISOString(),vence=addD(hoy(),P().diasPrueba);
+  const b=FS.batch();
+  b.set(tr,{nombre:a.taller,propietario:a.nombre,tel:a.tel||'',email:u.email,ruc:'',plan:'prueba',estado:'prueba',vence,limiteTs:limiteDe(vence),ownerUid:u.uid,creado:ahora,origen:'web',notas:''});
+  b.set(FS.collection('usuarios').doc(u.uid),{tallerId:tid,nombre:a.nombre,email:u.email,usuario:userName(u.email),rol:'admin',sucursalId:'central',mecanicoId:'',activo:true,cambiarClave:false,creado:ahora});
+  b.set(tr.collection('sucursales').doc('central'),{nombre:'Casa central',est:'001',pto:'001',nextFac:1});
+  b.set(tr.collection('meta').doc('config'),Object.assign(defCfg(),{taller:a.taller,tel:a.tel||''}));
+  b.set(tr.collection('meta').doc('contadores'),{nextOT:1});
+  try{await b.commit();st.alta=null;await onAuth(u);toast(`¡Taller creado! Tenés ${P().diasPrueba} días de prueba.`)}catch(e){console.error(e);toast('No se pudo crear el taller: '+(e.code||e.message))}}
+async function claveForzada(){const a=$('#k_1').value,b=$('#k_2').value;if(a!==b)return toast('Las contraseñas no coinciden.');if(a.length<(st.esDev?10:6))return toast(`Usá al menos ${st.esDev?10:6} caracteres.`);
+  const u=AUTH.currentUser;
+  try{await u.updatePassword(a);
+    if(st.esDev)await FS.collection('plataforma').doc('dev').set({claveCambiada:true,fecha:new Date().toISOString()});
+    else await FS.collection('usuarios').doc(u.uid).update({cambiarClave:false});
+    toast('Contraseña actualizada.');onAuth(u)}catch(e){toast(authMsg(e));if(e.code==='auth/requires-recent-login')setTimeout(()=>AUTH.signOut(),1500)}}
+function cambiarClaveModal(){modalHTML(`<h2>Cambiar contraseña</h2><form class="grid" onsubmit="event.preventDefault();cambiarClave()"><div class="fields">
+  <label class="field"><span>Contraseña actual</span><input id="c_0" type="password" required autocomplete="current-password"></label>
+  <label class="field"><span>Nueva contraseña</span><input id="c_1" type="password" minlength="6" required autocomplete="new-password"></label>
+  <label class="field"><span>Repetir nueva</span><input id="c_2" type="password" required autocomplete="new-password"></label></div>
+  <div class="row"><button class="btn pri">Guardar</button><button type="button" class="btn" onclick="closeM()">Cancelar</button></div></form>`)}
+async function cambiarClave(){const u=AUTH.currentUser,a=$('#c_1').value;if(a!==$('#c_2').value)return toast('Las contraseñas nuevas no coinciden.');
+  try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,$('#c_0').value));await u.updatePassword(a);closeM();toast('Contraseña actualizada.')}catch(e){toast(authMsg(e))}}
+function salir(){closeM();st.view='tablero';st.soporte=false;if(AUTH)AUTH.signOut();else render()}
 function confirmLimpiar(){modalHTML(`<h2>Borrar datos de ejemplo</h2><p>Se borran clientes, vehículos, órdenes, stock, mensajes y movimientos. Los usuarios se mantienen.</p><div class="row"><button class="btn danger" onclick="limpiar()">Borrar todo</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
 function limpiar(){['clientes','vehiculos','stock','movs','ots','mensajes','alertas','mecanicos'].forEach(c=>db[c]=[]);
-  db.sucursales=db.sucursales.filter(s=>s.id==='central');db.config.ejemplo=false;save();FS.collection('meta').doc('contadores').set({nextOT:1});closeM();go('config');toast('Datos de ejemplo borrados.')}
-function cargarEjemplo(){const D=seed();['clientes','vehiculos','stock','movs','mecanicos','ots','sucursales','mensajes','alertas'].forEach(c=>{db[c]=D[c]});
+  db.sucursales=db.sucursales.filter(s=>s.id==='central');db.config.ejemplo=false;save();T('meta').doc('contadores').set({nextOT:1});closeM();go('config');toast('Datos de ejemplo borrados.')}
+function cargarEjemplo(){const D=seed();['clientes','vehiculos','stock','movs','mecanicos','ots','mensajes','alertas'].forEach(c=>{db[c]=D[c]});
+  const lim=planDe(st.taller?.plan).maxSucursales;db.sucursales=D.sucursales.slice(0,Math.max(1,lim));
+  if(db.sucursales.length<2){db.mecanicos.forEach(m=>m.sucursalId='central');db.ots.forEach(o=>o.sucursalId='central');db.stock.forEach(s=>{s.ex={central:(s.ex.central||0)+(s.ex.s2||0)}});db.movs.forEach(m=>m.suc='central')}
   db.usuarios.filter(u=>u.rol==='mecanico'&&!db.mecanicos.find(m=>m.id===u.mecanicoId)).forEach(u=>u.mecanicoId='m1');
-  const keep={taller:db.config.taller};Object.assign(db.config,D.config,{ejemplo:true});save();FS.collection('meta').doc('contadores').set({nextOT:D.nextOT});closeM();go('tablero');toast('Datos de ejemplo cargados.')}
+  Object.assign(db.config,D.config,{taller:db.config.taller,ejemplo:true});save();T('meta').doc('contadores').set({nextOT:D.nextOT});closeM();go('tablero');toast('Datos de ejemplo cargados.')}
+
+/* ---------- MEMBRESÍA (lado taller) ---------- */
+function membBanner(){const t=st.taller;if(!t||st.soporte)return '';const m=memb(t),p=planDe(t.plan);
+  if(m.motivo==='gracia')return `<div class="alertbar"><strong>Membresía vencida</strong><span>Venció el ${fdate(t.vence)}. El sistema se bloquea en ${P().diasGracia+m.dias+1} día(s).${isA()?'':' Avisá al administrador.'}</span>${isA()?`<button class="btn sm pri" onclick="go('config')">Renovar</button>`:''}</div>`;
+  if(!isA())return '';
+  if(t.estado==='prueba')return `<div class="banner row between" style="border-style:solid;border-color:var(--info)"><span><b style="color:var(--info)">Prueba gratis</b> · ${diasTxt(m.dias)} (hasta ${fdate(t.vence)}).</span><button class="btn sm pri" onclick="go('config')">Ver planes</button></div>`;
+  if(m.dias<=7)return `<div class="banner row between" style="border-style:solid;border-color:var(--warn)"><span><b style="color:var(--warn)">Plan ${esc(p.nombre)}</b> · ${diasTxt(m.dias)} (${fdate(t.vence)}).</span><button class="btn sm pri" onclick="go('config')">Renovar</button></div>`;
+  return ''}
+function planesCards(actual,soloVer){const pl=P().planes.filter(p=>p.activo!==false);if(!pl.length)return '';
+  return `<div class="plans">${pl.map(p=>`<div class="plan ${p.id===actual?'cur':''}"><span class="sub" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em">${esc(p.nombre)}${p.id===actual?' · tu plan':''}</span><b>${gs(p.precio)}</b><small>${periodoTxt(p)}</small>
+    <small>Hasta ${p.maxUsuarios} usuarios · ${p.maxSucursales} sucursal${p.maxSucursales>1?'es':''}</small>${soloVer?'':`<button class="btn sm ${p.id===actual?'':'pri'}" style="justify-self:start;margin-top:6px" onclick="pedirPlan('${p.id}')">${p.id===actual?'Renovar':'Quiero este plan'}</button>`}</div>`).join('')}</div>`}
+function pedirPlan(pid){const p=planDe(pid),t=st.taller||{},w=P().waVentas;
+  const msg=`Hola, soy ${(me()||st.perfil||{}).nombre||''} de *${t.nombre||db.config.taller}*. Quiero ${t.plan===pid?'renovar':'contratar'} el plan ${p.nombre} (${gs(p.precio)} ${periodoTxt(p)}) de ${P().marca}. Les envío el comprobante de pago.`;
+  const l=waLink(w,msg);
+  modalHTML(`<h2>Plan ${esc(p.nombre)}</h2><p style="margin:0"><b>${gs(p.precio)}</b> ${periodoTxt(p)}</p><h3>Datos para el pago</h3><pre class="cred">${esc(P().datosPago)}</pre>
+  <p class="note">Después de pagar, enviá el comprobante. Tu membresía se activa en cuanto se confirme el pago.</p>
+  <div class="row">${l?`<a class="btn wa" href="${l}" target="_blank" rel="noopener">Enviar comprobante por WhatsApp</a>`:`<span class="sub">WhatsApp de ventas no configurado.</span>`}<button class="btn" onclick="closeM()">Cerrar</button></div>`)}
+function bloqueadoView(){const t=st.taller||{},m=memb(st.taller),adm=(st.perfil||{}).rol==='admin';
+  return `<div class="login" style="max-width:820px"><div><h1>${m.motivo==='suspendido'?'Taller suspendido':'Membresía vencida'}</h1>
+  <p class="sub" style="margin:4px 0 0">${esc(t.nombre||'')} · Plan ${esc(planDe(t.plan).nombre)}${t.vence?' · venció el '+fdate(t.vence):''}. Tus datos están guardados y vuelven a estar disponibles al renovar.</p></div>
+  ${adm?`<h2>Elegí un plan para reactivar</h2>${planesCards(t.plan==='prueba'?null:t.plan)}<div class="panel"><h3>Datos para el pago</h3><pre class="cred" style="margin-top:6px">${esc(P().datosPago)}</pre></div>`:'<div class="panel"><p style="margin:0">Avisá al administrador del taller para renovar la membresía.</p></div>'}</div>`}
+function miMembresia(){const t=st.taller;if(!t||!isA())return '';const m=memb(t),p=planDe(t.plan);
+  const nu=db.usuarios.filter(u=>u.activo).length,ns=db.sucursales.length;
+  if(!st.soporte&&st.misPagosTid!==st.tid){st.misPagosTid=st.tid;FS.collection('pagos').where('tallerId','==',st.tid).get().then(s=>{st.misPagos=s.docs.map(d=>d.data()).sort((a,b)=>b.fecha.localeCompare(a.fecha));remoteRender()},()=>{st.misPagos=[]})}
+  return `<div class="panel" id="memb"><div class="row between"><h2>Mi membresía</h2>${t.estado==='prueba'?'<span class="chip c-info">Prueba gratis</span>':m.motivo==='gracia'?'<span class="chip c-bad">Vencida</span>':'<span class="chip c-ok">Activa</span>'}</div>
+  <div class="grid kpis"><div class="kpi"><b class="m">${esc(p.nombre)}</b><span>Plan</span></div><div class="kpi ${m.dias<=7?'alert':''}"><b class="m">${t.vence?fdate(t.vence):'Sin vencimiento'}</b><span>${diasTxt(m.dias)}</span></div>
+  <div class="kpi ${nu>=p.maxUsuarios?'alert':''}"><b>${nu}/${p.maxUsuarios}</b><span>Usuarios activos</span></div><div class="kpi ${ns>=p.maxSucursales?'alert':''}"><b>${ns}/${p.maxSucursales}</b><span>Sucursales</span></div></div>
+  <h3 style="margin:14px 0 8px">${t.estado==='prueba'?'Elegí tu plan':'Planes disponibles'}</h3>${planesCards(t.plan)}
+  ${st.misPagos&&st.misPagos.length?`<h3 style="margin:14px 0 6px">Pagos registrados</h3><div class="tscroll"><table><tr><th>Fecha</th><th>Plan</th><th>Método</th><th>Válido hasta</th><th class="n">Monto</th></tr>${st.misPagos.map(x=>`<tr><td>${fdate(x.fecha)}</td><td>${esc(x.planNombre)}</td><td>${esc(x.metodo)}</td><td>${x.hasta?fdate(x.hasta):'Sin vencimiento'}</td><td class="n">${gs(x.monto)}</td></tr>`).join('')}</table></div>`:''}</div>`}
+const limiteUsuarios=()=>planDe(st.taller?.plan).maxUsuarios, limiteSucursales=()=>planDe(st.taller?.plan).maxSucursales;
+function addSucursal(){const n=$('#ns').value.trim();if(!n)return;if(!st.soporte&&db.sucursales.length>=limiteSucursales())return toast(`Tu plan permite ${limiteSucursales()} sucursal(es). Cambiá de plan para agregar más.`);
+  const e=String(db.sucursales.length+1).padStart(3,'0');db.sucursales.push({id:uid(),nombre:n,est:e,pto:'001',nextFac:1});save();render()}
 
 /* ---------- TABLERO ---------- */
 function tablero(){
@@ -1148,6 +1264,154 @@ async function descargarPDF(id){const o=db.ots.find(x=>x.id===id),b=$('#pdfb');
   }catch(e){console.error(e);toast('No se pudo generar el PDF.')}
   finally{ph.innerHTML='';if(b){b.disabled=false;b.textContent='Descargar PDF'}}}
 
+/* ---------- PANEL DESARROLLADOR ---------- */
+async function abrirDev(){st.fase='cargando';render();
+  try{const c=await FS.collection('plataforma').doc('config').get();if(!c.exists)await FS.collection('plataforma').doc('config').set(PLAT_DEF)}catch(e){console.error(e);st.fase='error';st.err=e.code||e.message;return render()}
+  const got=new Set(),rdy=k=>{got.add(k);if(got.size>=3&&st.fase!=='dev'){st.fase='dev';st.dtab=st.dtab||'talleres';render()}else if(st.fase==='dev')remoteRender()};
+  devUnsubs.push(FS.collection('talleres').onSnapshot(s=>{dv.talleres=s.docs.map(d=>Object.assign(d.data(),{id:d.id}));rdy('t')},e=>syncErr('talleres',e)));
+  devUnsubs.push(FS.collection('pagos').onSnapshot(s=>{dv.pagos=s.docs.map(d=>Object.assign(d.data(),{id:d.id}));rdy('p')},e=>syncErr('pagos',e)));
+  devUnsubs.push(FS.collection('usuarios').onSnapshot(s=>{dv.usuarios=s.docs.map(d=>Object.assign(d.data(),{id:d.id}));rdy('u')},e=>syncErr('usuarios',e)));
+}
+function soporte(tid){const t=dv.talleres.find(x=>x.id===tid);stopSync();db=emptyDB();st.soporte=true;st.perfil={rol:'admin',nombre:'Soporte',sucursalId:'central',tallerId:tid,activo:true};st.authUser=AUTH.currentUser;st.misPagosTid=null;entrarTaller(tid);toast('Modo soporte: '+(t?t.nombre:''))}
+function volverDev(){closeM();stopSync();db=emptyDB();Object.assign(st,{soporte:false,tid:null,taller:null,perfil:null,view:'tablero'});abrirDev()}
+function renderDev(){
+  const tabs=[['talleres','Talleres'],['pagos','Pagos'],['planes','Planes'],['plataforma','Plataforma']];
+  $('#who').innerHTML=`<span class="devtag">Desarrollador</span><span class="mono">${esc(DEV_EMAIL)}</span><button class="out" onclick="cambiarClaveModal()">Clave</button><button class="out" onclick="salir()">Salir</button>`;
+  $('#nav').innerHTML=tabs.map(([k,l])=>`<button class="${st.dtab===k?'on':''}" onclick="st.dtab='${k}';renderDev()">${l}</button>`).join('');
+  $('#app').innerHTML=({talleres:devTalleres,pagos:devPagos,planes:devPlanes,plataforma:devPlataforma}[st.dtab]||devTalleres)();
+}
+function estadoT(t){const m=memb(t);if(t.estado==='suspendido')return ['Suspendido','c-bad','susp'];if(!m.ok)return ['Vencido','c-bad','venc'];if(m.motivo==='gracia')return ['En gracia','c-bad','venc'];
+  if(t.estado==='prueba')return ['Prueba','c-info','prueba'];if(m.dias<=7)return ['Por vencer','c-warn','porvencer'];return ['Activo','c-ok','activo']}
+const mesDe=f=>(f||'').slice(0,7);
+function devTalleres(){const T0=dv.talleres,q=(st.dq||'').toLowerCase(),f=st.df||'todos',mes=hoy().slice(0,7);
+  const k=t=>estadoT(t)[2];
+  const cuenta=x=>T0.filter(t=>x.includes(k(t))).length;
+  const mrr=T0.filter(t=>['activo','porvencer'].includes(k(t))).reduce((a,t)=>{const p=planDe(t.plan);return a+(p.tipo==='periodo'&&p.dias?p.precio*30/p.dias:0)},0);
+  const cobrado=dv.pagos.filter(p=>mesDe(p.fecha)===mes).reduce((a,p)=>a+p.monto,0);
+  const list=T0.filter(t=>(f==='todos'||(f==='venc'?['venc','susp'].includes(k(t)):k(t)===f))&&(!q||(t.nombre+' '+(t.propietario||'')+' '+(t.tel||'')+' '+(t.email||'')).toLowerCase().includes(q)))
+    .sort((a,b)=>(a.vence||LEJOS).localeCompare(b.vence||LEJOS));
+  const nU=tid=>dv.usuarios.filter(u=>u.tallerId===tid&&u.activo).length;
+  return `<div class="row between"><h1>Talleres</h1><button class="btn pri" onclick="nuevoTallerModal()">+ Nuevo taller</button></div>
+  <div class="grid kpis"><div class="kpi good"><b>${cuenta(['activo','porvencer'])}</b><span>Clientes activos</span></div><div class="kpi"><b>${cuenta(['prueba'])}</b><span>En prueba</span></div>
+    <div class="kpi ${cuenta(['porvencer'])?'alert':''}"><b>${cuenta(['porvencer'])}</b><span>Vencen en 7 días</span></div><div class="kpi ${cuenta(['venc','susp'])?'alert':''}"><b>${cuenta(['venc','susp'])}</b><span>Vencidos o suspendidos</span></div>
+    <div class="kpi"><b class="m">${gs(cobrado)}</b><span>Cobrado este mes</span></div><div class="kpi"><b class="m">${gs(mrr)}</b><span>Ingreso mensual recurrente</span></div></div>
+  <div class="row between"><div class="row">${[['todos','Todos'],['activo','Activos'],['prueba','Prueba'],['porvencer','Por vencer'],['venc','Vencidos']].map(([x,l])=>`<button class="btn sm ${f===x?'dark':''}" onclick="st.df='${x}';renderDev()">${l}</button>`).join('')}</div>
+    <input id="dq" placeholder="Buscar taller, dueño o teléfono" value="${esc(st.dq||'')}" oninput="st.dq=this.value;clearTimeout(window._dq);window._dq=setTimeout(()=>{renderDev();const i=$('#dq');i.focus();i.setSelectionRange(i.value.length,i.value.length)},250)" style="max-width:300px"></div>
+  <div class="panel" style="padding:0"><div class="tscroll"><table><tr><th>Taller</th><th>Contacto</th><th>Plan</th><th>Estado</th><th>Vence</th><th class="n">Usuarios</th><th></th></tr>
+  ${list.map(t=>{const [el,ec]=estadoT(t),m=memb(t),p=planDe(t.plan);return `<tr><td><b>${esc(t.nombre)}</b><div class="sub" style="font-size:12px">${esc(t.propietario||'')}${t.ruc?' · RUC '+esc(t.ruc):''}</div></td>
+    <td class="mono" style="font-size:12px">${esc(t.tel||'')}<div class="sub">${esc(t.email&&!interno(t.email)?t.email:'')}</div></td><td>${esc(p.nombre)}</td><td><span class="chip ${ec}">${el}</span></td>
+    <td>${t.vence?fdate(t.vence):'—'}<div class="sub" style="font-size:12px">${diasTxt(m.dias)}</div></td><td class="n">${nU(t.id)}/${p.maxUsuarios}</td>
+    <td><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm pri" onclick="cobrarModal('${t.id}')">Cobrar</button><button class="btn sm" onclick="recordarTaller('${t.id}')">WhatsApp</button><button class="btn sm" onclick="editarTallerModal('${t.id}')">Editar</button><button class="btn sm dark" onclick="soporte('${t.id}')">Entrar</button></div></td></tr>`}).join('')||'<tr><td colspan="7" class="empty">No hay talleres en esta lista.</td></tr>'}</table></div></div>`}
+function nuevoTallerModal(){const pl=P().planes.filter(p=>p.activo!==false);
+  modalHTML(`<h2>Nuevo taller</h2><form class="grid" onsubmit="event.preventDefault();crearTallerDev()"><div class="fields">
+  <label class="field"><span>Nombre del taller</span><input id="nt_t" required></label><label class="field"><span>Propietario</span><input id="nt_o" required></label>
+  <label class="field"><span>WhatsApp</span><input id="nt_w" inputmode="tel"></label><label class="field"><span>RUC</span><input id="nt_r"></label>
+  <label class="field"><span>Plan</span><select id="nt_p" onchange="ntVence()"><option value="prueba">Prueba gratis (${P().diasPrueba} días)</option>${pl.map(p=>`<option value="${p.id}">${esc(p.nombre)} · ${gs(p.precio)}</option>`).join('')}</select></label>
+  <label class="field"><span>Vence</span><input id="nt_v" type="date"></label>
+  <label class="field"><span>Usuario del administrador</span><input id="nt_u" required autocapitalize="none" placeholder="ej.: tallerpiston o correo"></label>
+  <label class="field"><span>Contraseña temporal</span><input id="nt_k" required minlength="6" value="${claveTemp()}"></label></div>
+  <p class="note">Si elegís un plan pago, registrá el cobro después con “Cobrar” para que quede en el historial de pagos.</p>
+  <div class="row"><button class="btn pri" id="nt_b">Crear taller</button><button type="button" class="btn" onclick="closeM()">Cancelar</button></div></form>`);ntVence()}
+function ntVence(){const p=planDe($('#nt_p').value),v=$('#nt_v');v.disabled=p.tipo==='unico';v.value=p.tipo==='unico'?'':addD(hoy(),p.tipo==='prueba'?P().diasPrueba:p.dias)}
+async function crearTallerDev(){const g=k=>$('#nt_'+k).value.trim(),b=$('#nt_b'),plan=g('p'),pl=planDe(plan),vence=pl.tipo==='unico'?null:(g('v')||addD(hoy(),pl.dias)),us=g('u').toLowerCase(),pw=$('#nt_k').value;
+  b.disabled=true;b.textContent='Creando…';
+  try{const id=await crearCuentaAuth(us,pw),tr=FS.collection('talleres').doc(),ahora=new Date().toISOString(),bt=FS.batch();
+    bt.set(tr,{nombre:g('t'),propietario:g('o'),tel:g('w'),email:us.includes('@')?us:'',ruc:g('r'),plan,estado:plan==='prueba'?'prueba':'activo',vence,limiteTs:limiteDe(vence),ownerUid:id,creado:ahora,origen:'desarrollador',notas:''});
+    bt.set(FS.collection('usuarios').doc(id),{tallerId:tr.id,nombre:g('o'),usuario:userName(loginEmail(us)),email:loginEmail(us),rol:'admin',sucursalId:'central',mecanicoId:'',activo:true,cambiarClave:true,creado:ahora});
+    bt.set(tr.collection('sucursales').doc('central'),{nombre:'Casa central',est:'001',pto:'001',nextFac:1});
+    bt.set(tr.collection('meta').doc('config'),Object.assign(defCfg(),{taller:g('t'),tel:g('w'),ruc:g('r')}));
+    bt.set(tr.collection('meta').doc('contadores'),{nextOT:1});
+    await bt.commit();
+    const msg=fillPlat(P().bienvenida,{nombre:g('t'),propietario:g('o')},{'[Usuario]':userName(loginEmail(us)),'[Clave]':pw});
+    devMsgModal('Taller creado',g('w'),msg)}
+  catch(e){console.error(e);b.disabled=false;b.textContent='Crear taller';toast(e.code==='auth/email-already-in-use'?'Ese usuario ya existe. Elegí otro.':authMsg(e))}}
+function fillPlat(tpl,t,extra={}){const p=planDe(t.plan),m=memb(t);
+  const map=Object.assign({'[Propietario]':(t.propietario||'').split(' ')[0],'[Taller]':t.nombre||'','[Vence]':t.vence?fdate(t.vence):'sin vencimiento','[Dias]':diasTxt(m.dias),'[Plan]':p.nombre,'[Precio]':fmt(p.precio),'[DatosPago]':P().datosPago,'[Link]':appBase()},extra);
+  return Object.keys(map).reduce((s,k)=>s.split(k).join(map[k]),tpl||'')}
+function devMsgModal(titulo,tel,msg){const w=waLink(tel,msg);
+  modalHTML(`<h2>${esc(titulo)}</h2><pre class="cred" id="wa_t">${esc(msg)}</pre><div class="row">${w?`<a class="btn wa" href="${w}" target="_blank" rel="noopener">Enviar por WhatsApp</a>`:''}<button class="btn" onclick="copiarTxt($('#wa_t').textContent,'Mensaje copiado')">Copiar</button><button class="btn" onclick="closeM()">Cerrar</button></div>`)}
+function recordarTaller(tid){const t=dv.talleres.find(x=>x.id===tid);devMsgModal('Recordatorio · '+t.nombre,t.tel,fillPlat(P().recordatorio,t))}
+function cobrarModal(tid){const t=dv.talleres.find(x=>x.id===tid),pl=P().planes.filter(p=>p.activo!==false);if(!pl.length)return toast('Creá un plan primero en la pestaña Planes.');
+  const def=pl.find(p=>p.id===t.plan)?t.plan:pl[0].id;
+  modalHTML(`<h2>Registrar pago · ${esc(t.nombre)}</h2><form class="grid" onsubmit="event.preventDefault();cobrar('${tid}')"><div class="fields">
+  <label class="field"><span>Plan</span><select id="cb_p" onchange="cbCalc('${tid}',1)">${pl.map(p=>`<option value="${p.id}" ${p.id===def?'selected':''}>${esc(p.nombre)} · ${gs(p.precio)}</option>`).join('')}</select></label>
+  <label class="field" id="cb_nw"><span>Cantidad de períodos</span><input id="cb_n" value="1" inputmode="numeric" oninput="cbCalc('${tid}',1)"></label>
+  <label class="field"><span>Monto cobrado (Gs.)</span><input id="cb_m" inputmode="numeric" required></label>
+  <label class="field"><span>Método</span><select id="cb_md"><option>Transferencia</option><option>Efectivo</option><option>Giros Tigo</option><option>Billetera Personal</option><option>Depósito</option><option>Tarjeta</option></select></label>
+  <label class="field"><span>Fecha de pago</span><input type="date" id="cb_f" value="${hoy()}"></label><label class="field"><span>Nº comprobante / nota</span><input id="cb_nt"></label></div>
+  <p id="cb_info" class="banner" style="margin:0"></p>
+  <div class="row"><button class="btn pri">Registrar y activar</button><button type="button" class="btn" onclick="closeM()">Cancelar</button></div></form>`);cbCalc(tid,1)}
+function cbBase(t){return t.vence&&t.vence>hoy()?t.vence:hoy()}
+function cbCalc(tid,setM){const t=dv.talleres.find(x=>x.id===tid),p=planDe($('#cb_p').value),n=Math.max(1,num($('#cb_n').value)||1);
+  $('#cb_nw').hidden=p.tipo==='unico';if(setM)$('#cb_m').value=p.precio*(p.tipo==='unico'?1:n);
+  const nv=p.tipo==='unico'?null:addD(cbBase(t),p.dias*n);
+  $('#cb_info').innerHTML=`Vencimiento actual: <b>${t.vence?fdate(t.vence):'—'}</b> → nuevo: <b>${nv?fdate(nv):'sin vencimiento (pago único)'}</b>`}
+async function cobrar(tid){const t=dv.talleres.find(x=>x.id===tid),p=planDe($('#cb_p').value),n=p.tipo==='unico'?1:Math.max(1,num($('#cb_n').value)||1),monto=num($('#cb_m').value);
+  if(monto<=0)return toast('Ingresá el monto cobrado.');
+  const desde=p.tipo==='unico'?hoy():cbBase(t),hasta=p.tipo==='unico'?null:addD(desde,p.dias*n),b=FS.batch();
+  b.set(FS.collection('pagos').doc(),{tallerId:tid,taller:t.nombre,plan:p.id,planNombre:p.nombre,periodos:n,monto,metodo:$('#cb_md').value,fecha:$('#cb_f').value||hoy(),desde,hasta,nota:$('#cb_nt').value.trim(),registrado:new Date().toISOString()});
+  b.update(FS.collection('talleres').doc(tid),{plan:p.id,estado:'activo',vence:hasta,limiteTs:limiteDe(hasta)});
+  try{await b.commit();const msg=fillPlat(P().confirmacion,Object.assign({},t,{plan:p.id,vence:hasta}),{'[Monto]':fmt(monto),'[Hasta]':hasta?'hasta el '+fdate(hasta):'sin vencimiento'});
+    devMsgModal('Pago registrado',t.tel,msg);toast('Membresía activada')}catch(e){toast('No se pudo registrar: '+(e.code||e.message))}}
+function editarTallerModal(tid){const t=dv.talleres.find(x=>x.id===tid),adm=dv.usuarios.find(u=>u.id===t.ownerUid);
+  modalHTML(`<h2>Editar taller</h2><form class="grid" onsubmit="event.preventDefault();guardarTaller('${tid}')"><div class="fields">
+  ${[['nombre','Nombre del taller'],['propietario','Propietario'],['tel','WhatsApp'],['ruc','RUC'],['email','Correo de contacto']].map(([k,l])=>`<label class="field"><span>${l}</span><input id="et_${k}" value="${esc(interno(t[k])?'':t[k]||'')}"></label>`).join('')}
+  <label class="field"><span>Plan</span><select id="et_plan"><option value="prueba" ${t.plan==='prueba'?'selected':''}>Prueba gratis</option>${P().planes.map(p=>`<option value="${p.id}" ${p.id===t.plan?'selected':''}>${esc(p.nombre)}</option>`).join('')}</select></label>
+  <label class="field"><span>Estado</span><select id="et_estado">${[['prueba','Prueba'],['activo','Activo'],['suspendido','Suspendido']].map(([k,l])=>`<option value="${k}" ${t.estado===k?'selected':''}>${l}</option>`).join('')}</select></label>
+  <label class="field"><span>Vence (vacío = sin vencimiento)</span><input id="et_vence" type="date" value="${t.vence||''}"></label></div>
+  <label class="field"><span>Notas internas</span><textarea id="et_notas">${esc(t.notas||'')}</textarea></label>
+  <p class="note">Administrador: <span class="mono">${esc(adm?(adm.usuario||adm.email):'—')}</span> · Alta: ${fdate(t.creado)} · Origen: ${esc(t.origen||'—')}</p>
+  <div class="row"><button class="btn pri">Guardar</button><button type="button" class="btn" onclick="closeM()">Cancelar</button>${t.estado==='suspendido'?'':`<button type="button" class="btn danger" onclick="suspender('${tid}')">Suspender</button>`}</div></form>`)}
+async function guardarTaller(tid){const g=k=>$('#et_'+k).value.trim(),v=g('vence')||null;
+  const d={nombre:g('nombre'),propietario:g('propietario'),tel:g('tel'),ruc:g('ruc'),email:g('email'),plan:g('plan'),estado:g('estado'),vence:v,limiteTs:limiteDe(v),notas:g('notas')};
+  try{await FS.collection('talleres').doc(tid).update(d);closeM();toast('Taller actualizado')}catch(e){toast('No se pudo guardar: '+(e.code||e.message))}}
+async function suspender(tid){try{await FS.collection('talleres').doc(tid).update({estado:'suspendido'});closeM();toast('Taller suspendido')}catch(e){toast(e.code||e.message)}}
+function devPagos(){const mes=st.dm||hoy().slice(0,7),ps=dv.pagos.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)),T=hoy();
+  const meses=Array.from({length:12},(_,i)=>{const d=new Date(T+'T12:00:00');d.setDate(1);d.setMonth(d.getMonth()-i);return d.toISOString().slice(0,7)});
+  const sum=f=>ps.filter(f).reduce((a,p)=>a+p.monto,0);
+  const list=mes==='todos'?ps:ps.filter(p=>mesDe(p.fecha)===mes);
+  const serie=meses.slice(0,6).reverse().map(m=>({m,v:sum(p=>mesDe(p.fecha)===m)})),mx=Math.max(1,...serie.map(x=>x.v));
+  const NM=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'],lbl=m=>NM[+m.slice(5)-1]+' '+m.slice(2,4);
+  const W=600,H=170,bw=56,gap=(W-40)/6;
+  const chart=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ingresos de los últimos 6 meses" style="width:100%;min-width:360px;height:auto">${serie.map((x,i)=>{const h=(H-50)*x.v/mx,X=20+gap*i+(gap-bw)/2;return `<rect x="${X}" y="${H-28-h}" width="${bw}" height="${Math.max(h,1)}" rx="3" fill="${x.m===hoy().slice(0,7)?'var(--accent)':'var(--blue)'}"/><text x="${X+bw/2}" y="${H-34-h}" text-anchor="middle" font-size="11" fill="var(--ink)" font-family="IBM Plex Mono,monospace">${x.v?fmt(x.v/1000)+'k':''}</text><text x="${X+bw/2}" y="${H-10}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="IBM Plex Sans,sans-serif">${lbl(x.m)}</text>`}).join('')}</svg>`;
+  return `<h1>Pagos</h1>
+  <div class="grid kpis"><div class="kpi"><b class="m">${gs(sum(p=>mesDe(p.fecha)===meses[0]))}</b><span>Este mes</span></div><div class="kpi"><b class="m">${gs(sum(p=>mesDe(p.fecha)===meses[1]))}</b><span>Mes anterior</span></div>
+  <div class="kpi"><b class="m">${gs(sum(p=>(p.fecha||'').slice(0,4)===T.slice(0,4)))}</b><span>Este año</span></div><div class="kpi"><b class="m">${gs(sum(()=>true))}</b><span>Total histórico</span></div></div>
+  <div class="panel"><h2>Ingresos por mes</h2><div class="tscroll">${chart}</div></div>
+  <div class="panel"><div class="row between"><h2>Pagos registrados</h2><select style="width:auto" onchange="st.dm=this.value;renderDev()"><option value="todos" ${mes==='todos'?'selected':''}>Todos</option>${meses.map(m=>`<option value="${m}" ${m===mes?'selected':''}>${lbl(m)}</option>`).join('')}</select></div>
+  <div class="tscroll"><table><tr><th>Fecha</th><th>Taller</th><th>Plan</th><th>Método</th><th>Nota</th><th>Válido hasta</th><th class="n">Monto</th><th></th></tr>
+  ${list.map(p=>`<tr><td>${fdate(p.fecha)}</td><td>${esc(p.taller)}</td><td>${esc(p.planNombre)}${p.periodos>1?' ×'+p.periodos:''}</td><td>${esc(p.metodo)}</td><td class="sub">${esc(p.nota||'')}</td><td>${p.hasta?fdate(p.hasta):'Sin vencimiento'}</td><td class="n">${gs(p.monto)}</td>
+  <td><button class="btn sm danger" onclick="anularPago('${p.id}')">Anular</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">Sin pagos en este período.</td></tr>'}
+  ${list.length?`<tr><td colspan="6"><b>Total</b></td><td class="n"><b>${gs(list.reduce((a,p)=>a+p.monto,0))}</b></td><td></td></tr>`:''}</table></div></div>`}
+function anularPago(id){const p=dv.pagos.find(x=>x.id===id);modalHTML(`<h2>Anular pago</h2><p>Se borra el registro de ${gs(p.monto)} de ${esc(p.taller)} del ${fdate(p.fecha)}. El vencimiento del taller no cambia: corregilo con “Editar” si hace falta.</p>
+  <div class="row"><button class="btn danger" onclick="FS.collection('pagos').doc('${id}').delete().then(()=>{closeM();toast('Pago anulado')},e=>toast(e.code))">Anular</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
+function devPlanes(){const p=P(),pl=st.planesEd||(st.planesEd=JSON.parse(JSON.stringify(p.planes)));
+  const inp=(i,k,w,t)=>`<input value="${esc(pl[i][k])}" ${t?'inputmode="numeric"':''} style="${w?'width:'+w:''}" onchange="st.planesEd[${i}].${k}=${t?'num(this.value)':'this.value'}">`;
+  return `<div class="row between"><h1>Planes</h1><div class="row"><button class="btn" onclick="st.planesEd.push({id:'plan'+uid().slice(0,4),nombre:'Nuevo plan',tipo:'periodo',dias:30,precio:0,maxUsuarios:5,maxSucursales:1,activo:true});renderDev()">+ Agregar plan</button><button class="btn pri" onclick="guardarPlanes()">Guardar planes</button></div></div>
+  <div class="panel"><div class="tscroll"><table><tr><th>Nombre</th><th>Tipo</th><th class="n">Días</th><th class="n">Precio (Gs.)</th><th class="n">Usuarios</th><th class="n">Sucursales</th><th>A la venta</th><th>Clientes</th></tr>
+  ${pl.map((x,i)=>`<tr><td>${inp(i,'nombre')}<div class="sub mono" style="font-size:11px">${esc(x.id)}</div></td><td><select onchange="st.planesEd[${i}].tipo=this.value;renderDev()"><option value="periodo" ${x.tipo==='periodo'?'selected':''}>Por período</option><option value="unico" ${x.tipo==='unico'?'selected':''}>Pago único (vitalicio)</option></select></td>
+    <td class="n">${x.tipo==='unico'?'—':inp(i,'dias','70px',1)}</td><td class="n">${inp(i,'precio','120px',1)}</td><td class="n">${inp(i,'maxUsuarios','60px',1)}</td><td class="n">${inp(i,'maxSucursales','60px',1)}</td>
+    <td><input type="checkbox" style="width:auto" ${x.activo!==false?'checked':''} onchange="st.planesEd[${i}].activo=this.checked"></td><td class="n">${dv.talleres.filter(t=>t.plan===x.id).length}</td></tr>`).join('')}</table></div>
+  <p class="note" style="margin-top:8px">Un plan con clientes no se borra: desmarcá “A la venta” para dejar de ofrecerlo. Los cambios de precio aplican a los próximos cobros.</p></div>
+  <div class="panel"><h2>Prueba gratis</h2><div class="fields"><label class="field"><span>Días de prueba</span><input id="pp_d" value="${p.diasPrueba}" inputmode="numeric"></label>
+  <label class="field"><span>Usuarios en prueba</span><input id="pp_u" value="${p.planPrueba.maxUsuarios}" inputmode="numeric"></label><label class="field"><span>Sucursales en prueba</span><input id="pp_s" value="${p.planPrueba.maxSucursales}" inputmode="numeric"></label></div></div>
+  <div class="panel"><h2>Vista previa para el cliente</h2>${planesCards(null,true)}</div>`}
+async function guardarPlanes(){const pl=st.planesEd.map(x=>Object.assign({},x,{dias:x.tipo==='unico'?0:Math.max(1,x.dias||30)}));
+  try{await FS.collection('plataforma').doc('config').set({planes:pl,diasPrueba:Math.max(1,num($('#pp_d').value)),planPrueba:{maxUsuarios:Math.max(1,num($('#pp_u').value)),maxSucursales:Math.max(1,num($('#pp_s').value))}},{merge:true});st.planesEd=null;toast('Planes guardados')}catch(e){toast('No se pudo guardar: '+(e.code||e.message))}}
+function devPlataforma(){const p=P();
+  return `<h1>Plataforma</h1>
+  <div class="panel"><h2>Venta y cobro</h2><div class="fields">
+  <label class="field"><span>Nombre comercial</span><input id="pf_marca" value="${esc(p.marca)}"></label><label class="field"><span>WhatsApp de ventas</span><input id="pf_waVentas" value="${esc(p.waVentas)}" placeholder="0981 000 000"></label>
+  <label class="field"><span>Días de gracia tras vencer</span><input id="pf_diasGracia" value="${p.diasGracia}" inputmode="numeric"></label></div>
+  <div class="checks" style="margin-top:10px;display:block"><label><input type="checkbox" id="pf_registroAbierto" ${p.registroAbierto?'checked':''}> Permitir que talleres nuevos se registren solos con prueba gratis</label></div>
+  <label class="field" style="margin-top:10px"><span>Datos para el pago (los ve el cliente)</span><textarea id="pf_datosPago" style="min-height:110px">${esc(p.datosPago)}</textarea></label></div>
+  <div class="panel"><h2>Mensajes de WhatsApp</h2><p class="note" style="margin-top:-4px">Variables: <span class="mono">[Propietario] [Taller] [Plan] [Precio] [Vence] [Dias] [DatosPago] [Link] [Usuario] [Clave] [Monto] [Hasta]</span></p>
+  ${[['recordatorio','Recordatorio de vencimiento'],['bienvenida','Bienvenida con acceso'],['confirmacion','Confirmación de pago']].map(([k,l])=>`<label class="field" style="margin-top:10px"><span>${l}</span><textarea id="pf_${k}" style="min-height:100px">${esc(p[k])}</textarea></label>`).join('')}</div>
+  <div class="row"><button class="btn pri" onclick="guardarPlataforma()">Guardar</button></div>
+  <div class="panel"><h2>Enlace para registrarse</h2><p class="sub" style="margin-top:0">Compartí este enlace en redes o por WhatsApp. ${p.registroAbierto?'Cualquier taller puede crear su cuenta de prueba.':'El registro está cerrado: solo vos creás talleres.'}</p><div class="row"><input value="${esc(appBase())}" readonly style="max-width:420px"><button class="btn" onclick="copiarTxt(appBase(),'Enlace copiado')">Copiar</button></div></div>`}
+async function guardarPlataforma(){const g=k=>$('#pf_'+k).value;
+  try{await FS.collection('plataforma').doc('config').set({marca:g('marca').trim(),waVentas:g('waVentas').trim(),diasGracia:Math.max(0,num(g('diasGracia'))),registroAbierto:$('#pf_registroAbierto').checked,datosPago:g('datosPago'),recordatorio:g('recordatorio'),bienvenida:g('bienvenida'),confirmacion:g('confirmacion')},{merge:true});toast('Plataforma guardada')}catch(e){toast('No se pudo guardar: '+(e.code||e.message))}}
+
 /* ---------- CAJA Y FACTURAS ---------- */
 function finanzas(){
   const os=db.ots.filter(inSuc);
@@ -1171,36 +1435,52 @@ function finanzas(){
 /* ---------- CONFIGURACIÓN ---------- */
 function configView(){const c=db.config;
   return `<h1>Configuración</h1>
+  ${miMembresia()}
   <div class="panel"><h2>Datos del taller</h2><div class="fields">${[['taller','Nombre del taller'],['ruc','RUC'],['dir','Dirección'],['tel','Teléfono'],['timbrado','Nº de timbrado'],['vigDesde','Vigencia desde (AAAA-MM-DD)'],['garantiaDef','Garantía por defecto (días)'],['bono','Bono por eficiencia (%)'],['diasEstancado','Estancado después de (días)'],['coberturaDias','Cobertura de compra (días)'],['elevadores','Elevadores / puestos'],['telCompras','WhatsApp de compras'],['urlPublica','URL pública (QR y WhatsApp)']].map(([k,l])=>`<label class="field"><span>${l}</span><input id="cf_${k}" value="${esc(c[k])}"></label>`).join('')}</div>
   <div class="row" style="margin-top:12px"><button class="btn pri" onclick="saveCfg()">Guardar</button></div></div>
   <div class="panel"><h2>Sucursales</h2><div class="tscroll"><table><tr><th>Nombre</th><th>Establecimiento</th><th>Punto exp.</th><th>Próx. factura</th></tr>
   ${db.sucursales.map(s=>`<tr><td><input value="${esc(s.nombre)}" onchange="suc('${s.id}').nombre=this.value;save()"></td><td><input value="${esc(s.est)}" style="width:80px" onchange="suc('${s.id}').est=this.value;save()"></td><td><input value="${esc(s.pto)}" style="width:80px" onchange="suc('${s.id}').pto=this.value;save()"></td><td><input value="${s.nextFac}" style="width:100px" onchange="suc('${s.id}').nextFac=num(this.value)||1;save()"></td></tr>`).join('')}</table></div>
-  <div class="row" style="margin-top:10px"><input id="ns" placeholder="Nombre de la nueva sucursal" style="max-width:300px"><button class="btn" onclick="const n=$('#ns').value.trim();if(n){const e=String(db.sucursales.length+1).padStart(3,'0');db.sucursales.push({id:uid(),nombre:n,est:e,pto:'001',nextFac:1});save();render()}">Agregar sucursal</button></div></div>
+  <div class="row" style="margin-top:10px"><input id="ns" placeholder="Nombre de la nueva sucursal" style="max-width:300px"><button class="btn" onclick="addSucursal()">Agregar sucursal</button></div></div>
   <div class="panel"><h2>Mecánicos</h2><div class="tscroll"><table><tr><th>Nombre</th><th>Sucursal</th><th>Costo por hora (Gs.)</th><th>Comisión %</th></tr>
   ${db.mecanicos.map(m=>`<tr><td><input value="${esc(m.nombre)}" onchange="mecO('${m.id}').nombre=this.value;save()"></td><td><select onchange="mecO('${m.id}').sucursalId=this.value;save()">${db.sucursales.map(s=>`<option value="${s.id}" ${s.id===m.sucursalId?'selected':''}>${esc(s.nombre)}</option>`).join('')}</select></td>
   <td><input value="${m.costoHora}" inputmode="numeric" onchange="mecO('${m.id}').costoHora=num(this.value);save()"></td><td><input value="${m.comision}" inputmode="numeric" style="width:70px" onchange="mecO('${m.id}').comision=num(this.value);save()"></td></tr>`).join('')}</table></div>
   <div class="row" style="margin-top:10px"><input id="nm" placeholder="Nombre del nuevo mecánico" style="max-width:300px"><button class="btn" onclick="const n=$('#nm').value.trim();if(n){db.mecanicos.push({id:uid(),nombre:n,sucursalId:workSuc(),costoHora:30000,comision:8});save();render()}">Agregar mecánico</button></div></div>
-  <div class="panel"><h2>Usuarios y permisos</h2>
-  ${db.usuarios.some(u=>!u.activo&&u.rol==='pendiente')?'<div class="alertbar" style="margin-bottom:10px"><strong>Por aprobar</strong><span>Hay cuentas nuevas esperando. Asignales rol y sucursal, y marcá “Activo”.</span></div>':''}
-  <div class="tscroll"><table><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Sucursal</th><th>Mecánico vinculado</th><th>Activo</th></tr>
-  ${db.usuarios.sort((a,b)=>(a.activo===b.activo)?0:a.activo?1:-1).map(u=>`<tr><td><input value="${esc(u.nombre)}" onchange="usr('${u.id}').nombre=this.value;save()"></td><td class="mono" style="font-size:12px">${esc(u.email||'')}</td>
-  <td><select onchange="usr('${u.id}').rol=this.value;save();render()" ${u.id===st.user?'disabled':''}>${Object.entries(ROLES).map(([k,l])=>`<option value="${k}" ${u.rol===k?'selected':''}>${l}</option>`).join('')}</select></td>
-  <td><select onchange="usr('${u.id}').sucursalId=this.value;save()"><option value="">—</option>${db.sucursales.map(s=>`<option value="${s.id}" ${s.id===u.sucursalId?'selected':''}>${esc(s.nombre)}</option>`).join('')}</select></td>
+  <div class="panel"><div class="row between"><h2>Usuarios y permisos</h2><span class="sub">${db.usuarios.filter(u=>u.activo).length} de ${limiteUsuarios()} usuarios activos</span></div>
+  <div class="tscroll"><table><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Sucursal</th><th>Mecánico vinculado</th><th>Activo</th></tr>
+  ${db.usuarios.slice().sort((a,b)=>(b.activo?1:0)-(a.activo?1:0)||a.nombre.localeCompare(b.nombre)).map(u=>{const yo=u.id===st.user;return `<tr><td><input value="${esc(u.nombre)}" onchange="usr('${u.id}').nombre=this.value;save()"></td><td class="mono" style="font-size:12px">${esc(u.usuario||userName(u.email))}${u.cambiarClave?' <span class="chip c-warn">Clave temporal</span>':''}</td>
+  <td><select onchange="usr('${u.id}').rol=this.value;save();render()" ${yo?'disabled':''}>${Object.entries(ROLES).filter(([k])=>k!=='pendiente').map(([k,l])=>`<option value="${k}" ${u.rol===k?'selected':''}>${l}</option>`).join('')}</select></td>
+  <td><select onchange="usr('${u.id}').sucursalId=this.value;save()">${db.sucursales.map(s=>`<option value="${s.id}" ${s.id===u.sucursalId?'selected':''}>${esc(s.nombre)}</option>`).join('')}</select></td>
   <td>${u.rol==='mecanico'?`<select onchange="usr('${u.id}').mecanicoId=this.value;save()"><option value="">—</option>${db.mecanicos.map(m=>`<option value="${m.id}" ${m.id===u.mecanicoId?'selected':''}>${esc(m.nombre)}</option>`).join('')}</select>`:'<span class="sub">—</span>'}</td>
-  <td>${u.id===st.user?'<span class="sub">Vos</span>':`<input type="checkbox" style="width:auto" ${u.activo?'checked':''} onchange="activar('${u.id}',this.checked)" aria-label="Activo">`}</td></tr>`).join('')}</table></div>
-  <p class="note" style="margin-top:8px">Para sumar un empleado: que abra el sistema, toque “Crear cuenta nueva” con su correo, y vos lo activás acá.</p>
+  <td>${yo?'<span class="sub">Vos</span>':`<input type="checkbox" style="width:auto" ${u.activo?'checked':''} onchange="activar('${u.id}',this.checked)" aria-label="Activo">`}</td></tr>`}).join('')}</table></div>
+  <div class="row" style="margin-top:10px"><button class="btn pri" onclick="nuevoUsuarioModal()">+ Nuevo usuario</button></div>
+  <p class="note" style="margin-top:8px">Cada empleado ingresa con su nombre de usuario. Al primer ingreso se le pide cambiar la contraseña temporal. Si alguien olvida la contraseña, desactivalo y creale un usuario nuevo.</p>
   <div class="grid g3" style="margin-top:12px;font-size:13px">
     <div><b>Mecánico</b><div class="sub">Solo sus tareas asignadas, checklist de ingreso, cronómetro y notas. No ve precios ni clientes.</div></div>
     <div><b>Recepción</b><div class="sub">Recepción, OTs, presupuestos, WhatsApp, historial, stock sin costos y postventa.</div></div>
-    <div><b>Administrador</b><div class="sub">Todo: caja, cobros, facturas, costos, reportes, sucursales y usuarios.</div></div></div>
-  <p class="note" style="margin-top:10px">Las reglas de Firestore bloquean escrituras fuera del rol (por ejemplo, un mecánico solo puede cambiar estado, notas y horas de sus propias órdenes).</p></div>
+    <div><b>Administrador</b><div class="sub">Todo: caja, cobros, facturas, costos, reportes, sucursales, usuarios y membresía.</div></div></div></div>
   <div class="panel"><h2>Datos de ejemplo</h2><p class="sub" style="margin-top:0">Carga clientes, órdenes, stock e historial ficticios para probar o mostrar el sistema. Se borran con un botón.</p>
   <div class="row"><button class="btn" onclick="modalHTML('<h2>Cargar datos de ejemplo</h2><p>Se reemplazan clientes, vehículos, órdenes, stock, mecánicos y sucursales por datos ficticios. Usá esto solo en un taller recién creado.</p><div class=&quot;row&quot;><button class=&quot;btn pri&quot; onclick=&quot;cargarEjemplo()&quot;>Cargar</button><button class=&quot;btn&quot; onclick=&quot;closeM()&quot;>Cancelar</button></div>')" ${db.config.ejemplo?'disabled':''}>Cargar datos de ejemplo</button></div></div>
   <div class="panel"><h2>Respaldo</h2><p class="sub" style="margin-top:0">Los datos viven en Firebase. Este respaldo es una copia extra que podés guardar en tu PC.</p>
   <textarea id="bk" style="min-height:90px;font-family:var(--f-mono);font-size:11px" placeholder="Pegá aquí un respaldo para restaurarlo"></textarea>
   <div class="row" style="margin-top:8px"><button class="btn" onclick="respaldo()">Descargar respaldo</button>
   <button class="btn" onclick="restaurar()">Restaurar lo pegado</button></div></div>`}
-function activar(id,on){const u=usr(id);if(on&&(u.rol==='pendiente'||!u.sucursalId)){toast('Elegí rol y sucursal antes de activar.');return render()}u.activo=on;save();toast(on?u.nombre+' puede ingresar.':u.nombre+' ya no puede ingresar.')}
+function activar(id,on){const u=usr(id);if(on&&!st.soporte&&db.usuarios.filter(x=>x.activo).length>=limiteUsuarios()){toast(`Tu plan permite ${limiteUsuarios()} usuarios activos.`);return render()}u.activo=on;save();toast(on?u.nombre+' puede ingresar.':u.nombre+' ya no puede ingresar.')}
+function nuevoUsuarioModal(){if(!st.soporte&&db.usuarios.filter(u=>u.activo).length>=limiteUsuarios())return toast(`Tu plan permite ${limiteUsuarios()} usuarios activos. Desactivá uno o cambiá de plan.`);
+  modalHTML(`<h2>Nuevo usuario</h2><form class="grid" onsubmit="event.preventDefault();crearUsuario()"><div class="fields">
+  <label class="field"><span>Nombre y apellido</span><input id="nu_n" required></label>
+  <label class="field"><span>Usuario (para ingresar)</span><input id="nu_u" required pattern="[a-zA-Z0-9._\\-]{3,30}" title="3 a 30 letras, números, punto o guion" autocapitalize="none" placeholder="ej.: hugo.ortiz"></label>
+  <label class="field"><span>Contraseña temporal</span><input id="nu_p" required minlength="6" value="${claveTemp()}"></label>
+  <label class="field"><span>Rol</span><select id="nu_r" onchange="$('#nu_mw').hidden=this.value!=='mecanico'"><option value="recepcion">Recepción</option><option value="mecanico">Mecánico</option><option value="admin">Administrador</option></select></label>
+  <label class="field"><span>Sucursal</span><select id="nu_s">${db.sucursales.map(s=>`<option value="${s.id}">${esc(s.nombre)}</option>`).join('')}</select></label>
+  <label class="field" id="nu_mw" hidden><span>Mecánico vinculado</span><select id="nu_m"><option value="">—</option>${db.mecanicos.map(m=>`<option value="${m.id}">${esc(m.nombre)}</option>`).join('')}</select></label></div>
+  <div class="row"><button class="btn pri" id="nu_b">Crear usuario</button><button type="button" class="btn" onclick="closeM()">Cancelar</button></div></form>`)}
+async function crearUsuario(){const n=$('#nu_n').value.trim(),us=$('#nu_u').value.trim().toLowerCase(),pw=$('#nu_p').value,r=$('#nu_r').value,b=$('#nu_b');
+  b.disabled=true;b.textContent='Creando…';
+  try{const id=await crearCuentaAuth(us,pw);
+    await FS.collection('usuarios').doc(id).set({tallerId:st.tid,nombre:n,usuario:us,email:loginEmail(us),rol:r,sucursalId:$('#nu_s').value,mecanicoId:r==='mecanico'?$('#nu_m').value:'',activo:true,cambiarClave:true,creado:new Date().toISOString()});
+    const msg=`Hola ${n.split(' ')[0]}, ya tenés acceso al sistema de *${db.config.taller}*.\nIngresá en: ${appBase()}\nUsuario: ${us}\nContraseña temporal: ${pw}\nAl primer ingreso te va a pedir cambiarla.`;
+    modalHTML(`<h2>Usuario creado</h2><p style="margin:0">Pasale estos datos a ${esc(n)}:</p><pre class="cred" id="wa_t">${esc(msg)}</pre><div class="row"><button class="btn" onclick="copiarTxt($('#wa_t').textContent,'Datos copiados')">Copiar</button><button class="btn pri" onclick="closeM()">Listo</button></div>`)}
+  catch(e){b.disabled=false;b.textContent='Crear usuario';toast(e.code==='auth/email-already-in-use'?'Ese nombre de usuario ya existe. Elegí otro.':authMsg(e))}}
 function respaldo(){const d={};COLS.forEach(c=>d[c]=db[c]);d.config=db.config;const t=JSON.stringify(d);const b=new Blob([t],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`respaldo-taller-${hoy()}.json`;document.body.appendChild(a);a.click();a.remove();toast('Respaldo descargado')}
 function restaurar(){try{const d=JSON.parse($('#bk').value);if(!Array.isArray(d.ots))throw 0;COLS.filter(c=>c!=='usuarios').forEach(c=>{if(Array.isArray(d[c]))db[c]=d[c]});if(d.config)Object.assign(db.config,d.config);save();render();toast('Respaldo restaurado')}catch(e){toast('El texto pegado no es un respaldo válido.')}}
 const usr=id=>db.usuarios.find(u=>u.id===id);
