@@ -1,4 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
 <title>KEVANIX Taller</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B0D10">
+<meta name="description" content="KEVANIX Taller: sistema de gestión para talleres mecánicos.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KEVANIX Taller">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="img/favicon-64.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta property="og:title" content="KEVANIX Taller">
+<meta property="og:image" content="img/logo.jpg">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
@@ -28,7 +42,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 header.top{background:var(--ink);color:var(--bg);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 header.top .wrap{display:flex;align-items:center;gap:10px 14px;padding-block:10px;flex-wrap:wrap}
 .brand{font-family:var(--f-display);font-size:24px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:8px;margin-right:auto}
-.brand i{display:inline-block;width:12px;height:22px;background:var(--accent);transform:skewX(-14deg)}
+.brand img{width:38px;height:38px;border-radius:9px;display:block;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.brand b{font-weight:700}
+.hero-logo{width:min(100%,420px);aspect-ratio:3/2;border-radius:14px;display:block;box-shadow:0 18px 40px rgba(0,0,0,.28);background:#0B0D10;object-fit:cover}
+.instalar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .who{display:flex;align-items:center;gap:8px;font-size:12px}
 .who select{background:transparent;color:var(--bg);border:1px solid color-mix(in srgb,var(--bg) 35%,transparent);padding:4px 8px;width:auto}
 .who select option{color:var(--ink);background:var(--surface)}
@@ -233,7 +250,7 @@ pre.code{background:var(--sunk);border:1px solid var(--line);border-radius:6px;p
 </style>
 
 <header class="top"><div class="wrap">
-  <div class="brand"><i></i>KEVANIX Taller</div>
+  <div class="brand"><img src="img/emblema-96.png" alt="" width="38" height="38"><b>KEVANIX Taller</b></div>
   <div class="who" id="who"></div>
   <nav class="tabs" id="nav"></nav>
 </div></header>
@@ -554,10 +571,21 @@ function render(){
 }
 
 /* ---------- ACCESO ---------- */
+let INSTALL=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL=e;if(st.fase==='login')render()});
+window.addEventListener('appinstalled',()=>{INSTALL=null;toast('App instalada. Abrila desde el ícono KEVANIX Taller.');render()});
+const enApp=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+const esIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+function instalarBox(){if(enApp())return '';
+  if(INSTALL)return `<div class="panel instalar"><img src="img/icon-192.png" alt="" width="48" height="48" style="border-radius:11px"><span style="flex:1;min-width:180px"><b>Instalá la app</b><br><span class="sub">Ícono en tu celular o PC, abre a pantalla completa.</span></span><button class="btn pri" onclick="instalarApp()">Instalar</button></div>`;
+  if(esIOS())return `<div class="panel instalar"><img src="img/icon-192.png" alt="" width="48" height="48" style="border-radius:11px"><span style="flex:1;min-width:180px"><b>Instalá la app en tu iPhone</b><br><span class="sub">Tocá Compartir y luego “Agregar a pantalla de inicio”.</span></span></div>`;
+  return ''}
+async function instalarApp(){if(!INSTALL)return;INSTALL.prompt();try{await INSTALL.userChoice}catch(e){}INSTALL=null;render()}
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 function faseView(){
   const f=st.fase,p=P();
   if(f==='setup')return `<div class="login"><h1>Falta conectar Firebase</h1><p>Abrí <span class="mono">index.html</span> en GitHub (ícono del lápiz), buscá <span class="mono">FIREBASE_CONFIG</span> y pegá los datos de tu proyecto. Los pasos completos están en <span class="mono">LEEME.md</span>.</p></div>`;
-  if(f==='cargando')return '<div class="login"><h1>Cargando…</h1><p class="sub">Conectando con la base de datos.</p></div>';
+  if(f==='cargando')return '<div class="login"><img class="hero-logo" src="img/logo.jpg" alt="KEVANIX Taller mecánico"><h1>Cargando…</h1><p class="sub">Conectando con la base de datos.</p></div>';
   if(f==='error')return `<div class="login"><h1>No se pudo conectar</h1><p>Error: <span class="mono">${esc(st.err)}</span></p><p class="note">Si dice <b>permission-denied</b>, publicá las reglas de Firestore (archivo firestore.rules).</p></div>`;
   if(f==='inactivo')return `<div class="login"><h1>Usuario desactivado</h1><p>Tu usuario <b>${esc(userName(st.authUser?.email))}</b> no tiene acceso. Hablá con el administrador del taller.</p></div>`;
   if(f==='clave')return `<div class="login"><div><h1>Cambiá tu contraseña</h1><p class="sub" style="margin:4px 0 0">${st.esDev?'Primer ingreso del desarrollador: reemplazá la contraseña temporal.':'Ingresaste con una contraseña temporal. Elegí una nueva para continuar.'}</p></div>
@@ -569,7 +597,7 @@ function faseView(){
     <form class="grid" style="max-width:420px" onsubmit="event.preventDefault();st.alta={taller:$('#a_t').value.trim(),nombre:$('#a_n').value.trim(),tel:$('#a_w').value.trim()};crearTallerPrueba()">
     <label class="field"><span>Nombre del taller</span><input id="a_t" required value="${esc(a.taller||'')}"></label><label class="field"><span>Tu nombre</span><input id="a_n" required value="${esc(a.nombre||'')}"></label>
     <label class="field"><span>WhatsApp</span><input id="a_w" inputmode="tel" value="${esc(a.tel||'')}" placeholder="0981 000 000"></label><div class="row"><button class="btn pri">Crear taller</button></div></form></div>`}
-  if(f==='alta')return `<div class="login"><div><h1>Probá ${esc(p.marca)} gratis</h1><p class="sub" style="margin:4px 0 0">${p.diasPrueba} días con todas las funciones. Sin tarjeta.</p></div>
+  if(f==='alta')return `<div class="login"><img class="hero-logo" src="img/logo.jpg" alt="KEVANIX Taller mecánico"><div><h1>Probá ${esc(p.marca)} gratis</h1><p class="sub" style="margin:4px 0 0">${p.diasPrueba} días con todas las funciones. Sin tarjeta.</p></div>
     <form class="grid" style="max-width:420px" onsubmit="event.preventDefault();altaPrueba()">
     <label class="field"><span>Nombre del taller</span><input id="a_t" required></label><label class="field"><span>Tu nombre</span><input id="a_n" required autocomplete="name"></label>
     <label class="field"><span>WhatsApp</span><input id="a_w" inputmode="tel" placeholder="0981 000 000" required></label>
@@ -577,7 +605,7 @@ function faseView(){
     <label class="field"><span>Contraseña</span><input id="a_p" type="password" minlength="6" required autocomplete="new-password"></label>
     <div class="row"><button class="btn pri">Crear mi taller</button><button type="button" class="btn" onclick="st.fase='login';render()">Ya tengo cuenta</button></div></form>
     ${planesCards(null,true)}</div>`;
-  return `<div class="login"><div><h1>Ingresar</h1><p class="sub" style="margin:4px 0 0">${st.pendOT?'Código escaneado: ingresá para abrir la orden.':'Usá el usuario o correo que te dio el administrador.'}</p></div>
+  return `<div class="login"><img class="hero-logo" src="img/logo.jpg" alt="KEVANIX Taller mecánico">${instalarBox()}<div><h1>Ingresar</h1><p class="sub" style="margin:4px 0 0">${st.pendOT?'Código escaneado: ingresá para abrir la orden.':'Usá el usuario o correo que te dio el administrador.'}</p></div>
   <form class="grid" style="max-width:380px" onsubmit="event.preventDefault();entrar()">
     <label class="field"><span>Usuario o correo</span><input id="l_e" required autocomplete="username" autocapitalize="none"></label>
     <label class="field"><span>Contraseña</span><input id="l_p" type="password" required autocomplete="current-password"></label>
