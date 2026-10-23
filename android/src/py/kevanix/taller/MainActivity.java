@@ -40,6 +40,12 @@ import java.util.ArrayList;
 public class MainActivity extends Activity {
     static final String URL_APP = "https://genesysfastsistems-code.github.io/taller/";
     static final String HOST = "genesysfastsistems-code.github.io";
+    static final String DOMINIO = "taller.kevanix.com";
+    static boolean esDelSistema(Uri u) {
+        String h = u.getHost() == null ? "" : u.getHost();
+        if (DOMINIO.equals(h)) return true;
+        return HOST.equals(h) && u.getPath() != null && u.getPath().startsWith("/taller");
+    }
     static final int REQ_ARCHIVO = 10, REQ_PERMISO = 11;
 
     WebView web;
@@ -100,14 +106,14 @@ public class MainActivity extends Activity {
 
         Uri datos = getIntent() != null ? getIntent().getData() : null;
         if (b != null) web.restoreState(b);
-        else web.loadUrl(datos != null && HOST.equals(datos.getHost()) ? datos.toString() : URL_APP);
+        else web.loadUrl(datos != null && esDelSistema(datos) ? datos.toString() : URL_APP);
     }
 
     @Override
     protected void onNewIntent(Intent i) {
         super.onNewIntent(i);
         Uri d = i.getData();
-        if (d != null && HOST.equals(d.getHost())) web.loadUrl(d.toString());
+        if (d != null && esDelSistema(d)) web.loadUrl(d.toString());
     }
 
     @Override
@@ -130,7 +136,7 @@ public class MainActivity extends Activity {
     // Enlaces de WhatsApp, teléfono, correo y otros sitios: se abren fuera de la app
     boolean abrirFuera(Uri u) {
         String esq = u.getScheme() == null ? "" : u.getScheme();
-        if (("https".equals(esq) || "http".equals(esq)) && HOST.equals(u.getHost()) && u.getPath() != null && u.getPath().startsWith("/taller")) return false;
+        if (("https".equals(esq) || "http".equals(esq)) && esDelSistema(u)) return false;
         if ("blob".equals(esq) || "data".equals(esq) || "about".equals(esq) || "javascript".equals(esq)) return false;
         try {
             Intent i;
