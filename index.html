@@ -689,13 +689,21 @@ const carSVG=`<svg viewBox="0 0 300 400" aria-hidden="true"><g fill="none" strok
 <text x="150" y="18" text-anchor="middle" font-size="12" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">FRENTE</text>
 <text x="150" y="394" text-anchor="middle" font-size="12" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">TRASERA</text></svg>`;
 function dmgMap(list,ro){return `<div class="dmg${ro?' ro':''}" ${ro?'':'id="dmg"'}>${carSVG}${list.map((d,i)=>`<span class="pt" style="left:${d.x}%;top:${d.y}%">${i+1}</span>`).join('')}</div>`}
-const RK=['chapa','chasis','marca','modelo','anio','color','cli','ruc','tel','km','tipo','mec','falla','entrega'];
+const RK=['chapa','chasis','marca','modelo','anio','color','cli','ruc','tel','dir','email','km','tipo','mec','falla','entrega'];
 function recepcion(){
   if(!st.rec) st.rec={danos:[],fotos:[],combustible:4,checklist:{}};
   const r=st.rec,ws=workSuc();
   return `<div class="row between"><h1>Recepción y checklist</h1><span class="sub">${esc(sucN(ws))} · ${fdate(hoy())}</span></div>
   <div id="r_gar"></div>
   <form id="recf" class="grid" onsubmit="return false">
+  <div class="panel"><h2>Cliente</h2><div class="fields">
+    <label class="field"><span>RUC / CI</span><input id="r_ruc" list="dl_ruc" autocomplete="off" placeholder="Ej.: 4521378-6"></label>
+    <datalist id="dl_ruc">${db.clientes.filter(c=>c.ruc).map(c=>`<option value="${esc(c.ruc)}">${esc(c.nombre)}</option>`).join('')}</datalist>
+    <label class="field"><span>Nombre / Razón social</span><input id="r_cli" list="dl_cli" autocomplete="off"></label>
+    <datalist id="dl_cli">${db.clientes.map(c=>`<option value="${esc(c.nombre)}">${esc(c.ruc||'')}</option>`).join('')}</datalist>
+    <label class="field"><span>WhatsApp</span><input id="r_tel" inputmode="tel" placeholder="0981 000 000"></label>
+    <label class="field"><span>Dirección</span><input id="r_dir"></label><label class="field"><span>Correo</span><input id="r_email" type="email" autocomplete="off"></label></div>
+    <div id="r_clinfo" style="margin-top:10px"><p class="note">Escribí el RUC o CI: si el cliente ya existe se completan sus datos y sus vehículos.</p></div></div>
   <div class="panel"><h2>Vehículo</h2><div class="fields">
     <label class="field"><span>Chapa</span><input id="r_chapa" list="dl_chapas" placeholder="AAAA 000" autocomplete="off" style="text-transform:uppercase"></label>
     <datalist id="dl_chapas">${db.vehiculos.map(v=>`<option value="${esc(v.chapa)}">`).join('')}</datalist>
@@ -703,9 +711,6 @@ function recepcion(){
     <label class="field"><span>Marca</span><input id="r_marca"></label><label class="field"><span>Modelo</span><input id="r_modelo"></label>
     <label class="field"><span>Año</span><input id="r_anio" inputmode="numeric"></label><label class="field"><span>Color</span><input id="r_color"></label>
   </div><p class="note" id="r_hint" style="margin-top:8px">Si la chapa ya existe se completan los datos, se vincula el historial y se verifica la garantía.</p></div>
-  <div class="panel"><h2>Cliente</h2><div class="fields">
-    <label class="field"><span>Nombre / Razón social</span><input id="r_cli"></label><label class="field"><span>RUC / CI</span><input id="r_ruc"></label>
-    <label class="field"><span>WhatsApp</span><input id="r_tel" inputmode="tel" placeholder="0981 000 000"></label></div></div>
   <div class="grid g2">
     <div class="panel"><h2>Ingreso</h2><div class="fields">
       <label class="field"><span>Kilometraje</span><input id="r_km" inputmode="numeric" placeholder="0"></label>
@@ -724,6 +729,27 @@ function recepcion(){
     <div class="checks" style="margin-top:10px;display:block"><label><input type="checkbox" id="r_conf"> El cliente está conforme con el estado registrado (km, combustible, accesorios y daños).</label></div>
     <div class="row" style="margin-top:14px"><button class="btn pri" type="button" onclick="guardarRec()">Abrir orden de trabajo</button><button class="btn" type="button" onclick="st.rec=null;render()">Limpiar</button></div></div></form>`;
 }
+const rucBase=s=>String(s||'').replace(/[.\s]/g,'').split('-')[0].replace(/\D/g,'');
+function dvRuc(n){let t=0,k=2;for(let i=n.length-1;i>=0;i--){if(k>11)k=2;t+=(+n[i])*k;k++}const r=t%11;return r>1?11-r:0}
+const buscarCli=v=>{const b=rucBase(v);return b.length>=4?db.clientes.find(c=>rucBase(c.ruc)===b):null};
+function fillCli(c,force){[['cli',c.nombre],['ruc',c.ruc],['tel',c.tel],['dir',c.dir],['email',c.email]].forEach(([k,x])=>{const el=$('#r_'+k);if(el&&(force||!el.value))el.value=x||''});st.rec.cliId=c.id;cliInfo(c)}
+function cliInfo(c){const box=$('#r_clinfo');if(!box)return;
+  const os=db.ots.filter(o=>o.clienteId===c.id).sort((a,b)=>b.fecha.localeCompare(a.fecha)),vs=db.vehiculos.filter(v=>v.clienteId===c.id);
+  const deuda=os.filter(o=>o.aprob==='aprobado').reduce((a,o)=>a+Math.max(0,saldo(o)),0),ch=($('#r_chapa').value||'').trim().toUpperCase();
+  box.innerHTML=`<div class="banner" style="border-style:solid;border-color:var(--ok);display:grid;gap:8px">
+    <div class="row" style="gap:8px"><span class="chip c-ok">Cliente registrado</span><b>${esc(c.nombre)}</b><span class="sub">${os.length} visita${os.length===1?'':'s'}${os[0]?' · última '+fdate(os[0].fecha):''}</span>${deuda>0?`<span class="chip c-bad">Debe ${gs(deuda)}</span>`:''}</div>
+    ${vs.length?`<div class="row" style="gap:6px"><span class="sub">Sus vehículos:</span>${vs.map(v=>`<button type="button" class="btn sm ${v.chapa.toUpperCase()===ch?'dark':''}" onclick="pickVeh('${v.id}')">${esc(v.chapa)} · ${esc(v.marca)} ${esc(v.modelo)}</button>`).join('')}<button type="button" class="btn sm" onclick="pickVeh('')">Otro vehículo</button></div>`:'<span class="sub">Sin vehículos registrados.</span>'}</div>`}
+function cliNuevo(v){const box=$('#r_clinfo');if(!box)return;st.rec.cliId=null;const b=rucBase(v);
+  if(b.length<5){box.innerHTML='<p class="note">Escribí el RUC o CI: si el cliente ya existe se completan sus datos y sus vehículos.</p>';return}
+  const dv=dvRuc(b),con=v.includes('-');
+  box.innerHTML=`<div class="banner row" style="gap:8px"><span class="chip c-info">Cliente nuevo</span>${con?(rucBase(v)+'-'+dv===v.replace(/[.\s]/g,'')?'<span class="sub">RUC válido.</span>':`<span style="color:var(--bad)">El dígito verificador no coincide: debería ser <b class="mono">${b}-${dv}</b>.</span>`):`<span class="sub">Si tiene RUC, el dígito verificador es <b class="mono">${b}-${dv}</b>.</span><button type="button" class="btn sm" onclick="$('#r_ruc').value='${b}-${dv}'">Usar ${b}-${dv}</button>`}<span class="sub">Completá nombre y WhatsApp.</span></div>`}
+function pickVeh(id){const v=db.vehiculos.find(x=>x.id===id);
+  [['chapa',v?.chapa],['chasis',v?.chasis],['marca',v?.marca],['modelo',v?.modelo],['anio',v?.anio],['color',v?.color]].forEach(([k,x])=>$('#r_'+k).value=x||'');
+  if(v)window.recChk&&window.recChk();else{$('#r_gar').innerHTML='';$('#r_hint').textContent='Vehículo nuevo para este cliente.';$('#r_chapa').focus()}
+  const c=st.rec.cliId&&db.clientes.find(x=>x.id===st.rec.cliId);if(c)cliInfo(c)}
+function onRuc(){const v=$('#r_ruc').value.trim(),c=buscarCli(v);
+  if(c){if(st.rec.cliId!==c.id){fillCli(c,true);const vs=db.vehiculos.filter(x=>x.clienteId===c.id);if(vs.length===1&&!$('#r_chapa').value.trim())pickVeh(vs[0].id);toast('Cliente encontrado: '+c.nombre)}}
+  else cliNuevo(v)}
 function readRec(){const r=st.rec;if(!$('#recf'))return;RK.forEach(k=>r[k]=$('#r_'+k).value);r.conf=$('#r_conf').checked;
   document.querySelectorAll('[data-ck]').forEach(c=>r.checklist[c.dataset.ck]=c.checked?1:0);document.querySelectorAll('[data-dn]').forEach(c=>r.danos[+c.dataset.dn].nota=c.value)}
 function keepRec(){readRec();render()}
@@ -731,11 +757,15 @@ function bindRec(){
   const r=st.rec;RK.forEach(k=>{if(r[k]!=null)$('#r_'+k).value=r[k]});$('#r_conf').checked=!!r.conf;
   $('#r_fuel').oninput=e=>{r.combustible=+e.target.value;$('#r_fuelv').textContent=r.combustible+'/8';e.target.nextElementSibling.outerHTML=fuel(r.combustible)};
   const chk=()=>{const v=db.vehiculos.find(x=>x.chapa.toUpperCase()===$('#r_chapa').value.trim().toUpperCase());$('#r_gar').innerHTML='';if(!v)return;
-    const c=cli(v.clienteId);[['chasis',v.chasis],['marca',v.marca],['modelo',v.modelo],['anio',v.anio],['color',v.color],['cli',c.nombre],['ruc',c.ruc],['tel',c.tel]].forEach(([k,x])=>{if(!$('#r_'+k).value)$('#r_'+k).value=x||''});
+    [['chasis',v.chasis],['marca',v.marca],['modelo',v.modelo],['anio',v.anio],['color',v.color]].forEach(([k,x])=>{if(!$('#r_'+k).value)$('#r_'+k).value=x||''});const c=db.clientes.find(x=>x.id===v.clienteId);if(c&&(!st.rec.cliId||st.rec.cliId===c.id))fillCli(c,false);else if(c&&st.rec.cliId!==c.id)toast('Ojo: ese vehículo figura a nombre de '+c.nombre+'. Se transferirá al cliente cargado.');
     const os=db.ots.filter(o=>o.vehiculoId===v.id),u=os.sort((a,b)=>b.km-a.km)[0];
     $('#r_hint').innerHTML=`Vehículo registrado · ${os.length} visitas${u?` · último km: <b class="mono">${fmt(u.km)}</b>`:''}`;
     const g=garantiaPrev(v.id);if(g)$('#r_gar').innerHTML=`<div class="alertbar"><strong>En garantía</strong><span>Trabajo de la OT #${g.nro} (${esc(g.falla)}) entregado el ${fdate(g.fecha)}. Garantía de ${g.garantiaDias} días: quedan ${g.garantiaDias-dias(g.fecha,hoy())}. La nueva OT quedará marcada como reingreso.</span></div>`};
-  $('#r_chapa').onchange=chk;if(r.chapa)chk();
+  window.recChk=chk;$('#r_chapa').onchange=chk;if(r.chapa)chk();
+  $('#r_ruc').oninput=()=>{clearTimeout(window._rt);window._rt=setTimeout(onRuc,300)};$('#r_ruc').onchange=onRuc;
+  $('#r_ruc').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();onRuc()}};
+  $('#r_cli').onchange=()=>{const n=$('#r_cli').value.trim().toLowerCase(),c=db.clientes.find(x=>x.nombre.toLowerCase()===n);if(c&&st.rec.cliId!==c.id&&(!$('#r_ruc').value.trim()||buscarCli($('#r_ruc').value)?.id===c.id)){fillCli(c,true);const vs=db.vehiculos.filter(x=>x.clienteId===c.id);if(vs.length===1&&!$('#r_chapa').value.trim())pickVeh(vs[0].id)}};
+  if(r.cliId){const c=db.clientes.find(x=>x.id===r.cliId);if(c)cliInfo(c)}else if(r.ruc)cliNuevo(r.ruc);
   $('#dmg').onclick=e=>{if(e.target.closest('.pt'))return;const b=e.currentTarget.getBoundingClientRect();readRec();
     r.danos.push({x:Math.round((e.clientX-b.left)/b.width*100),y:Math.round((e.clientY-b.top)/b.height*100),nota:''});render();setTimeout(()=>{const i=document.querySelectorAll('[data-dn]');i[i.length-1]?.focus()},0)};
   $('#r_fotos').onchange=async e=>{readRec();for(const f of e.target.files){if(r.fotos.length>=6){toast('Máximo 6 fotos por orden.');break}r.fotos.push(await shrink(f))}render()};
@@ -745,8 +775,8 @@ async function guardarRec(){
   readRec();const r=st.rec;if(st.guardando)return;
   if(!r.chapa.trim())return toast('Falta la chapa del vehículo.');if(!r.cli.trim())return toast('Falta el nombre del cliente.');
   if(!r.km)return toast('Falta el kilometraje de ingreso.');if(!r.conf)return toast('Marcá la conformidad del cliente con el estado registrado.');
-  let c=db.clientes.find(x=>(r.ruc&&x.ruc===r.ruc)||x.nombre.toLowerCase()===r.cli.trim().toLowerCase());
-  if(!c){c={id:uid()};db.clientes.push(c)}Object.assign(c,{nombre:r.cli.trim(),ruc:r.ruc.trim(),tel:r.tel.trim()});
+  let c=(r.cliId&&db.clientes.find(x=>x.id===r.cliId))||buscarCli(r.ruc)||(!rucBase(r.ruc)&&db.clientes.find(x=>x.nombre.toLowerCase()===r.cli.trim().toLowerCase()));
+  if(!c){c={id:uid()};db.clientes.push(c)}Object.assign(c,{nombre:r.cli.trim(),ruc:r.ruc.trim(),tel:r.tel.trim(),dir:(r.dir||'').trim(),email:(r.email||'').trim()});
   const ch=r.chapa.trim().toUpperCase();let v=db.vehiculos.find(x=>x.chapa.toUpperCase()===ch);
   if(!v){v={id:uid()};db.vehiculos.push(v)}Object.assign(v,{chapa:ch,chasis:r.chasis.toUpperCase(),marca:r.marca,modelo:r.modelo,anio:r.anio,color:r.color,clienteId:c.id});
   const g=garantiaPrev(v.id);
@@ -901,7 +931,7 @@ function facturar(){const o=ot(),s=suc(o.sucursalId),n=`${s.est}-${s.pto}-${Stri
 function verKude(id){const o=db.ots.find(x=>x.id===id),c=db.config,cl=cli(o.clienteId),T=total(o),cdc=o.factura.cdc||'—';
   modalHTML(`<div class="kude"><div class="hd"><div><h2>${esc(c.taller)}</h2><div>RUC ${esc(c.ruc)} · ${esc(c.dir)}</div><div>${esc(sucN(o.sucursalId))} · Tel. ${esc(c.tel)}</div></div>
   <div style="text-align:right"><div>Timbrado Nº <b class="mono">${esc(c.timbrado)}</b></div><div class="sub">Vigente desde ${fdate(c.vigDesde)}</div><h3>FACTURA ELECTRÓNICA</h3><div class="mono"><b>${o.factura.nro}</b></div></div></div>
-  <div class="fields"><div><span class="sub">Fecha</span><br>${fdate(o.factura.fecha)}</div><div><span class="sub">Cliente</span><br>${esc(cl.nombre)}</div><div><span class="sub">RUC/CI</span><br>${esc(cl.ruc||'—')}</div><div><span class="sub">Condición</span><br>${saldo(o)>0?'Crédito':'Contado'}</div></div>
+  <div class="fields"><div><span class="sub">Fecha</span><br>${fdate(o.factura.fecha)}</div><div><span class="sub">Cliente</span><br>${esc(cl.nombre)}</div><div><span class="sub">RUC/CI</span><br>${esc(cl.ruc||'—')}</div>${cl.dir?`<div><span class="sub">Dirección</span><br>${esc(cl.dir)}</div>`:''}<div><span class="sub">Condición</span><br>${saldo(o)>0?'Crédito':'Contado'}</div></div>
   <div class="tscroll"><table><tr><th>Cant.</th><th>Descripción</th><th class="n">P. unit.</th><th class="n">IVA 10%</th></tr>${o.items.map(i=>`<tr><td>${i.cant}</td><td>${esc(i.desc)}</td><td class="n">${gs(i.precio)}</td><td class="n">${gs(i.cant*i.precio)}</td></tr>`).join('')}</table></div>
   <div class="totals"><span>Liquidación IVA 10%: ${gs(T/11)}</span><b>Total ${gs(T)}</b></div>
   <div><span class="sub" style="font-size:11px">CDC</span><div class="cdc">${cdc.replace(/(.{4})/g,'$1 ')}</div></div>
