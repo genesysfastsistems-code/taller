@@ -233,7 +233,28 @@ pre.code{background:var(--sunk);border:1px solid var(--line);border-radius:6px;p
 .sheet .qr{width:96px;height:96px;image-rendering:pixelated}
 #printhost{position:fixed;left:-10000px;top:0}
 /* Comprobantes (papel: siempre blanco) */
-.cp-sheet{background:#fff;color:#111;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column}
+.cp-sheet{background:#fff;color:#111;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cp-doc::before{content:"";position:absolute;left:0;right:0;top:0;height:4mm;background:linear-gradient(90deg,var(--cpa) 0 62%,var(--cpb) 62% 82%,var(--cpa2) 82%)}
+.cp-doc.sm::before{height:2.6mm}
+.cp-doc h5{color:var(--cpa2)!important}
+.cp-k{color:var(--cpa)!important}
+.cp-box{border-color:var(--cpa)!important;background:var(--cpt2)}
+.cp-box .t{background:var(--cpa);color:#fff;border-radius:1mm;padding:1mm 2mm}
+.cp-box .n{color:var(--cpa2)}
+.cp-grid{border-color:var(--cpa)!important;overflow:hidden}
+.cp-grid>div{border-color:var(--cpl)!important}
+.cp-grid>div:nth-child(odd){background:var(--cpt2)}
+.cp-tb th{background:var(--cpa)!important;color:#fff!important;border-color:var(--cpa)!important}
+.cp-tb td{border-left-color:var(--cpl)!important;border-right-color:var(--cpl)!important}
+.cp-tb tbody:first-of-type tr:nth-child(even) td{background:var(--cpt2)}
+.cp-tb tbody tr:last-child td{border-bottom-color:var(--cpa)!important}
+.cp-tb tr.f td{border-color:var(--cpa)!important;background:var(--cpt)!important}
+.cp-tb tr.f.tot td{background:var(--cpa)!important;color:#fff}
+.cp-amt{background:var(--cpa);color:#fff;border-color:var(--cpa2)!important}
+.cp-line{border-bottom-color:var(--cpl)!important}
+.cp-copy{background:var(--cpa);color:#fff!important;padding:.8mm 2.4mm;border-radius:1mm}
+.cp-sign div{border-top-color:var(--cpa2)!important}
+.cp-chip{display:inline-block;background:var(--cpb);color:#111;font-weight:700;padding:.3mm 2mm;border-radius:1mm}
 .cp-doc{flex:1;min-height:0;box-sizing:border-box;padding:11mm 12mm;display:flex;flex-direction:column;gap:3.2mm;font:9.5pt/1.32 'IBM Plex Sans',Arial,sans-serif;color:#111;position:relative}
 .cp-doc.sm{padding:6mm 8mm;gap:2mm;font-size:8pt}
 .cp-doc+.cp-doc{border-top:0.4mm dashed #777}
@@ -259,8 +280,8 @@ pre.code{background:var(--sunk);border:1px solid var(--line);border-radius:6px;p
 .cp-tb .r{text-align:right;white-space:nowrap}
 .cp-tb tbody tr:last-child td{border-bottom:0.3mm solid #111}
 .cp-fill{flex:1}
-.cp-copy{position:absolute;right:12mm;bottom:5mm;font:600 7pt 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#444;text-transform:uppercase}
-.cp-doc.sm .cp-copy{right:8mm;bottom:2.5mm}
+.cp-copy{position:absolute;left:12mm;top:6mm;font:600 7pt 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#444;text-transform:uppercase}
+.cp-doc.sm .cp-copy{left:8mm;top:3.6mm}
 .cp-sign{display:grid;grid-template-columns:1fr 1fr;gap:16mm;margin-top:10mm}
 .cp-doc.sm .cp-sign{margin-top:6mm}
 .cp-sign div{border-top:0.3mm solid #111;padding-top:1mm;text-align:center;font-size:7.5pt}
@@ -1042,14 +1063,14 @@ function cpFactura(o,sm,copia){const c=db.config,cl=cli(o.clienteId),v=veh(o.veh
   return `<div class="cp-doc ${sm?'sm':''}">
   <div class="cp-hd">${cpEmpresa()}<div class="cp-box"><div>Timbrado Nº <b>${esc(c.timbrado||'—')}</b></div><div class="cp-k">Inicio de vigencia ${c.vigDesde?fdate(c.vigDesde):'—'}${c.vigHasta?' · Vence '+fdate(c.vigHasta):''}</div>
     <div>RUC <b>${esc(c.ruc||'—')}</b></div><div class="t">${elec?'FACTURA ELECTRÓNICA':'FACTURA'}</div><div class="n">${esc(f.nro)}</div></div></div>
-  <div class="cp-grid"><div><div class="cp-k">Fecha de emisión</div>${fdate(f.fecha)}</div><div><div class="cp-k">Condición de venta</div>${cond==='credito'?'☐ Contado ☒ Crédito':'☒ Contado ☐ Crédito'}</div>
+  <div class="cp-grid"><div><div class="cp-k">Fecha de emisión</div>${fdate(f.fecha)}</div><div><div class="cp-k">Condición de venta</div><span class="cp-chip">${cond==='credito'?'CRÉDITO':'CONTADO'}</span></div>
     <div><div class="cp-k">Orden de trabajo</div>Nº ${o.nro}</div><div><div class="cp-k">Sucursal</div>${esc(s.nombre)}</div>
     <div class="w2"><div class="cp-k">Nombre o razón social</div><b>${esc(cl.nombre)}</b></div><div><div class="cp-k">RUC / CI</div>${esc(cl.ruc||'—')}</div><div><div class="cp-k">Teléfono</div>${esc(cl.tel||'—')}</div>
     <div class="w2"><div class="cp-k">Dirección</div>${esc(cl.dir||'—')}</div><div class="w2"><div class="cp-k">Vehículo</div>${esc(v.chapa)} · ${esc(v.marca)} ${esc(v.modelo)} · ${fmt(o.km)} km</div></div>
   <table class="cp-tb"><thead><tr><th class="r" style="width:9%">Cant.</th><th>Descripción</th><th class="r" style="width:15%">Precio unit.</th><th class="r" style="width:11%">Exentas</th><th class="r" style="width:11%">5%</th><th class="r" style="width:15%">10%</th></tr></thead>
   <tbody>${filas.join('')}</tbody>
   <tbody><tr class="f"><td colspan="3">Subtotales</td><td class="r">0</td><td class="r">0</td><td class="r">${fmt(T)}</td></tr>
-  <tr class="f"><td colspan="5">Total a pagar: GUARANÍES ${numLetras(T)}</td><td class="r">${fmt(T)}</td></tr>
+  <tr class="f tot"><td colspan="5">Total a pagar: GUARANÍES ${numLetras(T)}</td><td class="r">${fmt(T)}</td></tr>
   <tr class="f"><td colspan="6">Liquidación del IVA: (5%) 0 · (10%) ${fmt(Math.round(T/11))} · Total IVA ${fmt(Math.round(T/11))}</td></tr></tbody></table>
   <div class="cp-fill"></div>
   ${elec?`<div class="cp-note">CDC: <span style="font-family:'IBM Plex Mono',monospace">${esc((f.cdc||'').replace(/(.{4})/g,'$1 '))}</span><br>Representación gráfica de documento electrónico. Consulte su validez en ekuatia.set.gov.py</div>`:''}
@@ -1062,21 +1083,26 @@ function cpRecibo(o,p,sm,copia){const c=db.config,cl=cli(o.clienteId),v=veh(o.ve
   <div class="cp-line"><span class="cp-k">Recibí de</span><b>${esc(cl.nombre)}</b>${cl.ruc?`<span>· RUC/CI ${esc(cl.ruc)}</span>`:''}</div>
   <div class="cp-line"><span class="cp-k">La suma de guaraníes</span><b>${numLetras(p.monto)}</b></div>
   <div class="cp-line"><span class="cp-k">En concepto de</span><span>${esc(concepto)}</span></div>
-  <div class="cp-line"><span class="cp-k">Forma de pago</span><span>${esc(p.medio)}</span></div>
+  <div class="cp-line"><span class="cp-k">Forma de pago</span><span class="cp-chip">${esc(p.medio)}</span></div>
   <table class="cp-tb" style="width:auto;min-width:60%;align-self:flex-end"><tbody>
   <tr class="f"><td>Total del servicio</td><td class="r">Gs. ${fmt(T)}</td></tr><tr class="f"><td>Pagos anteriores</td><td class="r">Gs. ${fmt(antes)}</td></tr>
-  <tr class="f"><td>Este pago</td><td class="r">Gs. ${fmt(p.monto)}</td></tr><tr class="f"><td>Saldo pendiente</td><td class="r">Gs. ${fmt(Math.max(0,sal))}</td></tr></tbody></table>
+  <tr class="f"><td>Este pago</td><td class="r">Gs. ${fmt(p.monto)}</td></tr><tr class="f tot"><td>Saldo pendiente</td><td class="r">Gs. ${fmt(Math.max(0,sal))}</td></tr></tbody></table>
   <div class="cp-fill"></div>
   <div>${esc(ciudadTaller()?ciudadTaller()+', ':'')}${fechaLarga(p.fecha)}</div>
   <div class="cp-sign"><div>Firma y aclaración · ${esc(c.taller)}</div><div>Firma del cliente</div></div>
   ${copia?`<div class="cp-copy">${copia}</div>`:''}</div>`}
+const hexMix=(h,t)=>{const n=parseInt(h.slice(1),16),r=n>>16,g=n>>8&255,b=n&255,m=x=>Math.round(x+(255-x)*t);return '#'+[m(r),m(g),m(b)].map(x=>x.toString(16).padStart(2,'0')).join('')};
+const hexDark=(h,t)=>{const n=parseInt(h.slice(1),16),f=x=>Math.round(x*(1-t));return '#'+[n>>16,n>>8&255,n&255].map(x=>f(x).toString(16).padStart(2,'0')).join('')};
+const DOC_COLORES=[['#C8102E','Rojo'],['#1D4E89','Azul'],['#0E7C66','Verde'],['#D9661A','Naranja'],['#6A3FA0','Violeta'],['#16202A','Grafito']];
+function cpVars(){const a=/^#[0-9a-f]{6}$/i.test(db.config.colorDoc||'')?db.config.colorDoc:'#C8102E',b=/^#[0-9a-f]{6}$/i.test(db.config.colorDoc2||'')?db.config.colorDoc2:'#F2B705';
+  return `--cpa:${a};--cpa2:${hexDark(a,.35)};--cpb:${b};--cpt:${hexMix(a,.86)};--cpt2:${hexMix(a,.94)};--cpl:${hexMix(a,.6)}`}
 function cpPages(cp){const P=PAPEL[cp.papel],o=db.ots.find(x=>x.id===cp.otId),docs=[];
   const lbl=cp.tipo==='factura'?['ORIGINAL: Adquirente','DUPLICADO: Archivo tributario','TRIPLICADO: Contabilidad']:['ORIGINAL: Cliente','COPIA: Taller','COPIA'];
   for(let k=0;k<cp.copias;k++){const copia=cp.copias>1?lbl[k]:'';
     docs.push(sm=>cp.tipo==='factura'?cpFactura(o,sm,copia):cpRecibo(o,o.pagos[cp.pi],sm,copia))}
   const pages=[];
-  if(cp.juntas&&cp.papel!=='media'){for(let k=0;k<docs.length;k+=2)pages.push(`<div class="cp-sheet" style="width:${P.w}mm;height:${P.h}mm">${docs[k](true)}${docs[k+1]?docs[k+1](true):'<div class="cp-doc sm"></div>'}</div>`)}
-  else docs.forEach(d=>pages.push(`<div class="cp-sheet" style="width:${P.w}mm;height:${P.h}mm">${d(cp.papel==='media')}</div>`));
+  if(cp.juntas&&cp.papel!=='media'){for(let k=0;k<docs.length;k+=2)pages.push(`<div class="cp-sheet" style="width:${P.w}mm;height:${P.h}mm;${cpVars()}">${docs[k](true)}${docs[k+1]?docs[k+1](true):'<div class="cp-doc sm"></div>'}</div>`)}
+  else docs.forEach(d=>pages.push(`<div class="cp-sheet" style="width:${P.w}mm;height:${P.h}mm;${cpVars()}">${d(cp.papel==='media')}</div>`));
   return pages}
 function compModal(tipo,otId,pi){const o=db.ots.find(x=>x.id===otId);if(!o)return;
   if(tipo==='factura'&&!o.factura)return toast('La orden todavía no tiene factura.');
@@ -1645,6 +1671,9 @@ function configView(){const c=db.config;
   <label class="field"><span>Tipo de factura</span><select id="cf_tipoFactura"><option value="autoimpresor" ${c.tipoFactura!=='electronica'?'selected':''}>Autoimpresor / preimpresa</option><option value="electronica" ${c.tipoFactura==='electronica'?'selected':''}>Electrónica (KuDE)</option></select></label></div>
   <div class="row" style="margin-top:12px;gap:14px"><div style="width:120px;height:80px;border:1px dashed var(--line);border-radius:8px;display:grid;place-items:center;background:#fff;overflow:hidden">${c.logo?`<img src="${c.logo}" alt="Logo del taller" style="max-width:100%;max-height:100%;object-fit:contain">`:'<span class="sub" style="font-size:12px">Sin logo</span>'}</div>
   <div class="grid" style="gap:6px"><b>Logo del taller</b><span class="sub" style="font-size:12px">Sale en facturas y recibos. PNG o JPG.</span><div class="row"><label class="btn sm">Subir logo<input type="file" accept="image/*" hidden onchange="subirLogo(this)"></label>${c.logo?'<button class="btn sm danger" onclick="db.config.logo=\'\';save();render()">Quitar</button>':''}</div></div></div>
+  <div class="row" style="margin-top:12px;gap:10px"><b style="min-width:150px">Color de facturas y recibos</b><div class="row" style="gap:6px">${DOC_COLORES.map(([h,n])=>`<button class="btn sm" title="${n}" aria-label="${n}" onclick="db.config.colorDoc='${h}';save();render()" style="width:34px;height:34px;padding:0;background:${h};border:3px solid ${(c.colorDoc||'#C8102E')===h?'var(--ink)':'transparent'}"></button>`).join('')}
+  <input type="color" value="${esc(c.colorDoc||'#C8102E')}" onchange="db.config.colorDoc=this.value;save();render()" style="width:46px;height:34px;padding:2px" aria-label="Otro color"></div>
+  <span class="sub" style="font-size:12px">Detalle: <input type="color" value="${esc(c.colorDoc2||'#F2B705')}" onchange="db.config.colorDoc2=this.value;save();render()" style="width:46px;height:30px;padding:2px;vertical-align:middle" aria-label="Color de detalle"></span></div>
   <div class="row" style="margin-top:12px"><button class="btn pri" onclick="saveCfg()">Guardar</button></div></div>
   <div class="panel"><h2>Sucursales</h2><div class="tscroll"><table><tr><th>Nombre</th><th>Establecimiento</th><th>Punto exp.</th><th>Próx. factura</th></tr>
   ${db.sucursales.map(s=>`<tr><td><input value="${esc(s.nombre)}" onchange="suc('${s.id}').nombre=this.value;save()"></td><td><input value="${esc(s.est)}" style="width:80px" onchange="suc('${s.id}').est=this.value;save()"></td><td><input value="${esc(s.pto)}" style="width:80px" onchange="suc('${s.id}').pto=this.value;save()"></td><td><input value="${s.nextFac}" style="width:100px" onchange="suc('${s.id}').nextFac=num(this.value)||1;save()"></td></tr>`).join('')}</table></div>
