@@ -51,7 +51,7 @@ jobs:
 
       - name: Copiar el sistema
         run: |
-          rsync -a --exclude '.git' --exclude '.github' --exclude 'tools' --exclude '_site' ./ _site/
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'tools' --exclude '_site' --exclude 'android' ./ _site/
           touch _site/.nojekyll
 
       - uses: actions/upload-pages-artifact@v3
