@@ -271,8 +271,9 @@ const TPL_DEF={
   presupuesto:'Detectamos la falla en su vehículo. Adjuntamos el presupuesto detallado para su aprobación: [Link_Presupuesto]',
   retiro:'¡Buenas noticias! Su vehículo está listo y verificado. El total es de Gs. [Total]. Puede pasar a retirarlo.'};
 const PH=['[Cliente]','[Marca/Modelo]','[Chapa]','[NombreTaller]','[Link]','[Link_Presupuesto]','[Total]','[Saldo]','[OT]'];
+const nombrePila=n=>{n=String(n||'').trim();const t=n.includes(',')?n.split(',')[1].trim():n;const w=(t.split(/\s+/)[0]||'');return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()};
 function tplVals(o,D){const c=D.clientes.find(x=>x.id===o.clienteId)||{nombre:''},v=D.vehiculos.find(x=>x.id===o.vehiculoId)||{};const t=o.items.reduce((a,i)=>a+i.cant*i.precio,0);
-  return {'[Cliente]':(c.nombre||'').split(' ')[0],'[Marca/Modelo]':`${v.marca||''} ${v.modelo||''}`.trim(),'[Chapa]':v.chapa||'','[NombreTaller]':D.config.taller,'[Link]':appURL('seguimiento-'+o.token),
+  return {'[Cliente]':nombrePila(c.nombre),'[Marca/Modelo]':`${v.marca||''} ${v.modelo||''}`.trim(),'[Chapa]':v.chapa||'','[NombreTaller]':D.config.taller,'[Link]':appURL('seguimiento-'+o.token),
     '[Link_Presupuesto]':appURL('aprobar-'+o.token),'[Total]':fmt(t),'[Saldo]':fmt(t-o.pagos.reduce((a,p)=>a+p.monto,0)),'[OT]':String(o.nro)}}
 function fillTpl(tpl,o,D=db){const m=tplVals(o,D);return PH.reduce((s,k)=>s.split(k).join(m[k]),tpl)}
 let db, st={view:'tablero',param:null,rec:null,otFiltro:'activas',user:null,suc:'central',rp:90,sq:''};
@@ -739,10 +740,22 @@ function cliInfo(c){const box=$('#r_clinfo');if(!box)return;
   box.innerHTML=`<div class="banner" style="border-style:solid;border-color:var(--ok);display:grid;gap:8px">
     <div class="row" style="gap:8px"><span class="chip c-ok">Cliente registrado</span><b>${esc(c.nombre)}</b><span class="sub">${os.length} visita${os.length===1?'':'s'}${os[0]?' · última '+fdate(os[0].fecha):''}</span>${deuda>0?`<span class="chip c-bad">Debe ${gs(deuda)}</span>`:''}</div>
     ${vs.length?`<div class="row" style="gap:6px"><span class="sub">Sus vehículos:</span>${vs.map(v=>`<button type="button" class="btn sm ${v.chapa.toUpperCase()===ch?'dark':''}" onclick="pickVeh('${v.id}')">${esc(v.chapa)} · ${esc(v.marca)} ${esc(v.modelo)}</button>`).join('')}<button type="button" class="btn sm" onclick="pickVeh('')">Otro vehículo</button></div>`:'<span class="sub">Sin vehículos registrados.</span>'}</div>`}
+const RUC_CACHE={};
+async function dnitBuscar(b){b=String(+b);const sh=String(+b%1000).padStart(3,'0');
+  if(!(sh in RUC_CACHE)){try{const r=await fetch('ruc/'+sh+'.json',{cache:'force-cache'});RUC_CACHE[sh]=r.ok?await r.json():null}catch(e){RUC_CACHE[sh]=null}}
+  const d=RUC_CACHE[sh];if(!d)return {err:true};const x=d[b];return x?{ruc:b+'-'+x[1],dv:+x[1],nombre:x[0],estado:x[2]||'ACTIVO'}:null}
 function cliNuevo(v){const box=$('#r_clinfo');if(!box)return;st.rec.cliId=null;const b=rucBase(v);
-  if(b.length<5){box.innerHTML='<p class="note">Escribí el RUC o CI: si el cliente ya existe se completan sus datos y sus vehículos.</p>';return}
-  const dv=dvRuc(b),con=v.includes('-');
-  box.innerHTML=`<div class="banner row" style="gap:8px"><span class="chip c-info">Cliente nuevo</span>${con?(rucBase(v)+'-'+dv===v.replace(/[.\s]/g,'')?'<span class="sub">RUC válido.</span>':`<span style="color:var(--bad)">El dígito verificador no coincide: debería ser <b class="mono">${b}-${dv}</b>.</span>`):`<span class="sub">Si tiene RUC, el dígito verificador es <b class="mono">${b}-${dv}</b>.</span><button type="button" class="btn sm" onclick="$('#r_ruc').value='${b}-${dv}'">Usar ${b}-${dv}</button>`}<span class="sub">Completá nombre y WhatsApp.</span></div>`}
+  if(b.length<5){box.innerHTML='<p class="note">Escribí el RUC o CI: si el cliente ya existe se completan sus datos; si es nuevo se busca en el padrón de la DNIT.</p>';return}
+  const dv=dvRuc(b),con=v.includes('-'),bien=rucBase(v)+'-'+dv===v.replace(/[.\s]/g,'');
+  const dvTxt=con?(bien?'':`<span style="color:var(--bad)">El dígito verificador no coincide: debería ser <b class="mono">${b}-${dv}</b>.</span>`):`<span class="sub">Si tiene RUC, el dígito verificador es <b class="mono">${b}-${dv}</b>.</span><button type="button" class="btn sm" onclick="$('#r_ruc').value='${b}-${dv}'">Usar ${b}-${dv}</button>`;
+  box.innerHTML=`<div class="banner row" style="gap:8px"><span class="chip c-info">Cliente nuevo</span><span class="sub">Buscando en el padrón de la DNIT…</span></div>`;
+  dnitBuscar(b).then(x=>{if(rucBase($('#r_ruc')?.value)!==b||st.rec.cliId)return;
+    if(x&&!x.err){const n=$('#r_cli');if(!n.value.trim()||n.dataset.dnit==='1'){n.value=x.nombre;n.dataset.dnit='1'}$('#r_ruc').value=x.ruc;
+      const ok=x.estado==='ACTIVO';
+      box.innerHTML=`<div class="banner" style="border-style:solid;border-color:var(--info);display:grid;gap:6px"><div class="row" style="gap:8px"><span class="chip c-info">Cliente nuevo · DNIT</span><b>${esc(x.nombre)}</b><span class="mono">RUC ${esc(x.ruc)}</span><span class="chip ${ok?'c-ok':'c-bad'}">${esc(x.estado)}</span></div>
+      <span class="sub">${ok?'Datos traídos del padrón de contribuyentes de la DNIT. Completá WhatsApp y dirección.':'Atención: el RUC no está activo en la DNIT. Consultá antes de emitir factura a este RUC.'}</span></div>`;
+      toast('Encontrado en DNIT: '+x.nombre)}
+    else box.innerHTML=`<div class="banner row" style="gap:8px"><span class="chip c-info">Cliente nuevo</span>${x&&x.err?'<span class="sub">Padrón de la DNIT no disponible en este momento.</span>':'<span class="sub">No figura en el padrón de la DNIT (puede ser una CI sin RUC).</span>'}${dvTxt}<span class="sub">Completá nombre y WhatsApp.</span></div>`})}
 function pickVeh(id){const v=db.vehiculos.find(x=>x.id===id);
   [['chapa',v?.chapa],['chasis',v?.chasis],['marca',v?.marca],['modelo',v?.modelo],['anio',v?.anio],['color',v?.color]].forEach(([k,x])=>$('#r_'+k).value=x||'');
   if(v)window.recChk&&window.recChk();else{$('#r_gar').innerHTML='';$('#r_hint').textContent='Vehículo nuevo para este cliente.';$('#r_chapa').focus()}
@@ -764,6 +777,7 @@ function bindRec(){
   window.recChk=chk;$('#r_chapa').onchange=chk;if(r.chapa)chk();
   $('#r_ruc').oninput=()=>{clearTimeout(window._rt);window._rt=setTimeout(onRuc,300)};$('#r_ruc').onchange=onRuc;
   $('#r_ruc').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();onRuc()}};
+  $('#r_cli').oninput=e=>{e.target.dataset.dnit=''};
   $('#r_cli').onchange=()=>{const n=$('#r_cli').value.trim().toLowerCase(),c=db.clientes.find(x=>x.nombre.toLowerCase()===n);if(c&&st.rec.cliId!==c.id&&(!$('#r_ruc').value.trim()||buscarCli($('#r_ruc').value)?.id===c.id)){fillCli(c,true);const vs=db.vehiculos.filter(x=>x.clienteId===c.id);if(vs.length===1&&!$('#r_chapa').value.trim())pickVeh(vs[0].id)}};
   if(r.cliId){const c=db.clientes.find(x=>x.id===r.cliId);if(c)cliInfo(c)}else if(r.ruc)cliNuevo(r.ruc);
   $('#dmg').onclick=e=>{if(e.target.closest('.pt'))return;const b=e.currentTarget.getBoundingClientRect();readRec();
@@ -892,7 +906,7 @@ function autoMsg(o,tipo,force){
   if(!force&&!db.config.autoWA[tipo])return;
   if(!force&&db.mensajes.some(m=>m.otId===o.id&&m.tipo===tipo&&m.estado!=='descartado'))return;
   const c=cli(o.clienteId);db.mensajes.push({id:uid(),fecha:new Date().toISOString(),otId:o.id,tipo,tel:c.tel,nombre:c.nombre,texto:fillTpl(db.config.plantillas[tipo],o),estado:'pendiente',enviado:null});
-  toast(`WhatsApp “${TPL_TIPOS[tipo]}” en cola para ${c.nombre.split(' ')[0]}`)}
+  toast(`WhatsApp “${TPL_TIPOS[tipo]}” en cola para ${nombrePila(c.nombre)}`)}
 function entregar(){const o=ot();if(o.trabajando){o.horasReal=Math.round(horasOT(o)*100)/100;o.trabajando=null}o.estado='entregado';o.fechaEntrega=hoy();if(!o.encuesta)o.encuesta={token:uid(),nota:null};save();render();enviarEncuesta(o.id)}
 function enviarEncuesta(id){const o=db.ots.find(x=>x.id===id),c=cli(o.clienteId),v=veh(o.vehiculoId);
   const msg=`*${db.config.taller}*\nGracias por confiarnos su ${v.marca} ${v.modelo} (${v.chapa}). ¿Cómo fue su experiencia? Califíquenos en 10 segundos:\n${appURL('encuesta-'+o.encuesta.token)}`;
@@ -1038,7 +1052,7 @@ function crmView(){
     <div class="kpi"><b>${gars.length}</b><span>Trabajos en garantía</span></div><div class="kpi ${reing.length?'alert':''}"><b>${reing.length}</b><span>Reingresos en garantía</span></div></div>
   <div class="panel"><h2>Recordatorios de mantenimiento</h2><p class="note" style="margin:-4px 0 10px">Vencidos y próximos 30 días. Envío con un toque por WhatsApp; el envío 100 % automático requiere WhatsApp Business API en el servidor.</p>
   <div class="tscroll"><table><tr><th>Vehículo</th><th>Cliente</th><th>Motivo</th><th>Último servicio</th><th>Fecha sugerida</th><th>Estado</th><th></th></tr>
-  ${rec.map(r=>{const c=cli(r.v.clienteId),msg=`*${db.config.taller}*\nHola ${c.nombre.split(' ')[0]}, le recordamos que a su ${r.v.marca} ${r.v.modelo} (${r.v.chapa}) le corresponde: *${r.o.proxServ.motivo}*.\nÚltimo servicio: ${fdate(r.o.fecha)} con ${fmt(r.o.km)} km.\n¿Le agendamos un turno esta semana?`,w=waLink(c.tel,msg);
+  ${rec.map(r=>{const c=cli(r.v.clienteId),msg=`*${db.config.taller}*\nHola ${nombrePila(c.nombre)}, le recordamos que a su ${r.v.marca} ${r.v.modelo} (${r.v.chapa}) le corresponde: *${r.o.proxServ.motivo}*.\nÚltimo servicio: ${fdate(r.o.fecha)} con ${fmt(r.o.km)} km.\n¿Le agendamos un turno esta semana?`,w=waLink(c.tel,msg);
     return `<tr><td>${plate(r.v.chapa)}</td><td>${esc(c.nombre)}<div class="sub mono" style="font-size:11px">${esc(c.tel)}</div></td><td>${esc(r.o.proxServ.motivo)}</td><td>${fdate(r.o.fecha)}<div class="sub mono" style="font-size:11px">${fmt(r.o.km)} km</div></td><td>${fdate(r.due)}</td>
     <td>${r.o.recordado?`<span class="chip c-ok">Enviado ${fdate(r.o.recordado)}</span>`:r.dias<0?`<span class="chip c-bad">Vencido ${-r.dias} d</span>`:`<span class="chip c-warn">En ${r.dias} d</span>`}</td>
     <td>${w?`<a class="btn sm wa" href="${w}" target="_blank" rel="noopener" onclick="marcarRec('${r.o.id}')">${r.o.recordado?'Reenviar':'WhatsApp'}</a>`:'<span class="sub">Sin teléfono</span>'}</td></tr>`}).join('')||'<tr><td colspan="7" class="empty">No hay mantenimientos por vencer en los próximos 30 días.</td></tr>'}</table></div></div>
