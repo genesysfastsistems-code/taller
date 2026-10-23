@@ -49,7 +49,7 @@ def filas(txt):
         p = [x.strip() for x in linea.split(sep)]
         if len(p) < 3 or not p[0].isdigit():
             continue
-        ruc, nombre = str(int(p[0])), p[1]
+        ruc, nombre = str(int(p[0])), re.sub(r"\s+", " ", p[1])
         dv = p[2] if p[2].isdigit() and len(p[2]) == 1 else ""
         estado = ""
         for x in p[3:]:

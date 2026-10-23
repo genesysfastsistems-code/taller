@@ -743,7 +743,7 @@ function cliInfo(c){const box=$('#r_clinfo');if(!box)return;
 const RUC_CACHE={};
 async function dnitBuscar(b){b=String(+b);const sh=String(+b%1000).padStart(3,'0');
   if(!(sh in RUC_CACHE)){try{const r=await fetch('ruc/'+sh+'.json',{cache:'force-cache'});RUC_CACHE[sh]=r.ok?await r.json():null}catch(e){RUC_CACHE[sh]=null}}
-  const d=RUC_CACHE[sh];if(!d)return {err:true};const x=d[b];return x?{ruc:b+'-'+x[1],dv:+x[1],nombre:x[0],estado:x[2]||'ACTIVO'}:null}
+  const d=RUC_CACHE[sh];if(!d)return {err:true};const x=d[b];return x?{ruc:b+'-'+x[1],dv:+x[1],nombre:String(x[0]).replace(/\s+/g,' ').trim(),estado:x[2]||'ACTIVO'}:null}
 function cliNuevo(v){const box=$('#r_clinfo');if(!box)return;st.rec.cliId=null;const b=rucBase(v);
   if(b.length<5){box.innerHTML='<p class="note">Escribí el RUC o CI: si el cliente ya existe se completan sus datos; si es nuevo se busca en el padrón de la DNIT.</p>';return}
   const dv=dvRuc(b),con=v.includes('-'),bien=rucBase(v)+'-'+dv===v.replace(/[.\s]/g,'');
