@@ -742,7 +742,7 @@ function cliInfo(c){const box=$('#r_clinfo');if(!box)return;
     ${vs.length?`<div class="row" style="gap:6px"><span class="sub">Sus vehículos:</span>${vs.map(v=>`<button type="button" class="btn sm ${v.chapa.toUpperCase()===ch?'dark':''}" onclick="pickVeh('${v.id}')">${esc(v.chapa)} · ${esc(v.marca)} ${esc(v.modelo)}</button>`).join('')}<button type="button" class="btn sm" onclick="pickVeh('')">Otro vehículo</button></div>`:'<span class="sub">Sin vehículos registrados.</span>'}</div>`}
 const RUC_CACHE={};
 async function dnitBuscar(b){b=String(+b);const sh=String(+b%1000).padStart(3,'0');
-  if(!(sh in RUC_CACHE)){try{const r=await fetch('ruc/'+sh+'.json',{cache:'force-cache'});RUC_CACHE[sh]=r.ok?await r.json():null}catch(e){RUC_CACHE[sh]=null}}
+  if(!RUC_CACHE[sh]){try{const r=await fetch('ruc/'+sh+'.json?v='+hoy().slice(0,7));if(r.ok)RUC_CACHE[sh]=await r.json()}catch(e){}}
   const d=RUC_CACHE[sh];if(!d)return {err:true};const x=d[b];return x?{ruc:b+'-'+x[1],dv:+x[1],nombre:String(x[0]).replace(/\s+/g,' ').trim(),estado:x[2]||'ACTIVO'}:null}
 function cliNuevo(v){const box=$('#r_clinfo');if(!box)return;st.rec.cliId=null;const b=rucBase(v);
   if(b.length<5){box.innerHTML='<p class="note">Escribí el RUC o CI: si el cliente ya existe se completan sus datos; si es nuevo se busca en el padrón de la DNIT.</p>';return}
