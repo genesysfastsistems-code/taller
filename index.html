@@ -637,9 +637,23 @@ function render(){
 let INSTALL=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL=e;if(st.fase==='login')render()});
 window.addEventListener('appinstalled',()=>{INSTALL=null;toast('App instalada. Abrila desde el ícono KEVANIX Taller.');render()});
-const enApp=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+const APP_ANDROID=!!window.KevanixApp;
+const enApp=()=>APP_ANDROID||matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+const esAndroid=()=>/android/i.test(navigator.userAgent);
+async function guardarArchivo(blob,nombre){
+  if(APP_ANDROID){const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(String(fr.result).split(',')[1]);fr.readAsDataURL(blob)});window.KevanixApp.guardarArchivo(b64,nombre,blob.type||'application/octet-stream');return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+function imprimirAhora(titulo,limpiar){if(APP_ANDROID){window.KevanixApp.imprimir(titulo||'KEVANIX Taller');return}setTimeout(()=>{window.print();setTimeout(limpiar,800)},200)}
+// Botón atrás del celular (app Android)
+window.kvBack=function(){if($('#modal').innerHTML){closeM();return true}
+  if(PUB.includes(st.view)&&st.pubLocal&&me()){go('ot',st.pubLocal);return true}
+  if(st.fase==='app'&&me()&&NAVS[rol()]&&st.view!==NAVS[rol()][0][0]){go(st.view==='ot'?'ots':NAVS[rol()][0][0]);return true}
+  if(st.fase==='dev'&&st.dtab&&st.dtab!=='talleres'){st.dtab='talleres';renderDev();return true}
+  if(['alta'].includes(st.fase)){st.fase='login';render();return true}
+  return false};
 const esIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
 function instalarBox(){if(enApp())return '';
+  if(esAndroid())return `<div class="panel instalar"><img src="img/icon-192.png" alt="" width="48" height="48" style="border-radius:11px"><span style="flex:1;min-width:180px"><b>App para Android</b><br><span class="sub">Descargá e instalá KEVANIX Taller en tu celular.</span></span><a class="btn pri" href="app/KEVANIX-Taller.apk" download>Descargar APK</a>${INSTALL?'<button class="btn" onclick="instalarApp()">Instalar versión web</button>':''}</div>`;
   if(INSTALL)return `<div class="panel instalar"><img src="img/icon-192.png" alt="" width="48" height="48" style="border-radius:11px"><span style="flex:1;min-width:180px"><b>Instalá la app</b><br><span class="sub">Ícono en tu celular o PC, abre a pantalla completa.</span></span><button class="btn pri" onclick="instalarApp()">Instalar</button></div>`;
   if(esIOS())return `<div class="panel instalar"><img src="img/icon-192.png" alt="" width="48" height="48" style="border-radius:11px"><span style="flex:1;min-width:180px"><b>Instalá la app en tu iPhone</b><br><span class="sub">Tocá Compartir y luego “Agregar a pantalla de inicio”.</span></span></div>`;
   return ''}
@@ -1123,7 +1137,7 @@ function cpRender(){const cp=st.cp,o=db.ots.find(x=>x.id===cp.otId),P=PAPEL[cp.p
 function cpImprimir(){const cp=st.cp,P=PAPEL[cp.papel],ph=$('#printhost');ph.innerHTML=cpPages(cp).join('');
   let stl=$('#cpPage');if(!stl){stl=document.createElement('style');stl.id='cpPage';document.head.appendChild(stl)}
   stl.textContent=`@page{size:${P.w}mm ${P.h}mm;margin:0}`;
-  setTimeout(()=>{window.print();setTimeout(()=>{ph.innerHTML='';stl.textContent=''},800)},200)}
+  imprimirAhora(st.cp.tipo==='factura'?'Factura':'Recibo',()=>{ph.innerHTML='';stl.textContent=''})}
 async function cpPDF(){const cp=st.cp,P=PAPEL[cp.papel],o=db.ots.find(x=>x.id===cp.otId),b=$('#cpPdf');
   if(!window.html2canvas||!window.jspdf)return toast('No se pudo cargar el generador de PDF. Revisá la conexión.');
   b.disabled=true;b.textContent='Generando PDF…';const ph=$('#printhost');
@@ -1132,7 +1146,7 @@ async function cpPDF(){const cp=st.cp,P=PAPEL[cp.papel],o=db.ots.find(x=>x.id===
     const els=[...ph.querySelectorAll('.cp-sheet')];
     for(let k=0;k<els.length;k++){const cv=await html2canvas(els[k],{scale:2.5,backgroundColor:'#ffffff',logging:false,useCORS:true});if(k)pdf.addPage(P.pdf,P.w>P.h?'landscape':'portrait');pdf.addImage(cv.toDataURL('image/jpeg',.93),'JPEG',0,0,P.w,P.h)}
     const nom=cp.tipo==='factura'?`Factura_${o.factura.nro}`:`Recibo_${String(o.pagos[cp.pi].recibo||0).padStart(7,'0')}`;
-    pdf.save(`${nom}_${P.n.replace(/\s/g,'')}.pdf`);toast('PDF descargado')}
+    await guardarArchivo(pdf.output('blob'),`${nom}_${P.n.replace(/\s/g,'')}.pdf`);toast('PDF descargado')}
   catch(e){console.error(e);toast('No se pudo generar el PDF.')}
   finally{ph.innerHTML='';b.disabled=false;b.textContent='Descargar PDF'}}
 function subirLogo(inp){const f=inp.files&&inp.files[0];if(!f)return;const fr=new FileReader();
@@ -1473,11 +1487,11 @@ function drawCodes(root){
 function imprimirOT(id){const o=db.ots.find(x=>x.id===id);
   modalHTML(`<div class="row between"><h2>Hoja A4 · OT #${o.nro}</h2><button class="btn sm" onclick="closeM()">Cerrar</button></div>
   <p class="note" style="margin:0">Arriba la copia del taller con QR para abrir la orden. Abajo el comprobante del cliente. Se corta por la línea punteada.</p>
-  <div class="row"><button class="btn pri" id="pdfb" onclick="descargarPDF('${o.id}')">Descargar PDF</button>${inArt()?'':`<button class="btn dark" onclick="imprimirFisico('${o.id}')">Imprimir</button>`}</div>
+  <div class="row"><button class="btn pri" id="pdfb" onclick="descargarPDF('${o.id}')">Descargar PDF</button>${inArt()&&!APP_ANDROID?'':`<button class="btn dark" onclick="imprimirFisico('${o.id}')">Imprimir</button>`}</div>
   <div class="sheetwrap" id="sw">${sheetHTML(o)}</div>`);
   const sw=$('#sw'),sh=sw.querySelector('.sheet');drawCodes(sh);const s=sw.clientWidth/794;sh.style.transform=`scale(${s})`;sw.style.height=(1123*s)+'px';
 }
-function imprimirFisico(id){const o=db.ots.find(x=>x.id===id),ph=$('#printhost');ph.innerHTML=sheetHTML(o);drawCodes(ph);setTimeout(()=>{window.print();setTimeout(()=>ph.innerHTML='',500)},150)}
+function imprimirFisico(id){const o=db.ots.find(x=>x.id===id),ph=$('#printhost');ph.innerHTML=sheetHTML(o);drawCodes(ph);let stl=$('#cpPage');if(stl)stl.textContent='@page{size:A4;margin:0}';imprimirAhora('OT '+o.nro,()=>ph.innerHTML='')}
 async function descargarPDF(id){const o=db.ots.find(x=>x.id===id),b=$('#pdfb');
   if(!window.html2canvas||!window.jspdf)return toast('No se pudo cargar el generador de PDF. Revisá la conexión.');
   if(b){b.disabled=true;b.textContent='Generando PDF…'}
@@ -1491,7 +1505,7 @@ async function descargarPDF(id){const o=db.ots.find(x=>x.id===id),b=$('#pdfb');
     let dl=null;if(inArt()){try{dl=await window.claude.use('downloads')}catch(_){}}
     if(dl){try{await dl.save({filename:name,data:blob});toast('PDF guardado')}catch(e){if(!e||e.code!=='declined')toast('No se pudo guardar el PDF'+(e&&e.code?' ('+e.code+')':'')+'.')}}
     else if(inArt())toast('La descarga no está disponible en esta vista.');
-    else pdf.save(name);
+    else await guardarArchivo(blob,name);
   }catch(e){console.error(e);toast('No se pudo generar el PDF.')}
   finally{ph.innerHTML='';if(b){b.disabled=false;b.textContent='Descargar PDF'}}}
 
@@ -1718,7 +1732,7 @@ async function crearUsuario(){const n=$('#nu_n').value.trim(),us=$('#nu_u').valu
     const msg=`Hola ${n.split(' ')[0]}, ya tenés acceso al sistema de *${db.config.taller}*.\nIngresá en: ${appBase()}\nUsuario: ${us}\nContraseña temporal: ${pw}\nAl primer ingreso te va a pedir cambiarla.`;
     modalHTML(`<h2>Usuario creado</h2><p style="margin:0">Pasale estos datos a ${esc(n)}:</p><pre class="cred" id="wa_t">${esc(msg)}</pre><div class="row"><button class="btn" onclick="copiarTxt($('#wa_t').textContent,'Datos copiados')">Copiar</button><button class="btn pri" onclick="closeM()">Listo</button></div>`)}
   catch(e){b.disabled=false;b.textContent='Crear usuario';toast(e.code==='auth/email-already-in-use'?'Ese nombre de usuario ya existe. Elegí otro.':authMsg(e))}}
-function respaldo(){const d={};COLS.forEach(c=>d[c]=db[c]);d.config=db.config;const t=JSON.stringify(d);const b=new Blob([t],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`respaldo-taller-${hoy()}.json`;document.body.appendChild(a);a.click();a.remove();toast('Respaldo descargado')}
+function respaldo(){const d={};COLS.forEach(c=>d[c]=db[c]);d.config=db.config;const t=JSON.stringify(d);guardarArchivo(new Blob([t],{type:'application/json'}),`respaldo-taller-${hoy()}.json`);toast('Respaldo descargado')}
 function restaurar(){try{const d=JSON.parse($('#bk').value);if(!Array.isArray(d.ots))throw 0;COLS.filter(c=>c!=='usuarios').forEach(c=>{if(Array.isArray(d[c]))db[c]=d[c]});if(d.config)Object.assign(db.config,d.config);save();render();toast('Respaldo restaurado')}catch(e){toast('El texto pegado no es un respaldo válido.')}}
 const usr=id=>db.usuarios.find(u=>u.id===id);
 function saveCfg(){db.config.tipoFactura=$('#cf_tipoFactura').value;['taller','ruc','actividad','dir','ciudad','tel','email','timbrado','vigDesde','vigHasta','telCompras','urlPublica'].forEach(k=>db.config[k]=$('#cf_'+k).value.trim());['garantiaDef','bono','diasEstancado','coberturaDias','elevadores'].forEach(k=>db.config[k]=num($('#cf_'+k).value));save();toast('Configuración guardada')}
