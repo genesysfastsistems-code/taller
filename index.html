@@ -97,6 +97,8 @@ textarea{min-height:70px;resize:vertical}
 .c-ok{color:var(--ok)} .c-warn{color:var(--warn)} .c-bad{color:var(--bad)} .c-info{color:var(--info)} .c-mut{color:var(--muted)}
 .tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--sunk);border:1px solid var(--line);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
 .tag.exp{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tag.moto{background:var(--info);color:#fff;border-color:var(--info)}
+.dmg.moto{aspect-ratio:4/3;max-width:440px}
 .tag.gar{background:var(--bad);color:#fff;border-color:var(--bad)}
 .plate{display:inline-flex;flex-direction:column;border:2px solid var(--ink);border-radius:5px;overflow:hidden;background:#fff;color:#111;min-width:96px;vertical-align:middle}
 .plate em{background:var(--blue);color:#fff;font:600 8px var(--f-body);letter-spacing:.18em;text-align:center;padding:1px 4px;font-style:normal}
@@ -332,6 +334,11 @@ const K='kevanix_taller_v1', KS='kevanix_taller_sesion';
 const ESTADOS=[['recepcion','Recepción'],['diagnostico','Diagnóstico'],['presupuesto','Presupuesto'],['repuestos','Espera repuestos'],['reparacion','En reparación'],['calidad','Control calidad'],['listo','Listo p/ entrega'],['entregado','Entregado']];
 const ESTC={recepcion:'c-mut',diagnostico:'c-info',presupuesto:'c-warn',repuestos:'c-bad',reparacion:'c-info',calidad:'c-warn',listo:'c-ok',entregado:'c-mut'};
 const CHECK=['Rueda auxiliar','Gato y llave de rueda','Radio / estéreo','Cédula verde','Matafuego','Balizas','Alfombras','Tapa de tanque','Antena','Espejos completos','Tazas / llantas','Botiquín'];
+const CHECK_MOTO=['Casco','Espejos','Llave de contacto','Cédula verde','Herramientas','Baúl / alforjas','Candado / traba','Luces y giros','Bocina','Tapa de tanque','Kit de pinchazo','Cubre-asiento'];
+const VTIPOS={auto:'Auto',camioneta:'Camioneta',moto:'Moto',camion:'Camión'};
+const vtipoDe=v=>(v&&v.tipo)||'auto';
+const checkDe=t=>t==='moto'?CHECK_MOTO:CHECK;
+const vtag=v=>vtipoDe(v)==='moto'?'<span class="tag moto">Moto</span>':vtipoDe(v)==='camion'?'<span class="tag">Camión</span>':'';
 const ROLES={admin:'Administrador',recepcion:'Recepción',mecanico:'Mecánico',pendiente:'Pendiente'};
 const NAVS={
   admin:[['tablero','Tablero'],['recepcion','Recepción'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa'],['reportes','Reportes'],['finanzas','Caja y facturas'],['config','Configuración']],
@@ -381,14 +388,17 @@ function seed(){
            {id:'v2',chapa:'ABCF 087',chasis:'9BWZZZ377VT004251',marca:'Volkswagen',modelo:'Amarok',anio:'2017',color:'Gris',clienteId:'c2'},
            {id:'v3',chapa:'AARN 560',chasis:'KMHCT41BAEU512345',marca:'Hyundai',modelo:'Accent',anio:'2014',color:'Rojo',clienteId:'c3'},
            {id:'v4',chapa:'ACDE 331',chasis:'9BD19715EB3165432',marca:'Fiat',modelo:'Strada',anio:'2021',color:'Blanco',clienteId:'c2'},
-           {id:'v5',chapa:'ABTX 902',chasis:'KNAPC81BDK7123456',marca:'Kia',modelo:'Sportage',anio:'2020',color:'Negro',clienteId:'c4'}];
+           {id:'v5',chapa:'ABTX 902',chasis:'KNAPC81BDK7123456',marca:'Kia',modelo:'Sportage',anio:'2020',color:'Negro',clienteId:'c4'},
+           {id:'v6',tipo:'moto',chapa:'823 AFK',chasis:'9C2KC1670NR012345',marca:'Honda',modelo:'CG 160 Titan',anio:'2022',color:'Rojo',clienteId:'c3'}];
   const S=[['s1','ACE-5W30','Aceite sintético 5W-30 (L)','Lubricantes',24,14,12,38000,62000],['s2','FIL-AC-TY','Filtro de aceite Toyota','Filtros',6,2,5,28000,55000],
     ['s3','FIL-AI-AM','Filtro de aire Amarok','Filtros',2,0,3,85000,140000],['s4','PAS-DEL-HX','Pastillas de freno del. Hilux','Frenos',3,1,2,210000,330000],
     ['s5','DIS-DEL-AC','Disco de freno Accent','Frenos',1,2,2,190000,295000],['s6','BUJ-NGK','Bujía NGK iridium','Encendido',16,4,8,45000,78000],
     ['s7','REF-VERDE','Refrigerante (L)','Lubricantes',9,5,6,22000,38000],['s8','COR-DIST-FT','Kit correa distribución Strada','Motor',1,0,1,520000,780000],
     ['s9','LAMP-H4','Lámpara H4','Eléctrico',10,6,4,18000,35000],['s10','LIQ-FRENO','Líquido de frenos DOT4 (500ml)','Frenos',4,2,4,30000,52000],
     ['s11','AMO-TR-SPR','Amortiguador trasero Sprinter','Suspensión',4,0,1,410000,620000],['s12','SEN-O2-BSH','Sensor de oxígeno Bosch universal','Eléctrico',3,1,1,330000,520000],
-    ['s13','PAS-DEL-CR','Pastillas de freno del. Corolla 2009','Frenos',5,0,1,160000,250000]];
+    ['s13','PAS-DEL-CR','Pastillas de freno del. Corolla 2009','Frenos',5,0,1,160000,250000],
+    ['s14','KIT-TRANS-CG','Kit de transmisión CG 160 (cadena, corona y piñón)','Moto',4,1,2,145000,230000],['s15','ACE-4T-20W50','Aceite moto 4T 20W-50 (L)','Moto',18,6,8,32000,52000],
+    ['s16','CUB-TRAS-90','Cubierta trasera 90/90-18','Moto',3,2,2,165000,255000],['s17','PAS-DEL-MOTO','Pastillas de freno delanteras moto','Moto',6,2,3,38000,65000]];
   const stock=S.map(a=>({id:a[0],cod:a[1],desc:a[2],cat:a[3],ex:{central:a[4],s2:a[5]},min:a[6],costo:a[7],precio:a[8]}));
   // historial de consumo para rotación (uso diario simulado)
   let sd=7;const rnd=()=>(sd=(sd*9301+49297)%233280)/233280;
@@ -411,6 +421,9 @@ function seed(){
       items:[mo('Service completo',180000),rep('s3',1),rep('s1',7)]}),
     B({nro:103,vehiculoId:'v3',clienteId:'c3',km:122450,fecha:T,combustible:1,sucursalId:'s2',falla:'Testigo check engine encendido',mecanicoId:'m3',estado:'presupuesto',aprob:'pendiente',horasEst:1.5,
       items:[mo('Diagnóstico con escáner',80000),rep('s6',4),mo('Cambio de bujías',60000)]}),
+    B({nro:105,vehiculoId:'v6',clienteId:'c3',km:18640,fecha:addD(T,-1),tipo:'express',combustible:5,falla:'Ruido en la transmisión y service',mecanicoId:'m1',estado:'reparacion',horasEst:1.5,horasReal:.7,
+      checklist:{'Casco':1,'Espejos':1,'Llave de contacto':1,'Cédula verde':1},danos:[{x:30,y:58,nota:'Raspón en el escape'}],
+      items:[mo('Cambio de kit de transmisión',70000),rep('s14',1),mo('Service moto (aceite y filtro)',50000),rep('s15',1)]}),
     B({nro:104,vehiculoId:'v4',clienteId:'c2',km:48300,fecha:T,tipo:'express',falla:'Alineación y balanceo',mecanicoId:'m1',estado:'listo',horasEst:1,horasReal:1.2,items:[mo('Alineación y balanceo 4 ruedas',150000)],proxServ:{meses:6,motivo:'Rotación de cubiertas'}}),
     B({nro:106,vehiculoId:'v4',clienteId:'c2',km:48310,fecha:T,falla:'Ruido metálico en zona de distribución',mecanicoId:'m2',estado:'diagnostico',aprob:'pendiente',horasEst:2,garantiaDe:'OT100',items:[]}),
     B({nro:100,_k:'OT100',vehiculoId:'v4',clienteId:'c2',km:45120,fecha:addD(T,-24),falla:'Cambio kit de distribución',mecanicoId:'m2',estado:'entregado',horasEst:4,horasReal:5.5,garantiaDias:180,
@@ -772,7 +785,7 @@ function tablero(){
   return `<div class="row between"><h1>Tablero</h1><button class="btn pri" onclick="go('recepcion')">+ Recibir vehículo</button></div>
   ${gar.map(o=>`<div class="alertbar"><strong>Reingreso en garantía</strong><span>${plate(veh(o.vehiculoId).chapa)} OT #${o.nro} vuelve por trabajo de la OT #${(db.ots.find(x=>x.id===o.garantiaDe)||{}).nro}</span><button class="btn sm" onclick="go('ot','${o.id}')">Revisar</button></div>`).join('')}
   <div class="grid kpis">
-    <div class="kpi"><b>${act.length}</b><span>Vehículos en taller</span></div>
+    <div class="kpi"><b>${act.length}</b><span>Vehículos en taller${act.some(o=>vtipoDe(veh(o.vehiculoId))==='moto')?` · ${act.filter(o=>vtipoDe(veh(o.vehiculoId))==='moto').length} motos`:''}</span></div>
     <div class="kpi ${act.filter(o=>o.aprob==='pendiente').length?'alert':''}"><b>${act.filter(o=>o.aprob==='pendiente').length}</b><span>Esperan aprobación</span></div>
     <div class="kpi"><b>${act.filter(o=>o.estado==='repuestos').length}</b><span>Espera repuestos</span></div>
     <div class="kpi ${low.length?'alert':''}"><b>${low.length}</b><span>Stock bajo mínimo</span></div>
@@ -794,7 +807,16 @@ const carSVG=`<svg viewBox="0 0 300 400" aria-hidden="true"><g fill="none" strok
 <line x1="95" y1="180" x2="95" y2="280"/><line x1="205" y1="180" x2="205" y2="280"/><rect x="48" y="85" width="22" height="50" rx="6"/><rect x="230" y="85" width="22" height="50" rx="6"/><rect x="48" y="265" width="22" height="50" rx="6"/><rect x="230" y="265" width="22" height="50" rx="6"/></g>
 <text x="150" y="18" text-anchor="middle" font-size="12" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">FRENTE</text>
 <text x="150" y="394" text-anchor="middle" font-size="12" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">TRASERA</text></svg>`;
-function dmgMap(list,ro){return `<div class="dmg${ro?' ro':''}" ${ro?'':'id="dmg"'}>${carSVG}${list.map((d,i)=>`<span class="pt" style="left:${d.x}%;top:${d.y}%">${i+1}</span>`).join('')}</div>`}
+const motoSVG=`<svg viewBox="0 0 400 300" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted)">
+<circle cx="95" cy="205" r="56"/><circle cx="95" cy="205" r="12"/><circle cx="310" cy="205" r="56"/><circle cx="310" cy="205" r="12"/>
+<path d="M310 205 L268 92"/><path d="M252 84 L292 76"/><circle cx="286" cy="112" r="11"/><path d="M262 120 Q300 118 330 150"/>
+<path d="M168 112 Q205 92 250 104 L246 132 Q205 140 172 136 Z"/><path d="M104 120 L170 116 L172 136 L110 140 Q100 132 104 120 Z"/>
+<path d="M246 132 L205 192 L140 190 L95 205"/><path d="M172 136 L140 190"/><rect x="172" y="150" width="58" height="44" rx="6"/>
+<path d="M150 214 L60 228"/><path d="M48 168 Q70 140 112 142"/><path d="M95 205 L172 190"/></g>
+<text x="40" y="26" font-size="13" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">TRASERA</text>
+<text x="360" y="26" text-anchor="end" font-size="13" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">FRENTE</text>
+<text x="200" y="292" text-anchor="middle" font-size="12" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">LADO IZQUIERDO · marcá también el lado derecho en la descripción</text></svg>`;
+function dmgMap(list,ro,tipo){const m=tipo==='moto';return `<div class="dmg${ro?' ro':''}${m?' moto':''}" ${ro?'':'id="dmg"'}>${m?motoSVG:carSVG}${list.map((d,i)=>`<span class="pt" style="left:${d.x}%;top:${d.y}%">${i+1}</span>`).join('')}</div>`}
 const RK=['chapa','chasis','marca','modelo','anio','color','cli','ruc','tel','dir','email','km','tipo','mec','falla','entrega'];
 function recepcion(){
   if(!st.rec) st.rec={danos:[],fotos:[],combustible:4,checklist:{}};
@@ -810,7 +832,7 @@ function recepcion(){
     <label class="field"><span>WhatsApp</span><input id="r_tel" inputmode="tel" placeholder="0981 000 000"></label>
     <label class="field"><span>Dirección</span><input id="r_dir"></label><label class="field"><span>Correo</span><input id="r_email" type="email" autocomplete="off"></label></div>
     <div id="r_clinfo" style="margin-top:10px"><p class="note">Escribí el RUC o CI: si el cliente ya existe se completan sus datos y sus vehículos.</p></div></div>
-  <div class="panel"><h2>Vehículo</h2><div class="fields">
+  <div class="panel"><div class="row between"><h2>Vehículo</h2><div class="seg" role="group" aria-label="Tipo de vehículo">${Object.entries(VTIPOS).map(([k,l])=>`<button type="button" class="${(r.vtipo||'auto')===k?'on':''}" onclick="setVtipo('${k}')">${l}</button>`).join('')}</div></div><div class="fields">
     <label class="field"><span>Chapa</span><input id="r_chapa" list="dl_chapas" placeholder="AAAA 000" autocomplete="off" style="text-transform:uppercase"></label>
     <datalist id="dl_chapas">${db.vehiculos.map(v=>`<option value="${esc(v.chapa)}">`).join('')}</datalist>
     <label class="field"><span>Nº de chasis</span><input id="r_chasis" style="text-transform:uppercase"></label>
@@ -824,10 +846,10 @@ function recepcion(){
       <label class="field"><span>Mecánico</span><select id="r_mec">${db.mecanicos.filter(m=>m.sucursalId===ws).map(m=>`<option value="${m.id}">${esc(m.nombre)}</option>`).join('')}</select></label></div>
     <div class="field" style="margin-top:12px"><span>Combustible: <b id="r_fuelv">${r.combustible}/8</b></span><div class="row"><input type="range" id="r_fuel" min="0" max="8" value="${r.combustible}" style="max-width:220px">${fuel(r.combustible)}</div></div>
     <label class="field" style="margin-top:12px"><span>Falla reportada por el cliente</span><textarea id="r_falla" placeholder="Ej.: ruido en tren delantero al girar"></textarea></label></div>
-    <div class="panel"><h2>Checklist de accesorios</h2><div class="checks">${CHECK.map(c=>`<label><input type="checkbox" data-ck="${esc(c)}" ${r.checklist[c]?'checked':''}> ${esc(c)}</label>`).join('')}</div></div>
+    <div class="panel"><h2>Checklist de accesorios${r.vtipo==='moto'?' · moto':''}</h2><div class="checks">${checkDe(r.vtipo).map(c=>`<label><input type="checkbox" data-ck="${esc(c)}" ${r.checklist[c]?'checked':''}> ${esc(c)}</label>`).join('')}</div></div>
   </div>
   <div class="panel"><h2>Golpes y daños previos</h2><p class="sub" style="margin:0 0 10px">Tocá el diagrama donde está el daño y describilo.</p>
-    <div class="grid g2" style="align-items:start">${dmgMap(r.danos)}<div class="dmglist">${r.danos.length?r.danos.map((d,i)=>`<div><b>${i+1}</b><input value="${esc(d.nota)}" data-dn="${i}" placeholder="Describir daño"><button class="btn sm danger" type="button" onclick="st.rec.danos.splice(${i},1);keepRec()">✕</button></div>`).join(''):'<p class="sub">Sin daños marcados.</p>'}</div></div>
+    <div class="grid g2" style="align-items:start">${dmgMap(r.danos,0,r.vtipo)}<div class="dmglist">${r.danos.length?r.danos.map((d,i)=>`<div><b>${i+1}</b><input value="${esc(d.nota)}" data-dn="${i}" placeholder="Describir daño"><button class="btn sm danger" type="button" onclick="st.rec.danos.splice(${i},1);keepRec()">✕</button></div>`).join(''):'<p class="sub">Sin daños marcados.</p>'}</div></div>
     <h3 style="margin:14px 0 8px">Fotos</h3>
     <div class="photos">${r.fotos.map((f,i)=>`<figure><img src="${f}" alt="Foto ${i+1}"><button type="button" onclick="st.rec.fotos.splice(${i},1);keepRec()">✕</button></figure>`).join('')}
     <label class="btn" style="height:72px">+ Agregar fotos<input type="file" id="r_fotos" accept="image/*" multiple hidden></label></div></div>
@@ -861,7 +883,8 @@ function cliNuevo(v){const box=$('#r_clinfo');if(!box)return;st.rec.cliId=null;c
       <span class="sub">${ok?'Datos traídos del padrón de contribuyentes de la DNIT. Completá WhatsApp y dirección.':'Atención: el RUC no está activo en la DNIT. Consultá antes de emitir factura a este RUC.'}</span></div>`;
       toast('Encontrado en DNIT: '+x.nombre)}
     else box.innerHTML=`<div class="banner row" style="gap:8px"><span class="chip c-info">Cliente nuevo</span>${x&&x.err?'<span class="sub">Padrón de la DNIT no disponible en este momento.</span>':'<span class="sub">No figura en el padrón de la DNIT (puede ser una CI sin RUC).</span>'}${dvTxt}<span class="sub">Completá nombre y WhatsApp.</span></div>`})}
-function pickVeh(id){const v=db.vehiculos.find(x=>x.id===id);
+function setVtipo(t){readRec();st.rec.vtipo=t;render()}
+function pickVeh(id){const v=db.vehiculos.find(x=>x.id===id);if(v&&vtipoDe(v)!==(st.rec.vtipo||'auto')){readRec();st.rec.vtipo=vtipoDe(v);render()}
   [['chapa',v?.chapa],['chasis',v?.chasis],['marca',v?.marca],['modelo',v?.modelo],['anio',v?.anio],['color',v?.color]].forEach(([k,x])=>$('#r_'+k).value=x||'');
   if(v)window.recChk&&window.recChk();else{$('#r_gar').innerHTML='';$('#r_hint').textContent='Vehículo nuevo para este cliente.';$('#r_chapa').focus()}
   const c=st.rec.cliId&&db.clientes.find(x=>x.id===st.rec.cliId);if(c)cliInfo(c)}
@@ -874,7 +897,7 @@ function keepRec(){readRec();render()}
 function bindRec(){
   const r=st.rec;RK.forEach(k=>{if(r[k]!=null)$('#r_'+k).value=r[k]});$('#r_conf').checked=!!r.conf;
   $('#r_fuel').oninput=e=>{r.combustible=+e.target.value;$('#r_fuelv').textContent=r.combustible+'/8';e.target.nextElementSibling.outerHTML=fuel(r.combustible)};
-  const chk=()=>{const v=db.vehiculos.find(x=>x.chapa.toUpperCase()===$('#r_chapa').value.trim().toUpperCase());$('#r_gar').innerHTML='';if(!v)return;
+  const chk=()=>{const v=db.vehiculos.find(x=>x.chapa.toUpperCase()===$('#r_chapa').value.trim().toUpperCase());if(v&&vtipoDe(v)!==(st.rec.vtipo||'auto')){readRec();st.rec.vtipo=vtipoDe(v);render();return}$('#r_gar').innerHTML='';if(!v)return;
     [['chasis',v.chasis],['marca',v.marca],['modelo',v.modelo],['anio',v.anio],['color',v.color]].forEach(([k,x])=>{if(!$('#r_'+k).value)$('#r_'+k).value=x||''});const c=db.clientes.find(x=>x.id===v.clienteId);if(c&&(!st.rec.cliId||st.rec.cliId===c.id))fillCli(c,false);else if(c&&st.rec.cliId!==c.id)toast('Ojo: ese vehículo figura a nombre de '+c.nombre+'. Se transferirá al cliente cargado.');
     const os=db.ots.filter(o=>o.vehiculoId===v.id),u=os.sort((a,b)=>b.km-a.km)[0];
     $('#r_hint').innerHTML=`Vehículo registrado · ${os.length} visitas${u?` · último km: <b class="mono">${fmt(u.km)}</b>`:''}`;
@@ -897,7 +920,7 @@ async function guardarRec(){
   let c=(r.cliId&&db.clientes.find(x=>x.id===r.cliId))||buscarCli(r.ruc)||(!rucBase(r.ruc)&&db.clientes.find(x=>x.nombre.toLowerCase()===r.cli.trim().toLowerCase()));
   if(!c){c={id:uid()};db.clientes.push(c)}Object.assign(c,{nombre:r.cli.trim(),ruc:r.ruc.trim(),tel:r.tel.trim(),dir:(r.dir||'').trim(),email:(r.email||'').trim()});
   const ch=r.chapa.trim().toUpperCase();let v=db.vehiculos.find(x=>x.chapa.toUpperCase()===ch);
-  if(!v){v={id:uid()};db.vehiculos.push(v)}Object.assign(v,{chapa:ch,chasis:r.chasis.toUpperCase(),marca:r.marca,modelo:r.modelo,anio:r.anio,color:r.color,clienteId:c.id});
+  if(!v){v={id:uid()};db.vehiculos.push(v)}Object.assign(v,{tipo:r.vtipo||'auto',chapa:ch,chasis:r.chasis.toUpperCase(),marca:r.marca,modelo:r.modelo,anio:r.anio,color:r.color,clienteId:c.id});
   const g=garantiaPrev(v.id);
   st.guardando=true;const nro=await nuevoNro();st.guardando=false;
   const o={id:uid(),nro,tipo:r.tipo,sucursalId:workSuc(),vehiculoId:v.id,clienteId:c.id,fecha:hoy(),km:num(r.km),combustible:r.combustible,checklist:r.checklist,danos:r.danos,fotos:r.fotos,
@@ -952,7 +975,7 @@ function otView(){
       <div><div class="sub" style="font-size:12px">COMBUSTIBLE ${o.combustible}/8</div>${fuel(o.combustible)}</div><div><div class="sub" style="font-size:12px">INGRESO</div><b>${fdate(o.fecha)}</b></div></div>
       <div style="margin-top:10px;font-size:13px"><b>Accesorios:</b> ${ck.length?esc(ck.join(', ')):'<span class="sub">ninguno registrado</span>'}</div>
       ${o.entrega?`<div class="note" style="margin-top:4px">Entregado por ${esc(o.entrega)} · conforme con el estado registrado</div>`:''}
-      <div class="grid g2" style="margin-top:12px;align-items:start">${dmgMap(o.danos,1)}<div class="dmglist">${o.danos.length?o.danos.map((d,i)=>`<div><b>${i+1}</b>${esc(d.nota||'Sin descripción')}</div>`).join(''):'<p class="sub">Sin daños previos.</p>'}
+      <div class="grid g2" style="margin-top:12px;align-items:start">${dmgMap(o.danos,1,vtipoDe(v))}<div class="dmglist">${o.danos.length?o.danos.map((d,i)=>`<div><b>${i+1}</b>${esc(d.nota||'Sin descripción')}</div>`).join(''):'<p class="sub">Sin daños previos.</p>'}
       ${o.fotos.length?`<div class="photos" style="margin-top:8px">${o.fotos.map(f=>`<figure><img src="${f}" alt="Foto de ingreso"></figure>`).join('')}</div>`:''}</div></div></div>
   </div>
   <div class="panel"><div class="row between"><h2>${M?'Trabajos a realizar':'Presupuesto y trabajos'}</h2>${lock||M?(lock?'<span class="sub">Facturada: no se puede editar</span>':''):`<div class="row"><button class="btn sm" onclick="addMO()">+ Mano de obra</button><button class="btn sm" onclick="addRep()">+ Repuesto de stock</button><button class="btn sm" onclick="addRepLibre()">+ Repuesto externo</button></div>`}</div>
@@ -1340,7 +1363,7 @@ function semaforoView(){
 function semCard(o,l){const v=veh(o.vehiculoId),h=horasEn(o),late=l.limite&&h>l.limite;
   return `<div class="card" data-id="${o.id}" tabindex="0" role="button" aria-label="OT ${o.nro} ${esc(v.chapa)}" onkeydown="if(event.key==='Enter')go('ot','${o.id}')">
   <div class="row between"><span class="mono">#${o.nro}</span><span class="row" style="gap:4px">${o.garantiaDe?'<span class="tag gar">Garantía</span>':''}${o.tipo==='express'?'<span class="tag exp">Express</span>':''}</span></div>
-  <div class="row" style="gap:8px;flex-wrap:nowrap">${plate(v.chapa)}<span style="min-width:0">${esc(v.marca)} ${esc(v.modelo)}</span></div>
+  <div class="row" style="gap:8px;flex-wrap:nowrap">${plate(v.chapa)}<span style="min-width:0">${esc(v.marca)} ${esc(v.modelo)} ${vtag(v)}</span></div>
   <div class="meta">${esc(cli(o.clienteId).nombre)} · ${esc(mec(o.mecanicoId))}${o.trabajando?' · <b style="color:var(--ok)">trabajando</b>':''}${st.suc==='*'?' · '+esc(sucN(o.sucursalId)):''}</div>
   ${l.id==='amarillo'?`<div class="row between">${aprobChip(o.aprob)}<span class="mono" style="font-size:12px">${gs(total(o))}</span></div>`:''}
   ${l.id==='naranja'&&o.faltante?`<div class="meta" style="color:var(--orange);font-weight:600">Falta: ${esc(o.faltante)}</div>`:''}
@@ -1444,8 +1467,8 @@ const inArt=()=>!!(window.claude&&window.claude.use);
 function sheetHTML(o){
   const v=veh(o.vehiculoId),c=cli(o.clienteId),cf=db.config,s=suc(o.sucursalId),nro=String(o.nro).padStart(6,'0');
   const fuelP=n=>`<span class="fuelP">${Array.from({length:8},(_,i)=>`<i class="${i<n?'f':''}" style="height:${6+i*2}px"></i>`).join('')}</span> <b>${n}/8</b>`;
-  const ck=CHECK.map(k=>`<div><span class="cb">${o.checklist[k]?'✓':''}</span>${esc(k)}</div>`).join('');
-  const acc=CHECK.filter(k=>o.checklist[k]);
+  const CK=checkDe(vtipoDe(v)),ck=CK.map(k=>`<div><span class="cb">${o.checklist[k]?'✓':''}</span>${esc(k)}</div>`).join('');
+  const acc=CK.filter(k=>o.checklist[k]);
   const dn=o.danos.length?o.danos.map((d,i)=>`<div>${i+1}. ${esc(d.nota||'Sin descripción')}</div>`).join(''):'<div>Sin daños registrados.</div>';
   const pl=`<span class="plateP"><em>PARAGUAY</em><b>${esc(v.chapa)}</b></span>`;
   return `<div class="sheet">
