@@ -102,7 +102,7 @@ textarea{min-height:70px;resize:vertical}
 .tag.gar{background:var(--bad);color:#fff;border-color:var(--bad)}
 .plate{display:inline-flex;flex-direction:column;border:2px solid var(--ink);border-radius:5px;overflow:hidden;background:#fff;color:#111;min-width:96px;vertical-align:middle}
 .plate em{background:var(--blue);color:#fff;font:600 8px var(--f-body);letter-spacing:.18em;text-align:center;padding:1px 4px;font-style:normal}
-.plate strong{font:600 16px var(--f-mono);letter-spacing:.06em;text-align:center;padding:1px 8px}
+.plate strong{font:600 16px var(--f-mono);letter-spacing:.06em;text-align:center;padding:1px 8px;white-space:nowrap}
 .plate.big strong{font-size:24px;padding:3px 14px}
 .plate.big em{font-size:10px}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
@@ -341,8 +341,8 @@ const checkDe=t=>t==='moto'?CHECK_MOTO:CHECK;
 const vtag=v=>vtipoDe(v)==='moto'?'<span class="tag moto">Moto</span>':vtipoDe(v)==='camion'?'<span class="tag">Camión</span>':'';
 const ROLES={admin:'Administrador',recepcion:'Recepción',mecanico:'Mecánico',pendiente:'Pendiente'};
 const NAVS={
-  admin:[['tablero','Tablero'],['recepcion','Recepción'],['pos','Mostrador'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa'],['reportes','Reportes'],['finanzas','Caja y facturas'],['config','Configuración']],
-  recepcion:[['tablero','Tablero'],['recepcion','Recepción'],['pos','Mostrador'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa']],
+  admin:[['tablero','Tablero'],['recepcion','Recepción'],['pos','Mostrador'],['lavadero','Lavadero'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa'],['reportes','Reportes'],['finanzas','Caja y facturas'],['config','Configuración']],
+  recepcion:[['tablero','Tablero'],['recepcion','Recepción'],['pos','Mostrador'],['lavadero','Lavadero'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa']],
   mecanico:[['ots','Mis tareas'],['historial','Historial']]};
 
 const LANES=[
@@ -473,6 +473,12 @@ function seed(){
     {id:'vt2',venta:true,nro:2,fecha:T0,hora:'10:15',sucursalId:'central',clienteId:null,nombreCliente:'Consumidor final',lista:'publico',items:[{tipo:'rep',stockId:'s15',desc:'Aceite moto 4T 20W-50 (L)',cant:1,precio:52000,costo:32000},{tipo:'mo',desc:'Service moto (aceite y filtro)',cant:1,precio:50000}],pagos:[{fecha:T0,monto:102000,medio:'Transferencia',recibo:31}]}];
   D.egresos=[{id:'eg1',fecha:T0,concepto:'Compra de aceites (Lubricantes del Este)',cat:'Compra a proveedor',medio:'Transferencia',monto:640000,sucursalId:'central'},{id:'eg2',fecha:T0,concepto:'Almuerzo del personal',cat:'Otros',medio:'Efectivo',monto:85000,sucursalId:'central'}];
   D.config.listas=LISTAS_DEF.map(x=>({...x}));D.config.servicios=SERV_DEF.map(x=>({...x}));
+  D.config.lavados=LAV_DEF.map(x=>({...x,precios:{...x.precios}}));D.config.lavadores=[{nombre:'Marcos Benítez',comision:20},{nombre:'Luis Fernández',comision:20}];
+  const LV=(id,nro,h,vid,cid,est,items,lav,pag)=>({id,venta:true,lavado:true,nro,fecha:T0,hora:h,sucursalId:'central',vehiculoId:vid,clienteId:cid,vtipo:(v.find(x=>x.id===vid)||{}).tipo||'auto',chapa:(v.find(x=>x.id===vid)||{}).chapa||'',estado:est,lavador:lav,items,pagos:pag||[],obs:''});
+  D.ventas.push(LV('lw1',1,'08:10','v5','c4','entregado',[{tipo:'mo',desc:'Lavado completo (interior y exterior)',cant:1,precio:60000}],'Marcos Benítez',[{fecha:T0,monto:60000,medio:'Efectivo',recibo:32}]),
+    LV('lw2',2,'09:30','v2','c2','listo',[{tipo:'mo',desc:'Lavado exterior',cant:1,precio:40000},{tipo:'mo',desc:'Lavado de chasis',cant:1,precio:70000}],'Luis Fernández'),
+    LV('lw3',3,'10:05','v6','c3','lavando',[{tipo:'mo',desc:'Lavado completo (interior y exterior)',cant:1,precio:25000}],'Marcos Benítez'),
+    LV('lw4',4,'10:40','v1','c1','espera',[{tipo:'mo',desc:'Lavado de motor',cant:1,precio:40000}],''));
   D.config.proveedores=[{nombre:'Repuestos Japón',tel:'0981 300 100'},{nombre:'Filtros Paraguay',tel:'0971 220 330'},{nombre:'Motopartes CDE',tel:'0983 450 210'},{nombre:'Lubricantes del Este',tel:'0975 600 700'},{nombre:'Repuestos Alemanes',tel:'0961 800 900'}];
   return D;
 }
@@ -507,11 +513,17 @@ const SERV_DEF=[{id:'sv1',nombre:'Service completo',precio:180000,horas:1.5,tipo
  {id:'sv3',nombre:'Diagnóstico con escáner',precio:80000,horas:.5,tipo:'auto'},{id:'sv4',nombre:'Cambio de pastillas de freno',precio:90000,horas:1,tipo:'todos'},
  {id:'sv5',nombre:'Cambio de embrague',precio:350000,horas:4,tipo:'auto'},{id:'sv6',nombre:'Lavado de carburador',precio:60000,horas:1,tipo:'moto'},
  {id:'sv7',nombre:'Cambio de cadena y kit de transmisión',precio:70000,horas:.8,tipo:'moto'},{id:'sv8',nombre:'Service moto (aceite y filtro)',precio:50000,horas:.5,tipo:'moto'}];
+const LAV_DEF=[{id:'lv1',nombre:'Lavado exterior',min:30,precios:{auto:30000,camioneta:40000,moto:15000,camion:80000}},
+ {id:'lv2',nombre:'Lavado completo (interior y exterior)',min:60,precios:{auto:60000,camioneta:80000,moto:25000,camion:150000}},
+ {id:'lv3',nombre:'Lavado de motor',min:30,precios:{auto:40000,camioneta:50000,moto:25000,camion:80000}},
+ {id:'lv4',nombre:'Aspirado y limpieza de tapizado',min:90,precios:{auto:120000,camioneta:150000,moto:0,camion:0}},
+ {id:'lv5',nombre:'Encerado y pulido',min:120,precios:{auto:150000,camioneta:200000,moto:60000,camion:0}},
+ {id:'lv6',nombre:'Lavado de chasis',min:40,precios:{auto:50000,camioneta:70000,moto:0,camion:120000}}];
 const CAT_EGRESO=['Compra a proveedor','Sueldos y comisiones','Alquiler','Luz, agua e internet','Combustible','Impuestos','Otros'];
 const MEDIOS=['Efectivo','Transferencia','Tarjeta de débito','Tarjeta de crédito','Billetera (Tigo/Personal)','Cheque'];
 function defCfg(){return {taller:'Mi taller',ruc:'',dir:'',tel:'',timbrado:'',vigDesde:'',bono:5,garantiaDef:90,diasEstancado:90,coberturaDias:30,elevadores:4,telCompras:'',urlPublica:'',ejemplo:false,
   autoWA:{ingreso:true,presupuesto:true,retiro:true},plantillas:{...TPL_DEF},
-  listas:LISTAS_DEF.map(x=>({...x})),servicios:SERV_DEF.map(x=>({...x})),proveedores:[]}}
+  listas:LISTAS_DEF.map(x=>({...x})),servicios:SERV_DEF.map(x=>({...x})),proveedores:[],lavados:LAV_DEF.map(x=>({...x,precios:{...x.precios}})),lavadores:[]}}
 const emptyDB=()=>({clientes:[],vehiculos:[],stock:[],movs:[],mecanicos:[],ots:[],sucursales:[],usuarios:[],mensajes:[],alertas:[],ventas:[],egresos:[],config:defCfg(),nextOT:1});
 const fbOK=()=>FIREBASE_CONFIG.apiKey&&!/^PEGAR/.test(FIREBASE_CONFIG.apiKey);
 let FS=null,AUTH=null,SEC=null,last={},lastCfg='',unsubs=[],tUnsub=null,listos=new Set(),pendRender=null,plat=null,devUnsubs=[];
@@ -670,7 +682,7 @@ function render(){
       <span><b>${esc(u.nombre)}</b> · ${ROLES[u.rol]||''}</span>${st.soporte?'':'<button class="out" onclick="cambiarClaveModal()">Clave</button>'}<button class="out" onclick="salir()">Salir</button>`;
     $('#nav').innerHTML=NAVS[u.rol].map(([k,l])=>`<button class="${st.view===k||(st.view==='ot'&&k==='ots')?'on':''}" onclick="go('${k}')">${l}${isM()?'':navBadge(k)}</button>`).join('');
   } else {$('#who').innerHTML='';$('#nav').innerHTML=''}
-  const V={tablero,recepcion,ots:otsView,ot:otView,historial,stock:stockView,crm:crmView,reportes:reportesView,finanzas,pos:posView,config:configView,cliente:clienteView,encuesta:encuestaView,seguimiento:seguimientoView,mensajes:mensajesView}[st.view]||tablero;
+  const V={tablero,recepcion,ots:otsView,ot:otView,historial,stock:stockView,crm:crmView,reportes:reportesView,finanzas,pos:posView,lavadero:lavaderoView,config:configView,cliente:clienteView,encuesta:encuestaView,seguimiento:seguimientoView,mensajes:mensajesView}[st.view]||tablero;
   $('#app').innerHTML=(pub?'':membBanner())+(db.config.ejemplo&&!pub&&isA()?`<div class="banner row between"><span>Hay datos de ejemplo cargados.</span><button class="btn sm" onclick="confirmLimpiar()">Borrar datos de ejemplo</button></div>`:'')+V();
   if(st.view==='recepcion') bindRec();
   if(st.view==='pos'&&st.pos&&st.pos.focus){st.pos.focus=0;const i=$('#pos_q');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
@@ -985,7 +997,7 @@ function otView(){
   const gp=o.garantiaDe&&db.ots.find(x=>x.id===o.garantiaDe);
   const h=horasOT(o),ef=o.horasEst&&h?o.horasEst/h*100:null;
   return `<div class="row between"><div class="row"><button class="btn sm" onclick="go('ots')">← ${M?'Mis tareas':'OTs'}</button><h1>OT #${o.nro}</h1>${o.tipo==='express'?'<span class="tag exp">Express</span>':'<span class="tag">Tradicional</span>'}<span class="sub">${esc(sucN(o.sucursalId))}</span></div>
-    <div class="row">${M?'':aprobChip(o.aprob)+(o.factura?`<span class="chip c-ok">Factura ${o.factura.nro}</span>`:'')}<button class="btn sm" onclick="imprimirOT('${o.id}')">Hoja A4 con QR</button>${M?'':`<button class="btn sm" onclick="copiarTxt(appURL('seguimiento-'+ot().token),'Link de seguimiento copiado')">Link de seguimiento</button>`}</div></div>
+    <div class="row">${M?'':aprobChip(o.aprob)+(o.factura?`<span class="chip c-ok">Factura ${o.factura.nro}</span>`:'')}<button class="btn sm" onclick="imprimirOT('${o.id}')">Hoja A4 con QR</button>${M?'':`<button class="btn sm" onclick="lavNuevo('${o.id}')">Enviar al lavadero</button>`}${M?'':`<button class="btn sm" onclick="copiarTxt(appURL('seguimiento-'+ot().token),'Link de seguimiento copiado')">Link de seguimiento</button>`}</div></div>
   ${o.estado==='repuestos'&&o.faltante?`<div class="alertbar" style="border-color:var(--orange)"><strong style="color:var(--orange)">Espera de repuestos</strong><span>${esc(o.faltante)}</span></div>`:''}
   ${gp?`<div class="alertbar"><strong>Reingreso en garantía</strong><span>Este vehículo volvió ${dias(gp.fecha,o.fecha)} días después de la OT #${gp.nro} (“${esc(gp.falla)}”, ${esc(mec(gp.mecanicoId))}). Revisá si la falla corresponde a esa pieza o reparación.</span>${M?'':`<button class="btn sm" onclick="go('ot','${gp.id}')">Ver OT #${gp.nro}</button>`}</div>`:''}
   <div class="steps">${ESTADOS.map(([k,l],i)=>`<button class="${i<idx?'done':''} ${i===idx?'on':''}" onclick="setEstado('${k}')" ${M&&['entregado','presupuesto','recepcion'].includes(k)?'disabled':''}>${l}</button>`).join('')}</div>
@@ -1092,7 +1104,7 @@ function addPago(){const o=ot();modalHTML(`<h2>Registrar cobro · OT #${o.nro}</
   <div class="row"><button class="btn pri" onclick="savePago()">Registrar</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
 async function savePago(){const m=num($('#p_m').value);if(m<=0)return toast('Ingresá un monto válido.');const o=ot(),f=$('#p_f').value||hoy(),md=$('#p_md').value;closeM();
   const nro=await nuevoRecibo();o.pagos.push({fecha:f,monto:m,medio:md,recibo:nro,hora:new Date().toISOString()});save();render();toast('Cobro registrado: '+gs(m));compModal('recibo',o.id,o.pagos.length-1)}
-async function contador(k){const r=T('meta').doc('contadores'),mn=k==='nextVenta'?Math.max(0,...db.ventas.map(v=>v.nro||0))+1:1;
+async function contador(k){const r=T('meta').doc('contadores'),mn=k==='nextVenta'?Math.max(0,...db.ventas.filter(v=>!v.lavado).map(v=>v.nro||0))+1:k==='nextLavado'?Math.max(0,...db.ventas.filter(v=>v.lavado).map(v=>v.nro||0))+1:1;
   try{return await FS.runTransaction(async t=>{const d=await t.get(r);const n=Math.max(mn,(d.exists&&d.data()[k])||1);t.set(r,{[k]:n+1},{merge:true});return n})}
   catch(e){const n=Math.max(0,...db.ventas.map(v=>v.nro||0))+1;r.set({[k]:n+1},{merge:true}).catch(()=>{});return n}}
 const docById=id=>db.ots.find(x=>x.id===id)||db.ventas.find(x=>x.id===id);
@@ -1139,9 +1151,9 @@ function cpFactura(o,sm,copia){const c=db.config,cl=cliDoc(o),v=veh(o.vehiculoId
   <div class="cp-hd">${cpEmpresa()}<div class="cp-box"><div>Timbrado Nº <b>${esc(c.timbrado||'—')}</b></div><div class="cp-k">Inicio de vigencia ${c.vigDesde?fdate(c.vigDesde):'—'}${c.vigHasta?' · Vence '+fdate(c.vigHasta):''}</div>
     <div>RUC <b>${esc(c.ruc||'—')}</b></div><div class="t">${elec?'FACTURA ELECTRÓNICA':'FACTURA'}</div><div class="n">${esc(f.nro)}</div></div></div>
   <div class="cp-grid"><div><div class="cp-k">Fecha de emisión</div>${fdate(f.fecha)}</div><div><div class="cp-k">Condición de venta</div><span class="cp-chip">${cond==='credito'?'CRÉDITO':'CONTADO'}</span></div>
-    <div><div class="cp-k">${o.venta?'Venta mostrador':'Orden de trabajo'}</div>Nº ${o.nro}</div><div><div class="cp-k">Sucursal</div>${esc(s.nombre)}</div>
+    <div><div class="cp-k">${o.lavado?'Lavadero':o.venta?'Venta mostrador':'Orden de trabajo'}</div>Nº ${o.nro}</div><div><div class="cp-k">Sucursal</div>${esc(s.nombre)}</div>
     <div class="w2"><div class="cp-k">Nombre o razón social</div><b>${esc(cl.nombre)}</b></div><div><div class="cp-k">RUC / CI</div>${esc(cl.ruc||'—')}</div><div><div class="cp-k">Teléfono</div>${esc(cl.tel||'—')}</div>
-    <div class="w2"><div class="cp-k">Dirección</div>${esc(cl.dir||'—')}</div><div class="w2"><div class="cp-k">${o.venta?'Tipo':'Vehículo'}</div>${o.venta?'Venta en mostrador':`${esc(v.chapa)} · ${esc(v.marca)} ${esc(v.modelo)} · ${fmt(o.km)} km`}</div></div>
+    <div class="w2"><div class="cp-k">Dirección</div>${esc(cl.dir||'—')}</div><div class="w2"><div class="cp-k">${o.venta?'Tipo':'Vehículo'}</div>${o.lavado?`Lavadero · chapa ${esc(o.chapa||'—')}`:o.venta?'Venta en mostrador':`${esc(v.chapa)} · ${esc(v.marca)} ${esc(v.modelo)} · ${fmt(o.km)} km`}</div></div>
   <table class="cp-tb"><thead><tr><th class="r" style="width:9%">Cant.</th><th>Descripción</th><th class="r" style="width:15%">Precio unit.</th><th class="r" style="width:11%">Exentas</th><th class="r" style="width:11%">5%</th><th class="r" style="width:15%">10%</th></tr></thead>
   <tbody>${filas.join('')}</tbody>
   <tbody><tr class="f"><td colspan="3">Subtotales</td><td class="r">0</td><td class="r">0</td><td class="r">${fmt(T)}</td></tr>
@@ -1152,7 +1164,7 @@ function cpFactura(o,sm,copia){const c=db.config,cl=cliDoc(o),v=veh(o.vehiculoId
   ${copia?`<div class="cp-copy">${copia}</div>`:''}</div>`}
 function cpRecibo(o,p,sm,copia){const c=db.config,cl=cliDoc(o),v=veh(o.vehiculoId),T=total(o),i=o.pagos.indexOf(p);
   const antes=o.pagos.slice(0,i).reduce((a,x)=>a+x.monto,0),sal=T-antes-p.monto;
-  const concepto=o.venta?`Compra en mostrador Nº ${o.nro}${o.factura?' · Factura '+o.factura.nro:''}`:`${sal<=0?'Cancelación':'Pago a cuenta'} de la orden de trabajo Nº ${o.nro} · ${v.marca} ${v.modelo} chapa ${v.chapa}${o.factura?' · Factura '+o.factura.nro:''}`;
+  const concepto=o.lavado?`Servicio de lavadero Nº ${o.nro} · chapa ${o.chapa||'—'} · ${o.items.map(i=>i.desc).join(', ')}${o.factura?' · Factura '+o.factura.nro:''}`:o.venta?`Compra en mostrador Nº ${o.nro}${o.factura?' · Factura '+o.factura.nro:''}`:`${sal<=0?'Cancelación':'Pago a cuenta'} de la orden de trabajo Nº ${o.nro} · ${v.marca} ${v.modelo} chapa ${v.chapa}${o.factura?' · Factura '+o.factura.nro:''}`;
   return `<div class="cp-doc ${sm?'sm':''}">
   <div class="cp-hd">${cpEmpresa()}<div class="cp-box"><div class="t">RECIBO DE DINERO</div><div class="n">Nº ${String(p.recibo||0).padStart(7,'0')}</div><div class="cp-amt">Gs. ${fmt(p.monto)}</div></div></div>
   <div class="cp-line"><span class="cp-k">Recibí de</span><b>${esc(cl.nombre)}</b>${cl.ruc?`<span>· RUC/CI ${esc(cl.ruc)}</span>`:''}</div>
@@ -1360,7 +1372,7 @@ function saveStock(id){const g=k=>($('#sk_'+k)||{value:''}).value.trim();if(!g('
 function posInit(){if(!st.pos)st.pos={items:[],clienteId:null,ruc:'',nombre:'',lista:'publico',medio:'Efectivo',pagaCon:'',q:'',desc:0}}
 function posView(){posInit();const p=st.pos,ws=workSuc(),res=p.q?buscarStock(p.q).slice(0,12):[],sv=servDe(null);
   const sub=p.items.reduce((a,i)=>a+i.cant*i.precio,0),desc=Math.round(sub*(p.desc||0)/100),tot=sub-desc,cambio=num(p.pagaCon)-tot;
-  const hoyV=db.ventas.filter(v=>v.fecha===hoy()&&inSuc(v)).sort((a,b)=>b.nro-a.nro);
+  const hoyV=db.ventas.filter(v=>!v.lavado&&v.fecha===hoy()&&inSuc(v)).sort((a,b)=>b.nro-a.nro);
   return `<div class="row between"><h1>Mostrador</h1><span class="sub">${esc(sucN(ws))} · ${fdate(hoy())}</span></div>
   <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));align-items:start">
   <div class="panel"><h2>Buscar producto</h2>
@@ -1409,9 +1421,73 @@ async function posCobrar(){const p=st.pos,ws=workSuc();if(!p.items.length||st.co
   <div class="row"><button class="btn pri" onclick="compModal('recibo','${v.id}',0)">Imprimir recibo</button><button class="btn dark" onclick="facturarVenta('${v.id}')">Emitir factura</button><button class="btn" onclick="closeM();st.pos=null;render()">Nueva venta</button></div>`)}
 function facturarVenta(id){const v=db.ventas.find(x=>x.id===id);if(!v.factura)emitirFactura(v);else compModal('factura',id)}
 
+/* ---------- LAVADERO ---------- */
+const LAV_EST=[['espera','En espera','var(--muted)'],['lavando','Lavando','var(--info)'],['listo','Listo para retirar','var(--ok)']];
+const lavs=()=>db.ventas.filter(v=>v.lavado&&inSuc(v));
+const lavPrecio=(x,t)=>((x.precios||{})[t==='camion'?'camion':t]||0);
+function lavaderoView(){const L=lavs(),T0=hoy(),act=L.filter(v=>v.estado!=='entregado'),ent=L.filter(v=>v.estado==='entregado'&&v.fecha===T0).sort((a,b)=>b.nro-a.nro);
+  const cob=L.flatMap(v=>v.pagos).filter(p=>p.fecha===T0).reduce((a,p)=>a+p.monto,0),mes=T0.slice(0,7),Lm=L.filter(v=>v.fecha.startsWith(mes)&&v.estado==='entregado');
+  const porServ={};Lm.forEach(v=>v.items.forEach(i=>{porServ[i.desc]=porServ[i.desc]||[0,0];porServ[i.desc][0]+=i.cant;porServ[i.desc][1]+=i.cant*i.precio}));
+  const porLav={};Lm.forEach(v=>{const k=v.lavador||'Sin asignar';porLav[k]=porLav[k]||[0,0];porLav[k][0]++;porLav[k][1]+=total(v)});
+  return `<div class="row between"><h1>Lavadero</h1><button class="btn pri" onclick="lavNuevo()">+ Nuevo lavado</button></div>
+  <div class="grid kpis"><div class="kpi"><b>${act.filter(v=>v.estado==='espera').length}</b><span>En espera</span></div><div class="kpi"><b>${act.filter(v=>v.estado==='lavando').length}</b><span>Lavando</span></div>
+  <div class="kpi ${act.some(v=>v.estado==='listo')?'good':''}"><b>${act.filter(v=>v.estado==='listo').length}</b><span>Listos para retirar</span></div><div class="kpi"><b>${ent.length}</b><span>Entregados hoy</span></div><div class="kpi"><b class="m">${gs(cob)}</b><span>Cobrado hoy</span></div></div>
+  <div class="sem" style="grid-template-columns:repeat(3,minmax(260px,1fr))">${LAV_EST.map(([k,l,c])=>{const it=act.filter(v=>v.estado===k).sort((a,b)=>a.nro-b.nro);
+    return `<section class="lane"><header style="background:${c};color:#fff"><h3>${l}<small>${it.length}</small></h3><span>${k==='espera'?'Por orden de llegada':k==='lavando'?'En el box de lavado':'Avisar al cliente y cobrar'}</span></header>
+    ${it.map(v=>lavCard(v)).join('')||'<p class="empty">—</p>'}</section>`}).join('')}</div>
+  <div class="grid g2"><div class="panel"><h2>Entregados hoy</h2><div class="tscroll"><table><tr><th>Nº</th><th>Chapa</th><th>Servicio</th><th>Lavador</th><th class="n">Total</th><th></th></tr>
+    ${ent.map(v=>`<tr><td class="mono">${v.nro}</td><td>${plate(v.chapa||'—')}</td><td style="font-size:13px">${esc(v.items.map(i=>i.desc).join(', '))}</td><td>${esc(v.lavador||'—')}</td><td class="n">${v.otId?'<span class="sub">En OT</span>':gs(total(v))}</td><td>${v.pagos.length?`<button class="btn sm" onclick="compModal('recibo','${v.id}',0)">Recibo</button>`:''}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Todavía no se entregó ninguno hoy.</td></tr>'}</table></div></div>
+  <div class="panel"><h2>Resumen del mes</h2><div class="row" style="gap:16px;margin-bottom:8px"><span><b class="mono">${Lm.length}</b> lavados</span><span><b class="mono">${gs(Lm.reduce((a,v)=>a+total(v),0))}</b> facturado</span></div>
+    <div class="tscroll"><table><tr><th>Servicio</th><th class="n">Cant.</th><th class="n">Total</th></tr>${Object.entries(porServ).sort((a,b)=>b[1][1]-a[1][1]).map(([k,x])=>`<tr><td>${esc(k)}</td><td class="n">${x[0]}</td><td class="n">${gs(x[1])}</td></tr>`).join('')||'<tr><td colspan="3" class="empty">Sin datos.</td></tr>'}</table></div>
+    <h3 style="margin:12px 0 6px">Por lavador</h3><div class="tscroll"><table><tr><th>Lavador</th><th class="n">Lavados</th><th class="n">Total</th><th class="n">Comisión</th></tr>${Object.entries(porLav).map(([k,x])=>{const lv=(db.config.lavadores||[]).find(l=>l.nombre===k);return `<tr><td>${esc(k)}</td><td class="n">${x[0]}</td><td class="n">${gs(x[1])}</td><td class="n">${lv?gs(x[1]*(lv.comision||0)/100):'—'}</td></tr>`}).join('')||'<tr><td colspan="4" class="empty">Sin datos.</td></tr>'}</table></div></div></div>`}
+function lavCard(v){const c=cliDoc(v),min=Math.round((Date.now()-new Date(v.fecha+'T'+(v.estado==='lavando'&&v.horaInicio?v.horaInicio:v.hora)+':00'))/60000);
+  return `<div class="card" style="cursor:default"><div class="row between"><span class="mono">Nº ${v.nro} · ${esc(v.hora||'')}</span><span class="row" style="gap:4px">${v.vtipo==='moto'?'<span class="tag moto">Moto</span>':''}${v.otId?`<span class="tag">OT #${(db.ots.find(o=>o.id===v.otId)||{}).nro||''}</span>`:''}</span></div>
+  <div class="row" style="gap:8px;flex-wrap:nowrap">${plate(v.chapa||'—')}<span style="min-width:0">${esc(c.nombre)}</span></div>
+  <div class="meta">${esc(v.items.map(i=>i.desc).join(' + '))}${v.obs?` · <i>${esc(v.obs)}</i>`:''}</div>
+  <div class="row between"><span class="meta">${v.lavador?'Lavador: '+esc(v.lavador):'Sin lavador'}</span><b class="mono">${v.otId?'Va en la OT':gs(total(v))}</b></div>
+  <span class="age ${min>90&&v.estado!=='listo'?'late':''}">${min<1?'recién':min<60?min+' min':Math.floor(min/60)+' h '+min%60+' min'} ${v.estado==='espera'?'esperando':v.estado==='lavando'?'lavando':'listo'}</span>
+  <div class="row" style="gap:6px">${v.estado==='espera'?`<button class="btn sm pri" onclick="lavEstado('${v.id}','lavando')">Empezar lavado</button>`:v.estado==='lavando'?`<button class="btn sm pri" onclick="lavEstado('${v.id}','listo')">Terminado</button>`:`<button class="btn sm wa" onclick="lavAvisar('${v.id}')">Avisar por WhatsApp</button><button class="btn sm pri" onclick="lavCobrar('${v.id}')">${v.otId?'Entregar':'Cobrar y entregar'}</button>`}
+  <button class="btn sm" onclick="lavNuevo(null,'${v.id}')">Editar</button></div></div>`}
+function lavNuevo(otId,editId){const v=editId?db.ventas.find(x=>x.id===editId):null,o=otId?db.ots.find(x=>x.id===otId):null,vh=o?veh(o.vehiculoId):v&&v.vehiculoId?veh(v.vehiculoId):null,c=o?cli(o.clienteId):v?cliDoc(v):null;
+  st.lav={id:editId||null,otId:otId||(v&&v.otId)||null,chapa:(vh&&vh.chapa)||(v&&v.chapa)||'',vtipo:(vh&&vtipoDe(vh))||(v&&v.vtipo)||'auto',cliente:c?c.nombre:'',tel:c?c.tel||'':'',sel:v?v.items.map(i=>((db.config.lavados||[]).find(x=>x.nombre===i.desc)||{}).id).filter(Boolean):[],lavador:v?v.lavador:'',obs:v?v.obs:'',cargoOT:v?!!v.cargoOT:!!otId};lavForm()}
+function lavForm(){const f=st.lav,L=db.config.lavados||[],tot=L.filter(x=>f.sel.includes(x.id)).reduce((a,x)=>a+lavPrecio(x,f.vtipo),0);
+  modalHTML(`<div class="row between"><h2>${f.id?'Editar lavado':'Nuevo lavado'}</h2><button class="btn sm" onclick="closeM()">Cerrar</button></div>
+  <div class="fields"><label class="field"><span>Chapa</span><input id="lv_ch" list="dl_ch2" value="${esc(f.chapa)}" style="text-transform:uppercase" onchange="lavChapa(this.value)" autocomplete="off"></label><datalist id="dl_ch2">${db.vehiculos.map(v=>`<option value="${esc(v.chapa)}">`).join('')}</datalist>
+  <label class="field"><span>Cliente</span><input id="lv_cl" value="${esc(f.cliente)}" onchange="st.lav.cliente=this.value"></label><label class="field"><span>WhatsApp</span><input id="lv_tel" value="${esc(f.tel)}" inputmode="tel" onchange="st.lav.tel=this.value"></label></div>
+  <div class="row" style="margin-top:8px"><span class="cp-k">Vehículo</span><div class="seg">${Object.entries(VTIPOS).map(([k,l])=>`<button class="${f.vtipo===k?'on':''}" onclick="lavLeer();st.lav.vtipo='${k}';lavForm()">${l}</button>`).join('')}</div></div>
+  <h3>Servicios</h3><div class="checks">${L.map(x=>{const p=lavPrecio(x,f.vtipo);return `<label style="${p?'':'opacity:.45'}"><input type="checkbox" ${f.sel.includes(x.id)?'checked':''} ${p?'':'disabled'} onchange="lavLeer();st.lav.sel=this.checked?[...st.lav.sel,'${x.id}']:st.lav.sel.filter(i=>i!=='${x.id}');lavForm()"> <span style="flex:1">${esc(x.nombre)}</span><b class="mono">${p?gs(p):'—'}</b></label>`}).join('')}</div>
+  <div class="fields" style="margin-top:8px"><label class="field"><span>Lavador</span><select id="lv_lav"><option value="">Sin asignar</option>${(db.config.lavadores||[]).map(l=>`<option ${f.lavador===l.nombre?'selected':''}>${esc(l.nombre)}</option>`).join('')}</select></label>
+  <label class="field" style="grid-column:span 2"><span>Observaciones</span><input id="lv_obs" value="${esc(f.obs)}" placeholder="Ej.: no mojar el tablero, manchas en asiento"></label></div>
+  ${f.otId?`<label class="row" style="gap:6px;font-size:13px;margin-top:6px"><input type="checkbox" id="lv_ot" style="width:auto" ${f.cargoOT?'checked':''}> Cargar el lavado en la OT #${(db.ots.find(o=>o.id===f.otId)||{}).nro} (se cobra junto con la reparación)</label>`:''}
+  <div class="totals" style="margin-top:8px"><b>${gs(tot)}</b></div>
+  <div class="row"><button class="btn pri" onclick="lavGuardar()">${f.id?'Guardar':'Ingresar al lavadero'}</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
+function lavLeer(){const f=st.lav;if(!$('#lv_ch'))return;f.chapa=$('#lv_ch').value.trim().toUpperCase();f.cliente=$('#lv_cl').value;f.tel=$('#lv_tel').value;f.lavador=$('#lv_lav').value;f.obs=$('#lv_obs').value;if($('#lv_ot'))f.cargoOT=$('#lv_ot').checked}
+function lavChapa(ch){lavLeer();const v=db.vehiculos.find(x=>x.chapa.toUpperCase()===ch.trim().toUpperCase());if(v){const c=cli(v.clienteId);Object.assign(st.lav,{vtipo:vtipoDe(v),cliente:c.nombre,tel:c.tel||''})}lavForm()}
+async function lavGuardar(){lavLeer();const f=st.lav,L=db.config.lavados||[],sel=L.filter(x=>f.sel.includes(x.id));
+  if(!f.chapa)return toast('Falta la chapa.');if(!sel.length)return toast('Elegí al menos un servicio.');
+  const vh=db.vehiculos.find(x=>x.chapa.toUpperCase()===f.chapa),c=vh?db.clientes.find(x=>x.id===vh.clienteId):null;
+  const items=sel.map(x=>({tipo:'mo',desc:x.nombre,cant:1,precio:lavPrecio(x,f.vtipo)}));
+  if(f.id){const v=db.ventas.find(x=>x.id===f.id);Object.assign(v,{chapa:f.chapa,vtipo:f.vtipo,vehiculoId:vh?vh.id:null,clienteId:c?c.id:null,nombreCliente:c?'':f.cliente,tel:f.tel,items,lavador:f.lavador,obs:f.obs,cargoOT:!!(f.otId&&f.cargoOT)});save();closeM();render();return toast('Lavado actualizado')}
+  const nro=await contador('nextLavado');
+  db.ventas.push({id:uid(),venta:true,lavado:true,nro,fecha:hoy(),hora:new Date().toTimeString().slice(0,5),sucursalId:workSuc(),vehiculoId:vh?vh.id:null,clienteId:c?c.id:null,nombreCliente:c?'':(f.cliente||'Cliente'),tel:f.tel,chapa:f.chapa,vtipo:f.vtipo,
+    estado:'espera',lavador:f.lavador,obs:f.obs,otId:f.otId||null,cargoOT:!!(f.otId&&f.cargoOT),items,pagos:[]});
+  save();closeM();if(st.view!=='lavadero')go('lavadero');else render();toast(`Lavado Nº ${nro} en espera`)}
+function lavEstado(id,e){const v=db.ventas.find(x=>x.id===id);v.estado=e;if(e==='lavando')v.horaInicio=new Date().toTimeString().slice(0,5);if(e==='listo')v.horaFin=new Date().toTimeString().slice(0,5);save();render();if(e==='listo')lavAvisar(id)}
+function lavAvisar(id){const v=db.ventas.find(x=>x.id===id),c=cliDoc(v),tel=v.tel||c.tel||'';
+  const msg=`Hola ${nombrePila(c.nombre)}, su vehículo chapa ${v.chapa} ya está limpio y listo para retirar en *${db.config.taller}*.${v.otId?'':` Total: ${gs(total(v))}.`} ¡Gracias!`,w=waLink(tel,msg);
+  modalHTML(`<h2>Avisar que está listo</h2><textarea id="wa_t" readonly style="min-height:100px">${esc(msg)}</textarea><div class="row">${w?`<a class="btn wa" href="${w}" target="_blank" rel="noopener">Enviar por WhatsApp</a>`:'<span class="sub">Sin WhatsApp cargado.</span>'}<button class="btn" onclick="copiar()">Copiar</button><button class="btn" onclick="closeM()">Cerrar</button></div>`)}
+function lavCobrar(id){const v=db.ventas.find(x=>x.id===id);
+  if(v.otId&&v.cargoOT){const o=db.ots.find(x=>x.id===v.otId);if(o&&!o.factura){v.items.forEach(i=>o.items.push({tipo:'mo',desc:'Lavadero: '+i.desc,cant:i.cant,precio:i.precio}))}v.estado='entregado';v.entregado=new Date().toISOString();save();render();return toast(o&&!o.factura?`Cargado en la OT #${o.nro}`:'Entregado')}
+  modalHTML(`<h2>Cobrar lavado Nº ${v.nro} · ${esc(v.chapa)}</h2><p style="margin:0;font-size:20px"><b>${gs(total(v))}</b></p>
+  <div class="fields"><label class="field"><span>Medio de pago</span><select id="lc_m">${MEDIOS.map(m=>`<option>${m}</option>`).join('')}</select></label><label class="field"><span>Paga con (efectivo)</span><input id="lc_p" inputmode="numeric" oninput="const r=num(this.value)-${total(v)};$('#lc_v').textContent=num(this.value)?(r>=0?'Vuelto '+gs(r):'Faltan '+gs(-r)):''"></label></div><p id="lc_v" style="margin:0;font-weight:600;color:var(--ok)"></p>
+  <div class="row"><button class="btn pri" onclick="lavPagar('${id}')">Cobrar y entregar</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
+async function lavPagar(id){const v=db.ventas.find(x=>x.id===id),m=$('#lc_m').value;closeM();const rec=await nuevoRecibo();
+  v.pagos.push({fecha:hoy(),monto:total(v),medio:m,recibo:rec});v.estado='entregado';v.entregado=new Date().toISOString();save();render();
+  modalHTML(`<h2>Lavado Nº ${v.nro} cobrado</h2><p style="margin:0">${gs(total(v))} · ${esc(m)}</p><div class="row"><button class="btn pri" onclick="compModal('recibo','${v.id}',0)">Imprimir recibo</button><button class="btn dark" onclick="facturarVenta('${v.id}')">Emitir factura</button><button class="btn" onclick="closeM()">Listo</button></div>`)}
+
 /* ---------- CAJA: INGRESOS Y EGRESOS ---------- */
 function cajaDia(f){const ing=[];db.ots.filter(inSuc).forEach(o=>o.pagos.forEach(p=>{if(p.fecha===f)ing.push({hora:(p.hora||'').slice(11,16),det:`OT #${o.nro} · ${cli(o.clienteId).nombre}`,medio:p.medio,monto:p.monto,ref:o.id,tipo:'ot'})}));
-  db.ventas.filter(inSuc).forEach(v=>v.pagos.forEach(p=>{if(p.fecha===f)ing.push({hora:v.hora||'',det:`Mostrador Nº ${v.nro} · ${cliDoc(v).nombre}`,medio:p.medio,monto:p.monto,ref:v.id,tipo:'venta'})}));
+  db.ventas.filter(inSuc).forEach(v=>v.pagos.forEach(p=>{if(p.fecha===f)ing.push({hora:v.hora||'',det:`${v.lavado?'Lavadero':'Mostrador'} Nº ${v.nro} · ${cliDoc(v).nombre}${v.lavado&&v.chapa?' · '+v.chapa:''}`,medio:p.medio,monto:p.monto,ref:v.id,tipo:'venta'})}));
   const eg=db.egresos.filter(e=>e.fecha===f&&(st.suc==='*'||e.sucursalId===st.suc));return {ing,eg}}
 function cajaPanel(){const f=st.cajaF||hoy(),{ing,eg}=cajaDia(f),ti=ing.reduce((a,x)=>a+x.monto,0),te=eg.reduce((a,x)=>a+x.monto,0);
   const ef=ing.filter(x=>x.medio==='Efectivo').reduce((a,x)=>a+x.monto,0)-eg.filter(x=>x.medio==='Efectivo').reduce((a,x)=>a+x.monto,0);
@@ -1880,7 +1956,7 @@ function finanzas(){
   <div class="panel"><h2>Cuentas corrientes</h2><div class="tscroll"><table><tr><th>Cliente</th><th>RUC/CI</th><th class="n">OTs</th><th class="n">Total</th><th class="n">Saldo</th></tr>
   ${cc.map(x=>`<tr><td>${esc(x.c.nombre)}<div class="sub" style="font-size:12px">${x.os.filter(o=>saldo(o)>0).map(o=>`<a href="#" onclick="go('ot','${o.id}');return false" style="color:inherit">#${o.nro}</a>`).join(' · ')}</div></td><td class="mono">${esc(x.c.ruc)}</td><td class="n">${x.os.length}</td><td class="n">${gs(x.tot)}</td><td class="n" style="font-weight:600;color:${x.deuda>0?'var(--bad)':'var(--ok)'}">${gs(x.deuda)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Sin movimientos.</td></tr>'}</table></div></div>
   <div class="grid g2"><div class="panel"><h2>Facturas emitidas</h2><div class="tscroll"><table><tr><th>Número</th><th>Fecha</th><th>Cliente</th><th class="n">Total</th></tr>
-  ${[...fac,...facV].sort((a,b)=>b.factura.nro.localeCompare(a.factura.nro)).map(o=>`<tr class="click" onclick="verKude('${o.id}')"><td class="mono">${o.factura.nro}</td><td>${fdate(o.factura.fecha)}</td><td>${esc(cliDoc(o).nombre)}${o.venta?' <span class="tag">Mostrador</span>':''}</td><td class="n">${gs(total(o))}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">Aún no hay facturas.</td></tr>'}</table></div></div>
+  ${[...fac,...facV].sort((a,b)=>b.factura.nro.localeCompare(a.factura.nro)).map(o=>`<tr class="click" onclick="verKude('${o.id}')"><td class="mono">${o.factura.nro}</td><td>${fdate(o.factura.fecha)}</td><td>${esc(cliDoc(o).nombre)}${o.lavado?' <span class="tag">Lavadero</span>':o.venta?' <span class="tag">Mostrador</span>':''}</td><td class="n">${gs(total(o))}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">Aún no hay facturas.</td></tr>'}</table></div></div>
   <div class="panel"><h2>Presupuestos esperando respuesta</h2>${pend.map(o=>`<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line)"><span class="row">${plate(veh(o.vehiculoId).chapa)} <span>OT #${o.nro} · ${esc(cli(o.clienteId).nombre)}</span></span><span class="row"><b class="mono">${gs(total(o))}</b><button class="btn sm" onclick="go('ot','${o.id}')">Abrir</button></span></div>`).join('')||'<p class="empty">Ningún presupuesto pendiente.</p>'}</div></div>`;
 }
 
@@ -1903,6 +1979,12 @@ function configView(){const c=db.config;
   <td class="n"><input value="${x.precio}" inputmode="numeric" style="width:120px;text-align:right" onchange="db.config.servicios[${i}].precio=num(this.value);save()"></td><td class="n"><input value="${String(x.horas).replace('.',',')}" inputmode="decimal" style="width:70px;text-align:right" onchange="db.config.servicios[${i}].horas=dec(this.value);save()"></td>
   <td><button class="btn sm danger" onclick="db.config.servicios.splice(${i},1);save();render()" aria-label="Quitar">✕</button></td></tr>`).join('')}</table></div>
   <div class="row" style="margin-top:10px"><button class="btn" onclick="(db.config.servicios=db.config.servicios||[]).push({id:uid(),nombre:'Nuevo servicio',precio:0,horas:1,tipo:'todos'});save();render()">+ Agregar servicio</button></div></div>
+  <div class="panel"><h2>Lavadero: servicios y precios</h2><p class="note" style="margin:-4px 0 8px">Precio por tipo de vehículo. Dejá 0 si el servicio no se ofrece para ese tipo.</p><div class="tscroll"><table><tr><th>Servicio</th><th class="n">Auto</th><th class="n">Camioneta</th><th class="n">Moto</th><th class="n">Camión</th><th class="n">Minutos</th><th></th></tr>
+  ${(c.lavados||[]).map((x,i)=>`<tr><td><input value="${esc(x.nombre)}" onchange="db.config.lavados[${i}].nombre=this.value;save()"></td>${['auto','camioneta','moto','camion'].map(t=>`<td class="n"><input value="${(x.precios||{})[t]||0}" inputmode="numeric" style="width:100px;text-align:right" onchange="db.config.lavados[${i}].precios['${t}']=num(this.value);save()" aria-label="Precio ${t}"></td>`).join('')}
+  <td class="n"><input value="${x.min||30}" inputmode="numeric" style="width:70px;text-align:right" onchange="db.config.lavados[${i}].min=num(this.value);save()"></td><td><button class="btn sm danger" onclick="db.config.lavados.splice(${i},1);save();render()" aria-label="Quitar">✕</button></td></tr>`).join('')}</table></div>
+  <div class="row" style="margin-top:10px"><button class="btn" onclick="(db.config.lavados=db.config.lavados||[]).push({id:uid(),nombre:'Nuevo servicio',min:30,precios:{auto:0,camioneta:0,moto:0,camion:0}});save();render()">+ Agregar servicio de lavado</button></div>
+  <h3 style="margin:14px 0 6px">Lavadores</h3><div class="tscroll"><table><tr><th>Nombre</th><th class="n">Comisión %</th><th></th></tr>${(c.lavadores||[]).map((x,i)=>`<tr><td><input value="${esc(x.nombre)}" onchange="db.config.lavadores[${i}].nombre=this.value;save()"></td><td class="n"><input value="${x.comision||0}" inputmode="numeric" style="width:80px;text-align:right" onchange="db.config.lavadores[${i}].comision=num(this.value);save()"></td><td><button class="btn sm danger" onclick="db.config.lavadores.splice(${i},1);save();render()" aria-label="Quitar">✕</button></td></tr>`).join('')||'<tr><td colspan="3" class="empty">Sin lavadores.</td></tr>'}</table></div>
+  <div class="row" style="margin-top:10px"><button class="btn" onclick="(db.config.lavadores=db.config.lavadores||[]).push({nombre:'Nuevo lavador',comision:20});save();render()">+ Agregar lavador</button></div></div>
   <div class="panel"><h2>Proveedores</h2><div class="tscroll"><table><tr><th>Proveedor</th><th>WhatsApp</th><th></th></tr>${(c.proveedores||[]).map((x,i)=>`<tr><td><input value="${esc(x.nombre)}" onchange="db.config.proveedores[${i}].nombre=this.value;save()"></td><td><input value="${esc(x.tel)}" inputmode="tel" onchange="db.config.proveedores[${i}].tel=this.value;save()"></td><td><button class="btn sm danger" onclick="db.config.proveedores.splice(${i},1);save();render()" aria-label="Quitar">✕</button></td></tr>`).join('')||'<tr><td colspan="3" class="empty">Sin proveedores.</td></tr>'}</table></div>
   <div class="row" style="margin-top:10px"><button class="btn" onclick="(db.config.proveedores=db.config.proveedores||[]).push({nombre:'Nuevo proveedor',tel:''});save();render()">+ Agregar proveedor</button></div></div>
   <div class="panel"><h2>Sucursales</h2><div class="tscroll"><table><tr><th>Nombre</th><th>Establecimiento</th><th>Punto exp.</th><th>Próx. factura</th></tr>
