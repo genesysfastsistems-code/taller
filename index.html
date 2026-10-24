@@ -341,8 +341,8 @@ const checkDe=t=>t==='moto'?CHECK_MOTO:CHECK;
 const vtag=v=>vtipoDe(v)==='moto'?'<span class="tag moto">Moto</span>':vtipoDe(v)==='camion'?'<span class="tag">Camión</span>':'';
 const ROLES={admin:'Administrador',recepcion:'Recepción',mecanico:'Mecánico',pendiente:'Pendiente'};
 const NAVS={
-  admin:[['tablero','Tablero'],['recepcion','Recepción'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa'],['reportes','Reportes'],['finanzas','Caja y facturas'],['config','Configuración']],
-  recepcion:[['tablero','Tablero'],['recepcion','Recepción'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa']],
+  admin:[['tablero','Tablero'],['recepcion','Recepción'],['pos','Mostrador'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa'],['reportes','Reportes'],['finanzas','Caja y facturas'],['config','Configuración']],
+  recepcion:[['tablero','Tablero'],['recepcion','Recepción'],['pos','Mostrador'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa']],
   mecanico:[['ots','Mis tareas'],['historial','Historial']]};
 
 const LANES=[
@@ -383,7 +383,7 @@ const hrs=h=>(Math.round(h*10)/10).toString().replace('.',',')+' h';
 function seed(){
   const T=hoy();
   const c=[{id:'c1',nombre:'Rodrigo Benítez',ruc:'4521378-6',tel:'0983 412 556'},{id:'c2',nombre:'Transportes Itá SRL',ruc:'80034521-1',tel:'0973 220 100'},
-           {id:'c3',nombre:'María Gauto',ruc:'3987122',tel:'0991 774 310'},{id:'c4',nombre:'Lorena Acosta',ruc:'5120447',tel:'0985 330 918'}];
+           {id:'c3',nombre:'María Gauto',ruc:'3987122',tel:'0991 774 310'},{id:'c4',nombre:'Lorena Acosta',ruc:'5120447',tel:'0985 330 918'},{id:'c5',nombre:'Taller Hermanos Ortiz',ruc:'80112233-4',tel:'0982 554 120',lista:'mecanico'}];
   const v=[{id:'v1',chapa:'AAPK 214',chasis:'JTDBT923301234567',marca:'Toyota',modelo:'Hilux 2.8',anio:'2019',color:'Blanco',clienteId:'c1'},
            {id:'v2',chapa:'ABCF 087',chasis:'9BWZZZ377VT004251',marca:'Volkswagen',modelo:'Amarok',anio:'2017',color:'Gris',clienteId:'c2'},
            {id:'v3',chapa:'AARN 560',chasis:'KMHCT41BAEU512345',marca:'Hyundai',modelo:'Accent',anio:'2014',color:'Rojo',clienteId:'c3'},
@@ -398,8 +398,24 @@ function seed(){
     ['s11','AMO-TR-SPR','Amortiguador trasero Sprinter','Suspensión',4,0,1,410000,620000],['s12','SEN-O2-BSH','Sensor de oxígeno Bosch universal','Eléctrico',3,1,1,330000,520000],
     ['s13','PAS-DEL-CR','Pastillas de freno del. Corolla 2009','Frenos',5,0,1,160000,250000],
     ['s14','KIT-TRANS-CG','Kit de transmisión CG 160 (cadena, corona y piñón)','Moto',4,1,2,145000,230000],['s15','ACE-4T-20W50','Aceite moto 4T 20W-50 (L)','Moto',18,6,8,32000,52000],
-    ['s16','CUB-TRAS-90','Cubierta trasera 90/90-18','Moto',3,2,2,165000,255000],['s17','PAS-DEL-MOTO','Pastillas de freno delanteras moto','Moto',6,2,3,38000,65000]];
+    ['s16','CUB-TRAS-90','Cubierta trasera 90/90-18','Moto',3,2,2,165000,255000],['s17','PAS-DEL-MOTO','Pastillas de freno delanteras moto','Moto',6,2,3,38000,65000],
+    ['s18','FIL-WEGA-130','Filtro de aceite Wega WO-130','Filtros',8,3,4,24000,45000],['s19','FIL-FRAM-4967','Filtro de aceite Fram PH4967','Filtros',0,4,3,26000,49000]];
   const stock=S.map(a=>({id:a[0],cod:a[1],desc:a[2],cat:a[3],ex:{central:a[4],s2:a[5]},min:a[6],costo:a[7],precio:a[8]}));
+  const X={s1:{marca:'Shell Helix',barcode:'7790000100015',ubic:'A-1-2',prov:'Lubricantes del Este'},
+   s2:{marca:'Toyota',codFab:'90915-YZZE1',barcode:'4979000915011',equiv:['PH4967','WO-130','W68/3'],ubic:'B-4-12',prov:'Repuestos Japón',compat:[['Toyota','Hilux','2005','2024','2.5 / 3.0'],['Toyota','Corolla','2003','2019',''],['Toyota','Hiace','2005','2020','']]},
+   s18:{marca:'Wega',codFab:'WO-130',barcode:'7798000130010',equiv:['90915-YZZE1','PH4967'],ubic:'B-4-13',prov:'Filtros Paraguay',compat:[['Toyota','Hilux','2005','2024',''],['Toyota','Corolla','2003','2019','']]},
+   s19:{marca:'Fram',codFab:'PH4967',barcode:'0009100496700',equiv:['90915-YZZE1','WO-130'],ubic:'B-4-14',prov:'Filtros Paraguay',compat:[['Toyota','Hilux','2005','2024','']]},
+   s3:{marca:'Mann',codFab:'C 30 005',ubic:'B-2-3',prov:'Repuestos Alemanes',compat:[['Volkswagen','Amarok','2010','2022','2.0 TDI']]},
+   s4:{marca:'Bosch',codFab:'0 986 495 169',ubic:'C-1-4',prov:'Repuestos Japón',compat:[['Toyota','Hilux','2016','2024','2.8']]},
+   s5:{marca:'Fremax',codFab:'BD-5191',ubic:'C-2-1',compat:[['Hyundai','Accent','2011','2017','1.4 / 1.6']]},
+   s6:{marca:'NGK',codFab:'ILKAR7B11',barcode:'0087295935025',ubic:'D-1-1',prov:'Repuestos Japón',compat:[['Hyundai','Accent','2011','2017',''],['Toyota','Corolla','2009','2014','1.8']]},
+   s13:{marca:'Cobreq',codFab:'N-1385',ubic:'C-1-5',compat:[['Toyota','Corolla','2008','2014','']]},
+   s14:{marca:'Riffel',codFab:'KIT-CG160',barcode:'7896000160016',ubic:'M-1-1',prov:'Motopartes CDE',compat:[['Honda','CG 160','2016','2024','160cc'],['Honda','CG 150','2010','2015','150cc']]},
+   s15:{marca:'Motul',barcode:'3374650000204',ubic:'M-2-1',prov:'Lubricantes del Este'},
+   s16:{marca:'Pirelli',codFab:'90/90-18 SC',ubic:'M-3-2',prov:'Motopartes CDE',compat:[['Honda','CG 160','2016','2024',''],['Yamaha','YBR 125','2010','2023',''],['Kenton','GTR 150','2015','2024','']]},
+   s17:{marca:'Cobreq',codFab:'N-917',barcode:'7896000917018',ubic:'M-1-4',prov:'Motopartes CDE',compat:[['Honda','CB 125','2018','2024',''],['Honda','CG 160','2016','2024',''],['Yamaha','YBR 125','2015','2023','']]}};
+  stock.forEach(s=>{const x=X[s.id];if(!x)return;Object.assign(s,{marca:x.marca||'',codFab:x.codFab||'',barcode:x.barcode||'',equiv:x.equiv||[],proveedor:x.prov||'',ubic:x.ubic?{central:x.ubic}:{},
+    compat:(x.compat||[]).map(c=>({marca:c[0],modelo:c[1],desde:c[2],hasta:c[3],motor:c[4]}))})});
   // historial de consumo para rotación (uso diario simulado)
   let sd=7;const rnd=()=>(sd=(sd*9301+49297)%233280)/233280;
   const movs=[];const rate={s1:.9,s2:.25,s6:.35,s7:.2,s9:.12,s10:.1,s3:.06,s4:.05,s5:.04,s8:.02};
@@ -452,6 +468,12 @@ function seed(){
       elevadores:4,telCompras:'0981 555 210',autoWA:{ingreso:true,presupuesto:true,retiro:true},plantillas:{...TPL_DEF}}};
   const msg=(nro,tipo,est,h)=>{const o=ots.find(x=>x.nro===nro),cl=c.find(x=>x.id===o.clienteId);D.mensajes.push({id:uid(),fecha:new Date(Date.now()-h*36e5).toISOString(),otId:o.id,tipo,tel:cl.tel,nombre:cl.nombre,texto:fillTpl(D.config.plantillas[tipo],o,D),estado:est,enviado:est==='enviado'?new Date(Date.now()-h*36e5).toISOString():null})};
   msg(101,'ingreso','enviado',5);msg(103,'ingreso','enviado',28);msg(103,'presupuesto','enviado',27);msg(106,'ingreso','pendiente',6);msg(104,'retiro','pendiente',.5);
+  const T0=hoy();
+  D.ventas=[{id:'vt1',venta:true,nro:1,fecha:T0,hora:'08:40',sucursalId:'central',clienteId:'c5',lista:'mecanico',items:[{tipo:'rep',stockId:'s17',desc:'Pastillas de freno delanteras moto',cant:2,precio:58500,costo:38000}],pagos:[{fecha:T0,monto:117000,medio:'Efectivo',recibo:30}]},
+    {id:'vt2',venta:true,nro:2,fecha:T0,hora:'10:15',sucursalId:'central',clienteId:null,nombreCliente:'Consumidor final',lista:'publico',items:[{tipo:'rep',stockId:'s15',desc:'Aceite moto 4T 20W-50 (L)',cant:1,precio:52000,costo:32000},{tipo:'mo',desc:'Service moto (aceite y filtro)',cant:1,precio:50000}],pagos:[{fecha:T0,monto:102000,medio:'Transferencia',recibo:31}]}];
+  D.egresos=[{id:'eg1',fecha:T0,concepto:'Compra de aceites (Lubricantes del Este)',cat:'Compra a proveedor',medio:'Transferencia',monto:640000,sucursalId:'central'},{id:'eg2',fecha:T0,concepto:'Almuerzo del personal',cat:'Otros',medio:'Efectivo',monto:85000,sucursalId:'central'}];
+  D.config.listas=LISTAS_DEF.map(x=>({...x}));D.config.servicios=SERV_DEF.map(x=>({...x}));
+  D.config.proveedores=[{nombre:'Repuestos Japón',tel:'0981 300 100'},{nombre:'Filtros Paraguay',tel:'0971 220 330'},{nombre:'Motopartes CDE',tel:'0983 450 210'},{nombre:'Lubricantes del Este',tel:'0975 600 700'},{nombre:'Repuestos Alemanes',tel:'0961 800 900'}];
   return D;
 }
 /* ---------- FIREBASE: CONFIGURACIÓN ---------- */
@@ -468,7 +490,7 @@ const FIREBASE_CONFIG={
 const DEV_EMAIL='genesysfastsistems@gmail.com';
 // Los usuarios creados con nombre de usuario ingresan con este dominio interno (no recibe correos).
 const USER_DOMAIN='usuarios.kevanix-taller.app';
-const COLS=['clientes','vehiculos','stock','movs','mecanicos','ots','sucursales','usuarios','mensajes','alertas'];
+const COLS=['clientes','vehiculos','stock','movs','mecanicos','ots','sucursales','usuarios','mensajes','alertas','ventas','egresos'];
 const PLAT_DEF={marca:'KEVANIX Taller',diasPrueba:15,diasGracia:3,registroAbierto:true,waVentas:'',
   datosPago:'Banco: \nCuenta Nº: \nTitular: \nRUC/CI: \nAlias / Giros Tigo: ',
   planPrueba:{maxUsuarios:3,maxSucursales:1},
@@ -480,9 +502,17 @@ const PLAT_DEF={marca:'KEVANIX Taller',diasPrueba:15,diasGracia:3,registroAbiert
   recordatorio:'Hola [Propietario], le recordamos que la membresía de *[Taller]* en KEVANIX Taller vence el [Vence] ([Dias]).\nPara renovar el plan [Plan] (Gs. [Precio]):\n[DatosPago]\nEnvíenos el comprobante por este medio. ¡Gracias!',
   bienvenida:'¡Bienvenido a KEVANIX Taller, [Propietario]!\nYa está listo el sistema de *[Taller]*.\nIngrese en: [Link]\nUsuario: [Usuario]\nContraseña temporal: [Clave]\nAl primer ingreso le pediremos cambiarla.',
   confirmacion:'Hola [Propietario], recibimos su pago de Gs. [Monto] por el plan [Plan] de *[Taller]*. Su membresía quedó activa [Hasta]. ¡Gracias por confiar en KEVANIX!'};
+const LISTAS_DEF=[{id:'publico',nombre:'Público',desc:0},{id:'mecanico',nombre:'Mecánico aliado',desc:10},{id:'mayorista',nombre:'Mayorista / taller',desc:15}];
+const SERV_DEF=[{id:'sv1',nombre:'Service completo',precio:180000,horas:1.5,tipo:'auto'},{id:'sv2',nombre:'Alineación y balanceo',precio:150000,horas:1,tipo:'auto'},
+ {id:'sv3',nombre:'Diagnóstico con escáner',precio:80000,horas:.5,tipo:'auto'},{id:'sv4',nombre:'Cambio de pastillas de freno',precio:90000,horas:1,tipo:'todos'},
+ {id:'sv5',nombre:'Cambio de embrague',precio:350000,horas:4,tipo:'auto'},{id:'sv6',nombre:'Lavado de carburador',precio:60000,horas:1,tipo:'moto'},
+ {id:'sv7',nombre:'Cambio de cadena y kit de transmisión',precio:70000,horas:.8,tipo:'moto'},{id:'sv8',nombre:'Service moto (aceite y filtro)',precio:50000,horas:.5,tipo:'moto'}];
+const CAT_EGRESO=['Compra a proveedor','Sueldos y comisiones','Alquiler','Luz, agua e internet','Combustible','Impuestos','Otros'];
+const MEDIOS=['Efectivo','Transferencia','Tarjeta de débito','Tarjeta de crédito','Billetera (Tigo/Personal)','Cheque'];
 function defCfg(){return {taller:'Mi taller',ruc:'',dir:'',tel:'',timbrado:'',vigDesde:'',bono:5,garantiaDef:90,diasEstancado:90,coberturaDias:30,elevadores:4,telCompras:'',urlPublica:'',ejemplo:false,
-  autoWA:{ingreso:true,presupuesto:true,retiro:true},plantillas:{...TPL_DEF}}}
-const emptyDB=()=>({clientes:[],vehiculos:[],stock:[],movs:[],mecanicos:[],ots:[],sucursales:[],usuarios:[],mensajes:[],alertas:[],config:defCfg(),nextOT:1});
+  autoWA:{ingreso:true,presupuesto:true,retiro:true},plantillas:{...TPL_DEF},
+  listas:LISTAS_DEF.map(x=>({...x})),servicios:SERV_DEF.map(x=>({...x})),proveedores:[]}}
+const emptyDB=()=>({clientes:[],vehiculos:[],stock:[],movs:[],mecanicos:[],ots:[],sucursales:[],usuarios:[],mensajes:[],alertas:[],ventas:[],egresos:[],config:defCfg(),nextOT:1});
 const fbOK=()=>FIREBASE_CONFIG.apiKey&&!/^PEGAR/.test(FIREBASE_CONFIG.apiKey);
 let FS=null,AUTH=null,SEC=null,last={},lastCfg='',unsubs=[],tUnsub=null,listos=new Set(),pendRender=null,plat=null,devUnsubs=[];
 const dv={talleres:[],pagos:[],usuarios:[]};
@@ -541,12 +571,12 @@ function entrarTaller(tid){
 function startSync(){
   st.syncOn=true;st.fase='cargando';render();const since=addD(hoy(),-150);
   COLS.forEach(c=>{let q=c==='usuarios'?FS.collection('usuarios').where('tallerId','==',st.tid):T(c);if(c==='movs'||c==='mensajes')q=q.where('fecha','>=',since);
-    unsubs.push(q.onSnapshot(s=>{db[c]=s.docs.map(d=>Object.assign(d.data(),{id:d.id}));last[c]={};db[c].forEach(x=>last[c][x.id]=stable(x));llego(c)},e=>syncErr(c,e)))});
+    unsubs.push(q.onSnapshot(s=>{db[c]=s.docs.map(d=>Object.assign(d.data(),{id:d.id}));last[c]={};db[c].forEach(x=>last[c][x.id]=stable(x));llego(c)},e=>{syncErr(c,e);if(!listos.has(c)){last[c]={};llego(c)}}))});
   unsubs.push(T('meta').doc('config').onSnapshot(d=>{db.config=Object.assign(defCfg(),d.exists?d.data():{});lastCfg=stable(db.config);llego('config')},e=>syncErr('config',e)));
   unsubs.push(T('meta').doc('contadores').onSnapshot(d=>{db.nextOT=(d.exists&&d.data().nextOT)||1;llego('contadores')},e=>syncErr('contadores',e)));
   if(['admin','recepcion'].includes(st.perfil.rol))unsubs.push(FS.collection('publico').where('tallerId','==',st.tid).where('procesado','==',false).onSnapshot(s=>aplicarRespuestas(s.docs),e=>console.warn(e)));
 }
-function syncErr(c,e){console.error(c,e);toast(e.code==='permission-denied'?'Sin permiso para leer '+c+'. Revisá las reglas de Firestore.':'Error de conexión: '+(e.code||e.message))}
+function syncErr(c,e){console.error(c,e);toast(e.code==='permission-denied'?(['ventas','egresos'].includes(c)?'Falta actualizar las reglas de Firestore para Mostrador y Caja.':'Sin permiso para leer '+c+'. Revisá las reglas de Firestore.'):'Error de conexión: '+(e.code||e.message))}
 function llego(c){if(!st.syncOn)return;listos.add(c);
   if(st.fase!=='app'){if(listos.size>=COLS.length+2){st.fase='app';
       if(st.pendOT&&db.ots.find(o=>o.id===st.pendOT)){const id=st.pendOT;st.pendOT=null;go('ot',id)}else go(NAVS[rol()][0][0]);
@@ -640,9 +670,10 @@ function render(){
       <span><b>${esc(u.nombre)}</b> · ${ROLES[u.rol]||''}</span>${st.soporte?'':'<button class="out" onclick="cambiarClaveModal()">Clave</button>'}<button class="out" onclick="salir()">Salir</button>`;
     $('#nav').innerHTML=NAVS[u.rol].map(([k,l])=>`<button class="${st.view===k||(st.view==='ot'&&k==='ots')?'on':''}" onclick="go('${k}')">${l}${isM()?'':navBadge(k)}</button>`).join('');
   } else {$('#who').innerHTML='';$('#nav').innerHTML=''}
-  const V={tablero,recepcion,ots:otsView,ot:otView,historial,stock:stockView,crm:crmView,reportes:reportesView,finanzas,config:configView,cliente:clienteView,encuesta:encuestaView,seguimiento:seguimientoView,mensajes:mensajesView}[st.view]||tablero;
+  const V={tablero,recepcion,ots:otsView,ot:otView,historial,stock:stockView,crm:crmView,reportes:reportesView,finanzas,pos:posView,config:configView,cliente:clienteView,encuesta:encuestaView,seguimiento:seguimientoView,mensajes:mensajesView}[st.view]||tablero;
   $('#app').innerHTML=(pub?'':membBanner())+(db.config.ejemplo&&!pub&&isA()?`<div class="banner row between"><span>Hay datos de ejemplo cargados.</span><button class="btn sm" onclick="confirmLimpiar()">Borrar datos de ejemplo</button></div>`:'')+V();
   if(st.view==='recepcion') bindRec();
+  if(st.view==='pos'&&st.pos&&st.pos.focus){st.pos.focus=0;const i=$('#pos_q');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   if(st.view==='ots'&&me()&&!isM()) bindSem();
 }
 
@@ -734,9 +765,9 @@ async function cambiarClave(){const u=AUTH.currentUser,a=$('#c_1').value;if(a!==
   try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,$('#c_0').value));await u.updatePassword(a);closeM();toast('Contraseña actualizada.')}catch(e){toast(authMsg(e))}}
 function salir(){closeM();st.view='tablero';st.soporte=false;if(AUTH)AUTH.signOut();else render()}
 function confirmLimpiar(){modalHTML(`<h2>Borrar datos de ejemplo</h2><p>Se borran clientes, vehículos, órdenes, stock, mensajes y movimientos. Los usuarios se mantienen.</p><div class="row"><button class="btn danger" onclick="limpiar()">Borrar todo</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
-function limpiar(){['clientes','vehiculos','stock','movs','ots','mensajes','alertas','mecanicos'].forEach(c=>db[c]=[]);
+function limpiar(){['clientes','vehiculos','stock','movs','ots','mensajes','alertas','mecanicos','ventas','egresos'].forEach(c=>db[c]=[]);
   db.sucursales=db.sucursales.filter(s=>s.id==='central');db.config.ejemplo=false;save();T('meta').doc('contadores').set({nextOT:1});closeM();go('config');toast('Datos de ejemplo borrados.')}
-function cargarEjemplo(){const D=seed();['clientes','vehiculos','stock','movs','mecanicos','ots','mensajes','alertas'].forEach(c=>{db[c]=D[c]});
+function cargarEjemplo(){const D=seed();['clientes','vehiculos','stock','movs','mecanicos','ots','mensajes','alertas','ventas','egresos'].forEach(c=>{db[c]=D[c]});
   const lim=planDe(st.taller?.plan).maxSucursales;db.sucursales=D.sucursales.slice(0,Math.max(1,lim));
   if(db.sucursales.length<2){db.mecanicos.forEach(m=>m.sucursalId='central');db.ots.forEach(o=>o.sucursalId='central');db.stock.forEach(s=>{s.ex={central:(s.ex.central||0)+(s.ex.s2||0)}});db.movs.forEach(m=>m.suc='central')}
   db.usuarios.filter(u=>u.rol==='mecanico'&&!db.mecanicos.find(m=>m.id===u.mecanicoId)).forEach(u=>u.mecanicoId='m1');
@@ -817,7 +848,7 @@ const motoSVG=`<svg viewBox="0 0 400 300" aria-hidden="true"><g fill="none" stro
 <text x="360" y="26" text-anchor="end" font-size="13" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">FRENTE</text>
 <text x="200" y="292" text-anchor="middle" font-size="12" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">LADO IZQUIERDO · marcá también el lado derecho en la descripción</text></svg>`;
 function dmgMap(list,ro,tipo){const m=tipo==='moto';return `<div class="dmg${ro?' ro':''}${m?' moto':''}" ${ro?'':'id="dmg"'}>${m?motoSVG:carSVG}${list.map((d,i)=>`<span class="pt" style="left:${d.x}%;top:${d.y}%">${i+1}</span>`).join('')}</div>`}
-const RK=['chapa','chasis','marca','modelo','anio','color','cli','ruc','tel','dir','email','km','tipo','mec','falla','entrega'];
+const RK=['chapa','chasis','marca','modelo','anio','color','cli','ruc','tel','dir','email','lista','km','tipo','mec','falla','entrega'];
 function recepcion(){
   if(!st.rec) st.rec={danos:[],fotos:[],combustible:4,checklist:{}};
   const r=st.rec,ws=workSuc();
@@ -830,7 +861,7 @@ function recepcion(){
     <label class="field"><span>Nombre / Razón social</span><input id="r_cli" list="dl_cli" autocomplete="off"></label>
     <datalist id="dl_cli">${db.clientes.map(c=>`<option value="${esc(c.nombre)}">${esc(c.ruc||'')}</option>`).join('')}</datalist>
     <label class="field"><span>WhatsApp</span><input id="r_tel" inputmode="tel" placeholder="0981 000 000"></label>
-    <label class="field"><span>Dirección</span><input id="r_dir"></label><label class="field"><span>Correo</span><input id="r_email" type="email" autocomplete="off"></label></div>
+    <label class="field"><span>Tipo de cliente (precios)</span><select id="r_lista">${(db.config.listas||LISTAS_DEF).map(l=>`<option value="${l.id}">${esc(l.nombre)}${l.desc?' (−'+l.desc+'%)':''}</option>`).join('')}</select></label><label class="field"><span>Dirección</span><input id="r_dir"></label><label class="field"><span>Correo</span><input id="r_email" type="email" autocomplete="off"></label></div>
     <div id="r_clinfo" style="margin-top:10px"><p class="note">Escribí el RUC o CI: si el cliente ya existe se completan sus datos y sus vehículos.</p></div></div>
   <div class="panel"><div class="row between"><h2>Vehículo</h2><div class="seg" role="group" aria-label="Tipo de vehículo">${Object.entries(VTIPOS).map(([k,l])=>`<button type="button" class="${(r.vtipo||'auto')===k?'on':''}" onclick="setVtipo('${k}')">${l}</button>`).join('')}</div></div><div class="fields">
     <label class="field"><span>Chapa</span><input id="r_chapa" list="dl_chapas" placeholder="AAAA 000" autocomplete="off" style="text-transform:uppercase"></label>
@@ -860,7 +891,7 @@ function recepcion(){
 const rucBase=s=>String(s||'').replace(/[.\s]/g,'').split('-')[0].replace(/\D/g,'');
 function dvRuc(n){let t=0,k=2;for(let i=n.length-1;i>=0;i--){if(k>11)k=2;t+=(+n[i])*k;k++}const r=t%11;return r>1?11-r:0}
 const buscarCli=v=>{const b=rucBase(v);return b.length>=4?db.clientes.find(c=>rucBase(c.ruc)===b):null};
-function fillCli(c,force){[['cli',c.nombre],['ruc',c.ruc],['tel',c.tel],['dir',c.dir],['email',c.email]].forEach(([k,x])=>{const el=$('#r_'+k);if(el&&(force||!el.value))el.value=x||''});st.rec.cliId=c.id;cliInfo(c)}
+function fillCli(c,force){[['cli',c.nombre],['ruc',c.ruc],['tel',c.tel],['dir',c.dir],['email',c.email],['lista',c.lista||'publico']].forEach(([k,x])=>{const el=$('#r_'+k);if(el&&(force||!el.value))el.value=x||''});st.rec.cliId=c.id;cliInfo(c)}
 function cliInfo(c){const box=$('#r_clinfo');if(!box)return;
   const os=db.ots.filter(o=>o.clienteId===c.id).sort((a,b)=>b.fecha.localeCompare(a.fecha)),vs=db.vehiculos.filter(v=>v.clienteId===c.id);
   const deuda=os.filter(o=>o.aprob==='aprobado').reduce((a,o)=>a+Math.max(0,saldo(o)),0),ch=($('#r_chapa').value||'').trim().toUpperCase();
@@ -918,7 +949,7 @@ async function guardarRec(){
   if(!r.chapa.trim())return toast('Falta la chapa del vehículo.');if(!r.cli.trim())return toast('Falta el nombre del cliente.');
   if(!r.km)return toast('Falta el kilometraje de ingreso.');if(!r.conf)return toast('Marcá la conformidad del cliente con el estado registrado.');
   let c=(r.cliId&&db.clientes.find(x=>x.id===r.cliId))||buscarCli(r.ruc)||(!rucBase(r.ruc)&&db.clientes.find(x=>x.nombre.toLowerCase()===r.cli.trim().toLowerCase()));
-  if(!c){c={id:uid()};db.clientes.push(c)}Object.assign(c,{nombre:r.cli.trim(),ruc:r.ruc.trim(),tel:r.tel.trim(),dir:(r.dir||'').trim(),email:(r.email||'').trim()});
+  if(!c){c={id:uid()};db.clientes.push(c)}Object.assign(c,{nombre:r.cli.trim(),ruc:r.ruc.trim(),tel:r.tel.trim(),dir:(r.dir||'').trim(),email:(r.email||'').trim(),lista:r.lista||'publico'});
   const ch=r.chapa.trim().toUpperCase();let v=db.vehiculos.find(x=>x.chapa.toUpperCase()===ch);
   if(!v){v={id:uid()};db.vehiculos.push(v)}Object.assign(v,{tipo:r.vtipo||'auto',chapa:ch,chasis:r.chasis.toUpperCase(),marca:r.marca,modelo:r.modelo,anio:r.anio,color:r.color,clienteId:c.id});
   const g=garantiaPrev(v.id);
@@ -1043,25 +1074,31 @@ function enviarEncuesta(id){const o=db.ots.find(x=>x.id===id),c=cli(o.clienteId)
   <div class="row">${w?`<a class="btn wa" href="${w}" target="_blank" rel="noopener">Abrir WhatsApp</a>`:''}<button class="btn" onclick="copiar()">Copiar</button><button class="btn" onclick="closeM();verCliente('encuesta','${o.id}')">Ver encuesta</button><button class="btn" onclick="closeM()">Cerrar</button></div>`)}
 function modalHTML(h){$('#modal').innerHTML=`<div class="modal" onclick="if(event.target===this)closeM()"><div class="box">${h}</div></div>`}
 function closeM(){$('#modal').innerHTML=''}
-function addMO(){modalHTML(`<h2>Mano de obra</h2><div class="fields"><label class="field" style="grid-column:1/-1"><span>Descripción</span><input id="m_d" placeholder="Ej.: Cambio de embrague"></label>
+function servDe(tipo){return (db.config.servicios||[]).filter(x=>!tipo||x.tipo==='todos'||x.tipo===(tipo==='moto'?'moto':'auto'))}
+function addMO(){const tv=vtipoDe(veh(ot().vehiculoId)),sv=servDe(tv);modalHTML(`<h2>Mano de obra</h2>${sv.length?`<label class="field"><span>Servicio con precio fijo</span><select id="m_sv" onchange="const x=(db.config.servicios||[]).find(s=>s.id===this.value);if(x){$('#m_d').value=x.nombre;$('#m_p').value=x.precio;$('#m_h').value=String(x.horas).replace('.',',')}"><option value="">Elegir del catálogo…</option>${sv.map(x=>`<option value="${x.id}">${esc(x.nombre)} · ${gs(x.precio)}</option>`).join('')}</select></label>`:''}<div class="fields"><label class="field" style="grid-column:1/-1"><span>Descripción</span><input id="m_d" placeholder="Ej.: Cambio de embrague"></label>
   <label class="field"><span>Cantidad</span><input id="m_c" value="1" inputmode="numeric"></label><label class="field"><span>Precio unitario (Gs.)</span><input id="m_p" inputmode="numeric"></label><label class="field"><span>Suma horas estimadas</span><input id="m_h" placeholder="0" inputmode="decimal"></label></div>
   <div class="row"><button class="btn pri" onclick="saveMO()">Agregar</button><button class="btn" onclick="closeM()">Cancelar</button></div>`);$('#m_d').focus()}
 function saveMO(){const d=$('#m_d').value.trim(),c=num($('#m_c').value),p=num($('#m_p').value);if(!d||!c||!p)return toast('Completá descripción, cantidad y precio.');const o=ot();o.items.push({tipo:'mo',desc:d,cant:c,precio:p});o.horasEst=Math.round((o.horasEst+dec($('#m_h').value))*10)/10;save();closeM();render()}
 function addRepLibre(){modalHTML(`<h2>Repuesto externo</h2><p class="note">Para piezas compradas a proveedor solo para esta OT (no salen del stock).</p><div class="fields"><label class="field" style="grid-column:1/-1"><span>Descripción</span><input id="x_d"></label>
   <label class="field"><span>Cantidad</span><input id="x_c" value="1" inputmode="numeric"></label><label class="field"><span>Costo unitario</span><input id="x_k" inputmode="numeric"></label><label class="field"><span>Precio de venta</span><input id="x_p" inputmode="numeric"></label></div>
   <div class="row"><button class="btn pri" onclick="const d=$('#x_d').value.trim(),c=num($('#x_c').value),p=num($('#x_p').value);if(!d||!c||!p)return toast('Completá descripción, cantidad y precio.');ot().items.push({tipo:'rep',desc:d,cant:c,precio:p,costo:num($('#x_k').value)});save();closeM();render()">Agregar</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
-function addRep(){modalHTML(`<h2>Repuesto de stock · ${esc(sucN(ot().sucursalId))}</h2><input id="rp_q" placeholder="Buscar por código o descripción" oninput="repList()"><div id="rp_l" class="tscroll" style="max-height:340px"></div><div class="row"><button class="btn" onclick="closeM()">Cerrar</button></div>`);repList();$('#rp_q').focus()}
-function repList(){const q=$('#rp_q').value.toLowerCase(),sc=ot().sucursalId;$('#rp_l').innerHTML=`<table><tr><th>Repuesto</th><th class="n">Stock</th><th class="n">Precio</th><th class="n">Cant.</th><th></th></tr>${db.stock.filter(s=>(s.desc+s.cod).toLowerCase().includes(q)).map(s=>{const n=s.ex[sc]||0,otras=Object.entries(s.ex).filter(([k,x])=>k!==sc&&x>0);return `<tr class="${n<=s.min?'low':''}"><td>${esc(s.desc)}<div class="sub mono" style="font-size:11px">${esc(s.cod)}${otras.length?' · '+otras.map(([k,x])=>esc(sucN(k))+': '+x).join(', '):''}</div></td><td class="n">${n}</td><td class="n">${gs(s.precio)}</td><td class="n"><input id="q_${s.id}" value="1" style="width:56px" inputmode="numeric"></td><td><button class="btn sm pri" onclick="pickRep('${s.id}')" ${n?'':'disabled'}>Usar</button></td></tr>`}).join('')}</table>`}
+function addRep(){modalHTML(`<h2>Repuesto de stock · ${esc(sucN(ot().sucursalId))}</h2><input id="rp_q" placeholder="Código, barras o aplicación (ej.: pastillas Hilux 2020)" oninput="repList()"><div id="rp_l" class="tscroll" style="max-height:340px"></div><div class="row"><button class="btn" onclick="closeM()">Cerrar</button></div>`);repList();$('#rp_q').focus()}
+function repList(){const q=$('#rp_q').value,sc=ot().sucursalId;$('#rp_l').innerHTML=`<table><tr><th>Repuesto</th><th class="n">Stock</th><th class="n">Precio</th><th class="n">Cant.</th><th></th></tr>${buscarStock(q).map(s=>{const n=s.ex[sc]||0,otras=Object.entries(s.ex).filter(([k,x])=>k!==sc&&x>0);return `<tr class="${n<=s.min?'low':''}"><td>${esc(s.desc)}<div class="sub mono" style="font-size:11px">${esc(s.cod)}${otras.length?' · '+otras.map(([k,x])=>esc(sucN(k))+': '+x).join(', '):''}</div></td><td class="n">${n}</td><td class="n">${gs(s.precio)}</td><td class="n"><input id="q_${s.id}" value="1" style="width:56px" inputmode="numeric"></td><td><button class="btn sm pri" onclick="pickRep('${s.id}')" ${n?'':'disabled'}>Usar</button></td></tr>`}).join('')}</table>`}
 function pickRep(id){const o=ot(),s=db.stock.find(x=>x.id===id),q=num($('#q_'+id).value),sc=o.sucursalId,n=s.ex[sc]||0;if(q<1)return;if(q>n)return toast(`Solo hay ${n} en ${sucN(sc)}. Pedí un traspaso o marcá “Espera repuestos”.`);
-  s.ex[sc]=n-q;mov(s.id,sc,-q,'uso','OT #'+o.nro);o.items.push({tipo:'rep',stockId:s.id,desc:s.desc,cant:q,precio:s.precio,costo:s.costo});save();closeM();render();toast(`Descontado del stock: ${q} × ${s.desc}`)}
+  s.ex[sc]=n-q;mov(s.id,sc,-q,'uso','OT #'+o.nro);o.items.push({tipo:'rep',stockId:s.id,desc:s.desc,cant:q,precio:precioLista(s,cli(o.clienteId).lista),costo:s.costo});save();closeM();render();toast(`Descontado del stock: ${q} × ${s.desc}`)}
 function delItem(k){const o=ot(),i=o.items[k];if(i.stockId){const s=db.stock.find(x=>x.id===i.stockId);if(s){s.ex[o.sucursalId]=(s.ex[o.sucursalId]||0)+i.cant;mov(s.id,o.sucursalId,i.cant,'devolución','OT #'+o.nro)}}o.items.splice(k,1);save();render()}
 function addPago(){const o=ot();modalHTML(`<h2>Registrar cobro · OT #${o.nro}</h2><div class="fields"><label class="field"><span>Monto (Gs.)</span><input id="p_m" value="${saldo(o)}" inputmode="numeric"></label>
   <label class="field"><span>Medio</span><select id="p_md"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta de débito</option><option>Tarjeta de crédito</option><option>Billetera (Tigo/Personal)</option><option>Cheque</option></select></label><label class="field"><span>Fecha</span><input type="date" id="p_f" value="${hoy()}"></label></div>
   <div class="row"><button class="btn pri" onclick="savePago()">Registrar</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
 async function savePago(){const m=num($('#p_m').value);if(m<=0)return toast('Ingresá un monto válido.');const o=ot(),f=$('#p_f').value||hoy(),md=$('#p_md').value;closeM();
   const nro=await nuevoRecibo();o.pagos.push({fecha:f,monto:m,medio:md,recibo:nro,hora:new Date().toISOString()});save();render();toast('Cobro registrado: '+gs(m));compModal('recibo',o.id,o.pagos.length-1)}
-async function nuevoRecibo(){const r=T('meta').doc('contadores');
-  try{return await FS.runTransaction(async t=>{const d=await t.get(r);const n=(d.exists&&d.data().nextRecibo)||1;t.set(r,{nextRecibo:n+1},{merge:true});return n})}
+async function contador(k){const r=T('meta').doc('contadores'),mn=k==='nextVenta'?Math.max(0,...db.ventas.map(v=>v.nro||0))+1:1;
+  try{return await FS.runTransaction(async t=>{const d=await t.get(r);const n=Math.max(mn,(d.exists&&d.data()[k])||1);t.set(r,{[k]:n+1},{merge:true});return n})}
+  catch(e){const n=Math.max(0,...db.ventas.map(v=>v.nro||0))+1;r.set({[k]:n+1},{merge:true}).catch(()=>{});return n}}
+const docById=id=>db.ots.find(x=>x.id===id)||db.ventas.find(x=>x.id===id);
+const cliDoc=o=>o.venta&&!o.clienteId?{nombre:o.nombreCliente||'Consumidor final',ruc:o.rucCliente||'',tel:'',dir:''}:cli(o.clienteId);
+async function nuevoRecibo(){const r=T('meta').doc('contadores'),mn=Math.max(0,...db.ots.flatMap(o=>o.pagos.map(p=>p.recibo||0)),...db.ventas.flatMap(v=>v.pagos.map(p=>p.recibo||0)))+1;
+  try{return await FS.runTransaction(async t=>{const d=await t.get(r);const n=Math.max(mn,(d.exists&&d.data().nextRecibo)||1);t.set(r,{nextRecibo:n+1},{merge:true});return n})}
   catch(e){const n=Math.max(0,...db.ots.flatMap(o=>o.pagos.map(p=>p.recibo||0)))+1;r.set({nextRecibo:n+1},{merge:true}).catch(()=>{});return n}}
 function enviarWA(){const o=ot(),v=veh(o.vehiculoId),c=cli(o.clienteId);
   const msg=fillTpl(db.config.plantillas.presupuesto,o);
@@ -1071,7 +1108,8 @@ function enviarWA(){const o=ot(),v=veh(o.vehiculoId),c=cli(o.clienteId);
   <div class="row">${w?`<a class="btn wa" href="${w}" target="_blank" rel="noopener">Abrir WhatsApp</a>`:''}<button class="btn" onclick="copiar()">Copiar mensaje</button><button class="btn" onclick="closeM()">Cerrar</button></div>
   <p class="note">El enlace abre la vista del cliente con Aprobar / Rechazar. Para que funcione desde el teléfono del cliente, el sistema debe estar publicado con base de datos en la nube.</p>`)}
 function copiar(){const t=$('#wa_t');if(navigator.clipboard)navigator.clipboard.writeText(t.value).then(()=>toast('Mensaje copiado'),()=>{t.select();toast('Seleccionado: copiá con Ctrl+C')});else t.select()}
-function facturar(){const o=ot(),s=suc(o.sucursalId),n=`${s.est}-${s.pto}-${String(s.nextFac++).padStart(7,'0')}`;
+function facturar(){emitirFactura(ot())}
+function emitirFactura(o){const s=suc(o.sucursalId),n=`${s.est}-${s.pto}-${String(s.nextFac++).padStart(7,'0')}`;
   const ruc=(db.config.ruc||'').replace(/\D/g,'');o.factura={nro:n,fecha:hoy(),cdc:('01'+ruc.padStart(9,'0')+s.est+s.pto+String(s.nextFac-1).padStart(7,'0')+'1'+hoy().replace(/-/g,'')+'1'+Math.floor(Math.random()*1e9)).slice(0,44)};
   o.factura.condicion=saldo(o)>0?'credito':'contado';save();render();verKude(o.id);toast('Factura '+n+' emitida')}
 function verKude(id){compModal('factura',id)}
@@ -1094,16 +1132,16 @@ const ciudadTaller=()=>db.config.ciudad||((db.config.dir||'').split(',').pop().t
 function cpEmpresa(){const c=db.config;
   return `<div class="cp-emp">${c.logo?`<img src="${c.logo}" alt="">`:''}<div style="min-width:0"><h5>${esc(c.taller)}</h5>${c.actividad?`<div>${esc(c.actividad)}</div>`:''}
   <div>${c.ruc?'RUC '+esc(c.ruc)+' · ':''}${esc(c.dir||'')}</div><div>${c.tel?'Tel. '+esc(c.tel):''}${c.email?' · '+esc(c.email):''}</div></div></div>`}
-function cpFactura(o,sm,copia){const c=db.config,cl=cli(o.clienteId),v=veh(o.vehiculoId),T=total(o),f=o.factura,s=suc(o.sucursalId),elec=c.tipoFactura==='electronica';
+function cpFactura(o,sm,copia){const c=db.config,cl=cliDoc(o),v=veh(o.vehiculoId),T=total(o),f=o.factura,s=suc(o.sucursalId),elec=c.tipoFactura==='electronica';
   const cond=f.condicion||(saldo(o)>0?'credito':'contado'),min=sm?3:8,filas=o.items.map(i=>`<tr><td class="r">${i.cant}</td><td>${esc(i.desc)}</td><td class="r">${fmt(i.precio)}</td><td class="r"></td><td class="r"></td><td class="r">${fmt(i.cant*i.precio)}</td></tr>`);
   for(let k=filas.length;k<min;k++)filas.push('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>');
   return `<div class="cp-doc ${sm?'sm':''}">
   <div class="cp-hd">${cpEmpresa()}<div class="cp-box"><div>Timbrado Nº <b>${esc(c.timbrado||'—')}</b></div><div class="cp-k">Inicio de vigencia ${c.vigDesde?fdate(c.vigDesde):'—'}${c.vigHasta?' · Vence '+fdate(c.vigHasta):''}</div>
     <div>RUC <b>${esc(c.ruc||'—')}</b></div><div class="t">${elec?'FACTURA ELECTRÓNICA':'FACTURA'}</div><div class="n">${esc(f.nro)}</div></div></div>
   <div class="cp-grid"><div><div class="cp-k">Fecha de emisión</div>${fdate(f.fecha)}</div><div><div class="cp-k">Condición de venta</div><span class="cp-chip">${cond==='credito'?'CRÉDITO':'CONTADO'}</span></div>
-    <div><div class="cp-k">Orden de trabajo</div>Nº ${o.nro}</div><div><div class="cp-k">Sucursal</div>${esc(s.nombre)}</div>
+    <div><div class="cp-k">${o.venta?'Venta mostrador':'Orden de trabajo'}</div>Nº ${o.nro}</div><div><div class="cp-k">Sucursal</div>${esc(s.nombre)}</div>
     <div class="w2"><div class="cp-k">Nombre o razón social</div><b>${esc(cl.nombre)}</b></div><div><div class="cp-k">RUC / CI</div>${esc(cl.ruc||'—')}</div><div><div class="cp-k">Teléfono</div>${esc(cl.tel||'—')}</div>
-    <div class="w2"><div class="cp-k">Dirección</div>${esc(cl.dir||'—')}</div><div class="w2"><div class="cp-k">Vehículo</div>${esc(v.chapa)} · ${esc(v.marca)} ${esc(v.modelo)} · ${fmt(o.km)} km</div></div>
+    <div class="w2"><div class="cp-k">Dirección</div>${esc(cl.dir||'—')}</div><div class="w2"><div class="cp-k">${o.venta?'Tipo':'Vehículo'}</div>${o.venta?'Venta en mostrador':`${esc(v.chapa)} · ${esc(v.marca)} ${esc(v.modelo)} · ${fmt(o.km)} km`}</div></div>
   <table class="cp-tb"><thead><tr><th class="r" style="width:9%">Cant.</th><th>Descripción</th><th class="r" style="width:15%">Precio unit.</th><th class="r" style="width:11%">Exentas</th><th class="r" style="width:11%">5%</th><th class="r" style="width:15%">10%</th></tr></thead>
   <tbody>${filas.join('')}</tbody>
   <tbody><tr class="f"><td colspan="3">Subtotales</td><td class="r">0</td><td class="r">0</td><td class="r">${fmt(T)}</td></tr>
@@ -1112,9 +1150,9 @@ function cpFactura(o,sm,copia){const c=db.config,cl=cli(o.clienteId),v=veh(o.veh
   <div class="cp-fill"></div>
   ${elec?`<div class="cp-note">CDC: <span style="font-family:'IBM Plex Mono',monospace">${esc((f.cdc||'').replace(/(.{4})/g,'$1 '))}</span><br>Representación gráfica de documento electrónico. Consulte su validez en ekuatia.set.gov.py</div>`:''}
   ${copia?`<div class="cp-copy">${copia}</div>`:''}</div>`}
-function cpRecibo(o,p,sm,copia){const c=db.config,cl=cli(o.clienteId),v=veh(o.vehiculoId),T=total(o),i=o.pagos.indexOf(p);
+function cpRecibo(o,p,sm,copia){const c=db.config,cl=cliDoc(o),v=veh(o.vehiculoId),T=total(o),i=o.pagos.indexOf(p);
   const antes=o.pagos.slice(0,i).reduce((a,x)=>a+x.monto,0),sal=T-antes-p.monto;
-  const concepto=`${sal<=0?'Cancelación':'Pago a cuenta'} de la orden de trabajo Nº ${o.nro} · ${v.marca} ${v.modelo} chapa ${v.chapa}${o.factura?' · Factura '+o.factura.nro:''}`;
+  const concepto=o.venta?`Compra en mostrador Nº ${o.nro}${o.factura?' · Factura '+o.factura.nro:''}`:`${sal<=0?'Cancelación':'Pago a cuenta'} de la orden de trabajo Nº ${o.nro} · ${v.marca} ${v.modelo} chapa ${v.chapa}${o.factura?' · Factura '+o.factura.nro:''}`;
   return `<div class="cp-doc ${sm?'sm':''}">
   <div class="cp-hd">${cpEmpresa()}<div class="cp-box"><div class="t">RECIBO DE DINERO</div><div class="n">Nº ${String(p.recibo||0).padStart(7,'0')}</div><div class="cp-amt">Gs. ${fmt(p.monto)}</div></div></div>
   <div class="cp-line"><span class="cp-k">Recibí de</span><b>${esc(cl.nombre)}</b>${cl.ruc?`<span>· RUC/CI ${esc(cl.ruc)}</span>`:''}</div>
@@ -1133,7 +1171,7 @@ const hexDark=(h,t)=>{const n=parseInt(h.slice(1),16),f=x=>Math.round(x*(1-t));r
 const DOC_COLORES=[['#C8102E','Rojo'],['#1D4E89','Azul'],['#0E7C66','Verde'],['#D9661A','Naranja'],['#6A3FA0','Violeta'],['#16202A','Grafito']];
 function cpVars(){const a=/^#[0-9a-f]{6}$/i.test(db.config.colorDoc||'')?db.config.colorDoc:'#C8102E',b=/^#[0-9a-f]{6}$/i.test(db.config.colorDoc2||'')?db.config.colorDoc2:'#F2B705';
   return `--cpa:${a};--cpa2:${hexDark(a,.35)};--cpb:${b};--cpt:${hexMix(a,.86)};--cpt2:${hexMix(a,.94)};--cpl:${hexMix(a,.6)}`}
-function cpPages(cp){const P=PAPEL[cp.papel],o=db.ots.find(x=>x.id===cp.otId),docs=[];
+function cpPages(cp){const P=PAPEL[cp.papel],o=docById(cp.otId),docs=[];
   const lbl=cp.tipo==='factura'?['ORIGINAL: Adquirente','DUPLICADO: Archivo tributario','TRIPLICADO: Contabilidad']:['ORIGINAL: Cliente','COPIA: Taller','COPIA'];
   for(let k=0;k<cp.copias;k++){const copia=cp.copias>1?lbl[k]:'';
     docs.push(sm=>cp.tipo==='factura'?cpFactura(o,sm,copia):cpRecibo(o,o.pagos[cp.pi],sm,copia))}
@@ -1141,12 +1179,12 @@ function cpPages(cp){const P=PAPEL[cp.papel],o=db.ots.find(x=>x.id===cp.otId),do
   if(cp.juntas&&cp.papel!=='media'){for(let k=0;k<docs.length;k+=2)pages.push(`<div class="cp-sheet" style="width:${P.w}mm;height:${P.h}mm;${cpVars()}">${docs[k](true)}${docs[k+1]?docs[k+1](true):'<div class="cp-doc sm"></div>'}</div>`)}
   else docs.forEach(d=>pages.push(`<div class="cp-sheet" style="width:${P.w}mm;height:${P.h}mm;${cpVars()}">${d(cp.papel==='media')}</div>`));
   return pages}
-function compModal(tipo,otId,pi){const o=db.ots.find(x=>x.id===otId);if(!o)return;
-  if(tipo==='factura'&&!o.factura)return toast('La orden todavía no tiene factura.');
+function compModal(tipo,otId,pi){const o=docById(otId);if(!o)return;
+  if(tipo==='factura'&&!o.factura)return toast('Todavía no tiene factura.');
   let papel='a4';try{papel=localStorage.getItem('kt_papel_'+tipo)||(tipo==='recibo'?'media':'a4')}catch(e){}
   st.cp={tipo,otId,pi,papel,copias:tipo==='factura'?2:2,juntas:tipo==='recibo'};cpRender()}
 function cpSet(k,v){st.cp[k]=v;if(k==='papel'){try{localStorage.setItem('kt_papel_'+st.cp.tipo,v)}catch(e){}}cpRender()}
-function cpRender(){const cp=st.cp,o=db.ots.find(x=>x.id===cp.otId),P=PAPEL[cp.papel],pages=cpPages(cp);
+function cpRender(){const cp=st.cp,o=docById(cp.otId),P=PAPEL[cp.papel],pages=cpPages(cp);
   const titulo=cp.tipo==='factura'?`Factura ${o.factura.nro}`:`Recibo Nº ${String(o.pagos[cp.pi].recibo||0).padStart(7,'0')}`;
   modalHTML(`<div class="row between"><h2>${titulo}</h2><button class="btn sm" onclick="closeM()">Cerrar</button></div>
   <div class="grid" style="gap:10px"><div class="row"><span class="cp-k" style="min-width:70px">Papel</span><div class="seg">${Object.entries(PAPEL).map(([k,x])=>`<button class="${cp.papel===k?'on':''}" onclick="cpSet('papel','${k}')">${x.n}</button>`).join('')}</div></div>
@@ -1161,7 +1199,7 @@ function cpImprimir(){const cp=st.cp,P=PAPEL[cp.papel],ph=$('#printhost');ph.inn
   let stl=$('#cpPage');if(!stl){stl=document.createElement('style');stl.id='cpPage';document.head.appendChild(stl)}
   stl.textContent=`@page{size:${P.w}mm ${P.h}mm;margin:0}`;
   imprimirAhora(st.cp.tipo==='factura'?'Factura':'Recibo',()=>{ph.innerHTML='';stl.textContent=''})}
-async function cpPDF(){const cp=st.cp,P=PAPEL[cp.papel],o=db.ots.find(x=>x.id===cp.otId),b=$('#cpPdf');
+async function cpPDF(){const cp=st.cp,P=PAPEL[cp.papel],o=docById(cp.otId),b=$('#cpPdf');
   if(!window.html2canvas||!window.jspdf)return toast('No se pudo cargar el generador de PDF. Revisá la conexión.');
   b.disabled=true;b.textContent='Generando PDF…';const ph=$('#printhost');
   try{ph.innerHTML=cpPages(cp).join('');if(document.fonts&&document.fonts.ready)await document.fonts.ready;
@@ -1218,32 +1256,176 @@ function historial(){
 }
 
 /* ---------- STOCK ---------- */
+/* ---------- INVENTARIO AVANZADO ---------- */
+const normTxt=t=>String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const normRef=t=>String(t||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const STOP=new Set(['de','del','la','el','los','las','para','y','con','a','en','un','una']);
+const raiz=w=>w.length>4?w.replace(/(es|s)$/,''):w;
+const refsDe=s=>[s.cod,s.codFab,s.barcode,...(s.equiv||[])].map(normRef).filter(Boolean);
+const equivalentes=s=>{const r=new Set(refsDe(s));return db.stock.filter(x=>x.id!==s.id&&refsDe(x).some(y=>r.has(y)))};
+const compatTxt=c=>`${c.marca} ${c.modelo}${c.desde||c.hasta?` (${c.desde||'…'}–${c.hasta||'…'})`:''}${c.motor?' '+c.motor:''}`;
+const fmtUbic=u=>{if(!u)return '';const p=String(u).split('-');return p.length===3?`Pasillo ${p[0]} · Estante ${p[1]} · Gaveta ${p[2]}`:String(u)};
+const ubicDe=(s,suc)=>(s.ubic||{})[suc===('*')?db.sucursales[0]?.id:suc]||'';
+function listaDe(id){return (db.config.listas||LISTAS_DEF).find(l=>l.id===id)||(db.config.listas||LISTAS_DEF)[0]}
+function precioLista(s,id){if(!id||id==='publico')return s.precio;const ov=(s.precios||{})[id];if(ov)return ov;const l=listaDe(id);return Math.round(s.precio*(1-(l.desc||0)/100)/100)*100}
+function buscarStock(q,opts={}){q=String(q||'').trim();let L=db.stock;
+  if(opts.cat)L=L.filter(s=>s.cat===opts.cat);if(opts.marcaV)L=L.filter(s=>(s.compat||[]).some(c=>c.marca===opts.marcaV));
+  if(opts.conStock)L=L.filter(s=>qty(s)>0);
+  if(!q)return L.slice().sort((a,b)=>(qty(a)-a.min)-(qty(b)-b.min));
+  const nq=normRef(q),own=s=>[s.cod,s.codFab,s.barcode].map(normRef).includes(nq),exact=L.filter(own);
+  if(!exact.length)L.filter(s=>refsDe(s).includes(nq)).forEach(s=>exact.push(s));
+  if(exact.length){const ids=new Set(exact.map(s=>s.id));const eq=[];exact.forEach(s=>equivalentes(s).forEach(x=>{if(!ids.has(x.id)){ids.add(x.id);eq.push(Object.assign(Object.create(x),{_equiv:s.id}))}}));return [...exact,...eq]}
+  const toks=normTxt(q).split(/[^a-z0-9.]+/).filter(t=>t&&!STOP.has(t)),years=toks.filter(t=>/^(19|20)\d{2}$/.test(t)).map(Number),words=toks.filter(t=>!/^(19|20)\d{2}$/.test(t)).map(raiz);
+  const res=[];
+  L.forEach(s=>{const comp=s.compat||[];
+    const hay=normTxt([s.desc,s.cat,s.marca,s.cod,s.codFab,s.barcode,(s.equiv||[]).join(' '),comp.map(c=>`${c.marca} ${c.modelo} ${c.modelo.replace(/\s/g,'')} ${c.motor}`).join(' ')].join(' '));
+    const hayN=hay.replace(/[^a-z0-9 ]/g,' ');
+    if(!words.every(w=>hay.includes(w)||hayN.includes(w)||hay.replace(/\s/g,'').includes(w)))return;
+    let sc=1;
+    if(years.length&&comp.length){const ok=comp.some(c=>{const cm=normTxt(c.marca+' '+c.modelo+' '+c.modelo.replace(/\s/g,''));const vehW=words.filter(w=>cm.includes(w));return years.every(y=>(!c.desde||y>=+c.desde)&&(!c.hasta||y<=+c.hasta))&&(vehW.length||!words.some(w=>normTxt(comp.map(x=>x.marca+' '+x.modelo).join(' ')).includes(w)))});if(!ok)return;sc+=2}
+    if(qty(s)>0)sc+=1;res.push([sc,s])});
+  return res.sort((a,b)=>b[0]-a[0]).map(x=>x[1])}
 function stockView(){
   const low=db.stock.filter(s=>qty(s)<=s.min).length,A=isA();
   const val=db.stock.reduce((a,s)=>a+qty(s)*s.costo,0);
   const tr=db.movs.filter(m=>m.tipo==='traspaso'&&m.cant>0).slice(-6).reverse();
+  const cats=[...new Set(db.stock.map(s=>s.cat).filter(Boolean))].sort(),marcas=[...new Set(db.stock.flatMap(s=>(s.compat||[]).map(c=>c.marca)))].sort();
   return `<div class="row between"><h1>Stock e inventario</h1><div class="row">${A&&db.sucursales.length>1?`<button class="btn" onclick="traspaso()">Traspasar entre sucursales</button>`:''}${A?`<button class="btn pri" onclick="editStock()">+ Nuevo artículo</button>`:''}</div></div>
   <div class="grid kpis"><div class="kpi"><b>${db.stock.length}</b><span>Artículos</span></div><div class="kpi ${low?'alert':''}"><b>${low}</b><span>Bajo mínimo</span></div>${A?`<div class="kpi"><b class="m">${gs(val)}</b><span>Valor al costo</span></div>`:''}</div>
-  ${comprasPanel()}
-  <div class="panel"><input id="sq" placeholder="Buscar repuesto, aceite o accesorio" value="${esc(st.sq)}" oninput="st.sq=this.value;stockTable()" style="max-width:380px;margin-bottom:10px"><div class="tscroll" id="stt">${stockTableH()}</div></div>
+  ${comprasPanel()}${pedidosProveedor()}
+  <div class="panel"><div class="grid" style="gap:10px">
+    <input id="sq" placeholder="Código interno, de fábrica, de barras o aplicación (ej.: pastillas Honda CG 160 2022)" value="${esc(st.sq)}" oninput="st.sq=this.value;clearTimeout(window._sq);window._sq=setTimeout(stockTable,200)" style="font-size:16px;padding:12px 14px">
+    <div class="row"><select style="width:auto" onchange="st.scat=this.value;stockTable()" aria-label="Categoría"><option value="">Todas las categorías</option>${cats.map(c=>`<option ${st.scat===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
+    <select style="width:auto" onchange="st.smar=this.value;stockTable()" aria-label="Marca de vehículo"><option value="">Todas las marcas de vehículo</option>${marcas.map(c=>`<option ${st.smar===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
+    <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" style="width:auto" ${st.scon?'checked':''} onchange="st.scon=this.checked;stockTable()"> Solo con stock</label>
+    <span class="note">Escaneá el código de barras o escribí el código de otra marca para ver las equivalencias.</span></div></div>
+    <div class="tscroll" id="stt" style="margin-top:10px">${stockTableH()}</div></div>
   ${A&&tr.length?`<div class="panel"><h2>Últimos traspasos</h2><table><tr><th>Fecha</th><th>Artículo</th><th>Destino</th><th>Detalle</th><th class="n">Cant.</th></tr>${tr.map(m=>`<tr><td>${fdate(m.fecha)}</td><td>${esc((db.stock.find(s=>s.id===m.stockId)||{}).desc)}</td><td>${esc(sucN(m.suc))}</td><td class="sub">${esc(m.ref)}</td><td class="n">${m.cant}</td></tr>`).join('')}</table></div>`:''}`;
 }
 function stockTable(){$('#stt').innerHTML=stockTableH()}
-function stockTableH(){const q=st.sq.toLowerCase(),A=isA(),multi=db.sucursales.length>1;
-  return `<table><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th class="n">Stock${st.suc==='*'?' total':''}</th>${multi?'<th>Por sucursal</th>':''}<th class="n">Mín.</th>${A?'<th class="n">Costo</th>':''}<th class="n">Venta</th>${A?'<th></th>':''}</tr>
-  ${db.stock.filter(s=>(s.desc+s.cod+s.cat).toLowerCase().includes(q)).sort((a,b)=>(qty(a)-a.min)-(qty(b)-b.min)).map(s=>`<tr class="${qty(s)<=s.min?'low':''}"><td class="mono">${esc(s.cod)}</td><td>${esc(s.desc)} ${qty(s)<=s.min?'<span class="chip c-bad">Reponer</span>':''}</td><td>${esc(s.cat)}</td>
-  <td class="n">${A&&st.suc!=='*'?`<div class="row" style="justify-content:flex-end;gap:4px;flex-wrap:nowrap"><button class="btn sm" onclick="adj('${s.id}',-1)" aria-label="Restar">−</button><b style="min-width:28px;text-align:center">${qty(s)}</b><button class="btn sm" onclick="adj('${s.id}',1)" aria-label="Sumar">+</button></div>`:`<b>${qty(s)}</b>`}</td>
-  ${multi?`<td class="sub" style="font-size:12px;white-space:nowrap">${db.sucursales.map(x=>esc(x.nombre.replace('Sucursal ',''))+': '+(s.ex[x.id]||0)).join(' · ')}</td>`:''}
-  <td class="n">${s.min}</td>${A?`<td class="n">${gs(s.costo)}</td>`:''}<td class="n">${gs(s.precio)}</td>${A?`<td><button class="btn sm" onclick="editStock('${s.id}')">Editar</button></td>`:''}</tr>`).join('')||'<tr><td colspan="9" class="empty">Sin artículos.</td></tr>'}</table>`}
+function stockTableH(){const A=isA(),multi=db.sucursales.length>1,L=buscarStock(st.sq,{cat:st.scat,marcaV:st.smar,conStock:st.scon}),ws=workSuc();
+  const ls=(db.config.listas||LISTAS_DEF);
+  const head=st.sq&&L.some(s=>s._equiv)?`<div class="banner" style="border-style:solid;border-color:var(--info);margin-bottom:8px"><b style="color:var(--info)">Equivalencias:</b> estos artículos de otras marcas sirven igual que el buscado.</div>`:'';
+  return head+`<table><tr><th>Códigos</th><th>Artículo</th><th>Ubicación</th><th class="n">Stock</th>${multi?'<th>Sucursales</th>':''}<th class="n">Precios</th>${A?'<th></th>':''}</tr>
+  ${L.map(s=>{const q=qty(s),eq=equivalentes(s),comp=s.compat||[];return `<tr class="${q<=s.min?'low':''}">
+  <td class="mono" style="font-size:12px;white-space:nowrap"><b>${esc(s.cod)}</b>${s.codFab?`<div class="sub">Fáb. ${esc(s.codFab)}</div>`:''}${s.barcode?`<div class="sub">▮▯ ${esc(s.barcode)}</div>`:''}</td>
+  <td style="min-width:240px">${s._equiv?'<span class="chip c-info">Equivalente</span> ':''}<b>${esc(s.desc)}</b> ${q<=s.min?'<span class="chip c-bad">Reponer</span>':''}<div class="sub" style="font-size:12px">${esc([s.marca,s.cat].filter(Boolean).join(' · '))}</div>
+    ${comp.length?`<div style="font-size:12px;margin-top:2px">${comp.slice(0,3).map(c=>esc(compatTxt(c))).join(' · ')}${comp.length>3?` <span class="sub">+${comp.length-3}</span>`:''}</div>`:'<div class="sub" style="font-size:12px">Universal</div>'}
+    ${eq.length?`<button class="btn sm" style="margin-top:4px" onclick="fichaStock('${s.id}')">≡ ${eq.length} equivalente${eq.length>1?'s':''} · ${eq.reduce((a,x)=>a+qty(x),0)} en stock</button>`:''}</td>
+  <td style="font-size:12px;min-width:150px">${ubicDe(s,ws)?esc(fmtUbic(ubicDe(s,ws))):'<span class="sub">Sin ubicación</span>'}</td>
+  <td class="n">${A&&st.suc!=='*'?`<div class="row" style="justify-content:flex-end;gap:4px;flex-wrap:nowrap"><button class="btn sm" onclick="adj('${s.id}',-1)" aria-label="Restar">−</button><b style="min-width:28px;text-align:center">${q}</b><button class="btn sm" onclick="adj('${s.id}',1)" aria-label="Sumar">+</button></div>`:`<b>${q}</b>`}<div class="sub" style="font-size:11px">mín. ${s.min}</div></td>
+  ${multi?`<td class="sub" style="font-size:12px;white-space:nowrap">${db.sucursales.map(x=>esc(x.nombre.replace('Sucursal ',''))+': '+(s.ex[x.id]||0)).join('<br>')}</td>`:''}
+  <td class="n" style="font-size:12px;white-space:nowrap">${ls.map((l,i)=>`<div>${i?`<span class="sub">${esc(l.nombre.split(' ')[0])}</span> `:''}<b${i?'':' style="font-size:14px"'}>${gs(precioLista(s,l.id))}</b></div>`).join('')}${A?`<div class="sub">Costo ${gs(s.costo)}</div>`:''}</td>
+  ${A?`<td><div class="grid" style="gap:4px"><button class="btn sm" onclick="editStock('${s.id}')">Editar</button><button class="btn sm" onclick="fichaStock('${s.id}')">Ficha</button></div></td>`:''}</tr>`}).join('')||`<tr><td colspan="8" class="empty">${st.sq?'No hay artículos que coincidan. Probá con menos palabras o con el código de otra marca.':'Sin artículos.'}</td></tr>`}</table>`}
+function fichaStock(id){const s=db.stock.find(x=>x.id===id),eq=equivalentes(s),ms=db.movs.filter(m=>m.stockId===id).slice(-8).reverse();
+  modalHTML(`<div class="row between"><h2>${esc(s.desc)}</h2><button class="btn sm" onclick="closeM()">Cerrar</button></div>
+  <div class="fields"><div><span class="cp-k">Código interno</span><br><b class="mono">${esc(s.cod)}</b></div><div><span class="cp-k">Código de fábrica</span><br><span class="mono">${esc(s.codFab||'—')}</span></div><div><span class="cp-k">Código de barras</span><br><span class="mono">${esc(s.barcode||'—')}</span></div><div><span class="cp-k">Marca / categoría</span><br>${esc([s.marca,s.cat].filter(Boolean).join(' · ')||'—')}</div><div><span class="cp-k">Proveedor</span><br>${esc(s.proveedor||'—')}</div></div>
+  <h3>Stock y ubicación</h3><table><tr><th>Sucursal</th><th class="n">Stock</th><th>Ubicación</th></tr>${db.sucursales.map(x=>`<tr><td>${esc(x.nombre)}</td><td class="n">${s.ex[x.id]||0}</td><td>${esc(fmtUbic((s.ubic||{})[x.id])||'—')}</td></tr>`).join('')}</table>
+  <h3>Precios</h3><div class="row">${(db.config.listas||LISTAS_DEF).map(l=>`<span class="tag">${esc(l.nombre)}</span><b class="mono">${gs(precioLista(s,l.id))}</b>`).join('<span class="sub">·</span>')}</div>
+  <h3>Vehículos compatibles</h3>${(s.compat||[]).length?`<div class="row">${s.compat.map(c=>`<span class="tag">${esc(compatTxt(c))}</span>`).join('')}</div>`:'<p class="sub" style="margin:0">Universal / sin restricciones cargadas.</p>'}
+  <h3>Equivalencias (cruce de referencias)</h3>${(s.equiv||[]).length?`<p class="note" style="margin:0 0 6px">Referencias: <span class="mono">${esc(s.equiv.join(', '))}</span></p>`:''}
+  ${eq.length?`<table><tr><th>Artículo</th><th>Marca</th><th>Ubicación</th><th class="n">Stock</th><th class="n">Precio</th></tr>${eq.map(x=>`<tr><td><b>${esc(x.desc)}</b><div class="sub mono" style="font-size:11px">${esc(x.cod)} · ${esc(x.codFab||'')}</div></td><td>${esc(x.marca||'')}</td><td style="font-size:12px">${esc(fmtUbic(ubicDe(x,workSuc()))||'—')}</td><td class="n"><b>${qty(x)}</b></td><td class="n">${gs(x.precio)}</td></tr>`).join('')}</table>`:'<p class="sub" style="margin:0">No hay equivalentes cargados.</p>'}
+  ${ms.length?`<h3>Últimos movimientos</h3><table><tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th class="n">Cant.</th></tr>${ms.map(m=>`<tr><td>${fdate(m.fecha)}</td><td>${esc(m.tipo)}</td><td class="sub">${esc(sucN(m.suc))} · ${esc(m.ref)}</td><td class="n">${m.cant>0?'+':''}${m.cant}</td></tr>`).join('')}</table>`:''}`)}
+function pedidosProveedor(){const low=db.stock.filter(s=>qty(s)<=s.min);if(!low.length||!isA())return '';
+  const g={};low.forEach(s=>{(g[s.proveedor||'Sin proveedor']=g[s.proveedor||'Sin proveedor']||[]).push(s)});
+  return `<div class="panel"><h2>Pedidos a proveedores</h2><p class="note" style="margin:-4px 0 10px">Artículos en o por debajo del mínimo, agrupados por proveedor. Cantidad sugerida: hasta el doble del mínimo.</p>
+  <div class="grid g2">${Object.entries(g).map(([p,L])=>{const pr=(db.config.proveedores||[]).find(x=>x.nombre===p),msg=`*${db.config.taller}* · Pedido de repuestos\n${L.map(s=>`• ${s.desc}${s.codFab?' ('+s.codFab+')':''} × ${Math.max(1,s.min*2-qty(s))}`).join('\n')}\n¿Nos confirman disponibilidad y precio?`,w=pr?waLink(pr.tel,msg):'';
+    return `<div style="border:1px solid var(--line);border-radius:8px;padding:10px"><div class="row between"><b>${esc(p)}</b>${w?`<a class="btn sm wa" href="${w}" target="_blank" rel="noopener">Pedir por WhatsApp</a>`:`<span class="sub" style="font-size:12px">${p==='Sin proveedor'?'Asigná un proveedor al artículo':'Cargá su WhatsApp en Configuración'}</span>`}</div>
+    <div style="font-size:13px;margin-top:6px">${L.map(s=>`<div class="row between"><span>${esc(s.desc)}</span><span class="mono">hay ${qty(s)} · pedir ${Math.max(1,s.min*2-qty(s))}</span></div>`).join('')}</div></div>`}).join('')}</div></div>`}
 function adj(id,d){const s=db.stock.find(x=>x.id===id);const n=s.ex[st.suc]||0;if(n+d<0)return;s.ex[st.suc]=n+d;mov(s.id,st.suc,d,d>0?'compra':'ajuste','Ajuste manual');save();stockTable()}
-function editStock(id){const s=db.stock.find(x=>x.id===id)||{cod:'',desc:'',cat:'',ex:{},min:1,costo:0,precio:0};const ws=workSuc();
-  modalHTML(`<h2>${id?'Editar':'Nuevo'} artículo</h2><div class="fields">${[['cod','Código'],['desc','Descripción'],['cat','Categoría'],['min','Stock mínimo'],['costo','Costo (Gs.)'],['precio','Precio venta (Gs.)']].map(([k,l])=>`<label class="field"><span>${l}</span><input id="sk_${k}" value="${esc(s[k])}"></label>`).join('')}
-  ${db.sucursales.map(x=>`<label class="field"><span>Stock en ${esc(x.nombre)}</span><input id="sk_ex_${x.id}" value="${s.ex[x.id]||0}" inputmode="numeric"></label>`).join('')}</div>
+function editStock(id){const s=db.stock.find(x=>x.id===id)||{cod:'',desc:'',cat:'',ex:{},min:1,costo:0,precio:0,compat:[],equiv:[],ubic:{},precios:{}};
+  const ls=(db.config.listas||LISTAS_DEF).filter(l=>l.id!=='publico'),cats=[...new Set(db.stock.map(x=>x.cat).filter(Boolean))],provs=[...new Set([...(db.config.proveedores||[]).map(p=>p.nombre),...db.stock.map(x=>x.proveedor).filter(Boolean)])];
+  const f=(k,l,v,extra='')=>`<label class="field"><span>${l}</span><input id="sk_${k}" value="${esc(v??'')}" ${extra}></label>`;
+  modalHTML(`<div class="row between"><h2>${id?'Editar':'Nuevo'} artículo</h2><button class="btn sm" onclick="closeM()">Cerrar</button></div>
+  <h3>Datos</h3><div class="fields">${f('desc','Descripción',s.desc)}${f('marca','Marca del repuesto',s.marca)}
+  <label class="field"><span>Categoría / componente</span><input id="sk_cat" list="dl_cat" value="${esc(s.cat||'')}" placeholder="Frenos, Motor, Eléctrico…"></label><datalist id="dl_cat">${['Motor','Frenos','Eléctrico','Suspensión','Filtros','Lubricantes','Transmisión','Carrocería','Moto',...cats].filter((x,i,a)=>a.indexOf(x)===i).map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+  <label class="field"><span>Proveedor</span><input id="sk_prov" list="dl_prov" value="${esc(s.proveedor||'')}"></label><datalist id="dl_prov">${provs.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>${f('min','Stock mínimo',s.min,'inputmode="numeric"')}</div>
+  <h3>Códigos y equivalencias</h3><div class="fields">${f('cod','Código interno',s.cod)}${f('codFab','Código de fábrica',s.codFab)}${f('barcode','Código de barras',s.barcode,'inputmode="numeric"')}</div>
+  <label class="field" style="margin-top:8px"><span>Códigos equivalentes de otras marcas (separados por coma)</span><input id="sk_equiv" value="${esc((s.equiv||[]).join(', '))}" placeholder="Ej.: PH4967, WO-130, W68/3"></label>
+  <h3>Vehículos compatibles</h3><p class="note" style="margin:-6px 0 6px">Uno por línea: <span class="mono">Marca; Modelo; Año desde-hasta; Motor</span> · Ej.: <span class="mono">Honda; CG 160; 2016-2024; 160cc</span></p>
+  <textarea id="sk_compat" style="min-height:90px;font-family:var(--f-mono);font-size:13px">${esc((s.compat||[]).map(c=>[c.marca,c.modelo,(c.desde||'')+(c.hasta?'-'+c.hasta:''),c.motor].join('; ')).join('\n'))}</textarea>
+  <h3>Precios</h3><div class="fields">${f('costo','Costo (Gs.)',s.costo,'inputmode="numeric"')}${f('precio','Precio público (Gs.)',s.precio,'inputmode="numeric"')}${ls.map(l=>f('pl_'+l.id,`${l.nombre} (vacío = −${l.desc}%)`,(s.precios||{})[l.id]||'','inputmode="numeric"')).join('')}</div>
+  <h3>Stock y ubicación por sucursal</h3><div class="grid" style="gap:8px">${db.sucursales.map(x=>{const u=String((s.ubic||{})[x.id]||'').split('-');return `<div class="fields" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr;align-items:end"><label class="field"><span>Stock en ${esc(x.nombre)}</span><input id="sk_ex_${x.id}" value="${s.ex[x.id]||0}" inputmode="numeric"></label><label class="field"><span>Pasillo</span><input id="sk_u1_${x.id}" value="${esc(u[0]||'')}"></label><label class="field"><span>Estante</span><input id="sk_u2_${x.id}" value="${esc(u[1]||'')}"></label><label class="field"><span>Gaveta</span><input id="sk_u3_${x.id}" value="${esc(u[2]||'')}"></label><span></span></div>`}).join('')}</div>
   <div class="row"><button class="btn pri" onclick="saveStock('${id||''}')">Guardar</button><button class="btn" onclick="closeM()">Cancelar</button>${id?`<button class="btn danger" onclick="db.stock=db.stock.filter(x=>x.id!=='${id}');save();closeM();render()">Eliminar</button>`:''}</div>`)}
-function saveStock(id){const g=k=>$('#sk_'+k).value.trim();if(!g('desc'))return toast('Falta la descripción.');
+function saveStock(id){const g=k=>($('#sk_'+k)||{value:''}).value.trim();if(!g('desc'))return toast('Falta la descripción.');
   let s=db.stock.find(x=>x.id===id);if(!s){s={id:uid(),ex:{}};db.stock.push(s)}
   db.sucursales.forEach(x=>{const n=num(g('ex_'+x.id)),d=n-(s.ex[x.id]||0);if(d)mov(s.id,x.id,d,d>0?'compra':'ajuste','Edición de artículo');s.ex[x.id]=n});
-  Object.assign(s,{cod:g('cod').toUpperCase(),desc:g('desc'),cat:g('cat'),min:num(g('min')),costo:num(g('costo')),precio:num(g('precio'))});save();closeM();render();toast('Artículo guardado')}
+  const ubic={};db.sucursales.forEach(x=>{const u=[g('u1_'+x.id),g('u2_'+x.id),g('u3_'+x.id)];if(u.some(Boolean))ubic[x.id]=u.map(v=>v.toUpperCase()||'?').join('-')});
+  const compat=$('#sk_compat').value.split('\n').map(l=>l.split(';').map(x=>x.trim())).filter(p=>p[0]).map(p=>{const [d,h]=(p[2]||'').split('-').map(x=>x.trim());return {marca:p[0],modelo:p[1]||'',desde:d||'',hasta:h||'',motor:p[3]||''}});
+  const precios={};(db.config.listas||LISTAS_DEF).filter(l=>l.id!=='publico').forEach(l=>{const v=num(g('pl_'+l.id));if(v)precios[l.id]=v});
+  Object.assign(s,{cod:g('cod').toUpperCase(),codFab:g('codFab').toUpperCase(),barcode:g('barcode'),desc:g('desc'),marca:g('marca'),cat:g('cat'),proveedor:g('prov'),min:num(g('min')),costo:num(g('costo')),precio:num(g('precio')),
+    equiv:g('equiv').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean),compat,ubic,precios});save();closeM();render();toast('Artículo guardado')}
+
+/* ---------- PUNTO DE VENTA (MOSTRADOR) ---------- */
+function posInit(){if(!st.pos)st.pos={items:[],clienteId:null,ruc:'',nombre:'',lista:'publico',medio:'Efectivo',pagaCon:'',q:'',desc:0}}
+function posView(){posInit();const p=st.pos,ws=workSuc(),res=p.q?buscarStock(p.q).slice(0,12):[],sv=servDe(null);
+  const sub=p.items.reduce((a,i)=>a+i.cant*i.precio,0),desc=Math.round(sub*(p.desc||0)/100),tot=sub-desc,cambio=num(p.pagaCon)-tot;
+  const hoyV=db.ventas.filter(v=>v.fecha===hoy()&&inSuc(v)).sort((a,b)=>b.nro-a.nro);
+  return `<div class="row between"><h1>Mostrador</h1><span class="sub">${esc(sucN(ws))} · ${fdate(hoy())}</span></div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));align-items:start">
+  <div class="panel"><h2>Buscar producto</h2>
+    <input id="pos_q" placeholder="Escaneá el código de barras o escribí código / aplicación" value="${esc(p.q)}" autocomplete="off" style="font-size:16px;padding:12px 14px"
+      oninput="st.pos.q=this.value;clearTimeout(window._pq);window._pq=setTimeout(()=>{st.pos.focus=1;render()},250)" onkeydown="if(event.key==='Enter'){event.preventDefault();posEnter()}">
+    <div class="tscroll" style="margin-top:8px">${p.q?`<table><tr><th>Artículo</th><th>Ubicación</th><th class="n">Stock</th><th class="n">Precio</th><th></th></tr>${res.map(s=>{const n=s.ex[ws]||0;return `<tr class="${n<=0?'low':''}"><td>${s._equiv?'<span class="chip c-info">Equivalente</span> ':''}<b>${esc(s.desc)}</b><div class="sub mono" style="font-size:11px">${esc(s.cod)}${s.codFab?' · '+esc(s.codFab):''}</div></td><td style="font-size:12px">${esc(fmtUbic(ubicDe(s,ws))||'—')}</td><td class="n">${n}</td><td class="n">${gs(precioLista(s,p.lista))}</td><td><button class="btn sm pri" onclick="posAdd('${s.id}')" ${n>0?'':'disabled'}>Agregar</button></td></tr>`}).join('')||'<tr><td colspan="5" class="empty">Sin resultados.</td></tr>'}</table>`:'<p class="note">Funciona con lector de código de barras: escaneás y se agrega solo.</p>'}</div>
+    ${sv.length?`<h3 style="margin:14px 0 8px">Servicios con precio fijo</h3><div class="row" style="gap:6px">${sv.map(x=>`<button class="btn sm" onclick="posServ('${x.id}')">${esc(x.nombre)} · ${gs(x.precio)}</button>`).join('')}</div>`:''}</div>
+  <div class="panel"><div class="row between"><h2>Venta</h2>${p.items.length?'<button class="btn sm danger" onclick="st.pos=null;render()">Vaciar</button>':''}</div>
+    <div class="fields"><label class="field"><span>RUC / CI (opcional)</span><input id="pos_ruc" value="${esc(p.ruc)}" placeholder="Consumidor final" onchange="posCliente(this.value)"></label>
+    <label class="field"><span>Cliente</span><input id="pos_nom" value="${esc(p.nombre)}" placeholder="Consumidor final" onchange="st.pos.nombre=this.value"></label>
+    <label class="field"><span>Lista de precios</span><select onchange="posLista(this.value)">${(db.config.listas||LISTAS_DEF).map(l=>`<option value="${l.id}" ${p.lista===l.id?'selected':''}>${esc(l.nombre)}${l.desc?' (−'+l.desc+'%)':''}</option>`).join('')}</select></label></div>
+    <div class="tscroll" style="margin-top:10px"><table><tr><th>Detalle</th><th class="n">Cant.</th><th class="n">Precio</th><th class="n">Subtotal</th><th></th></tr>
+    ${p.items.map((i,k)=>`<tr><td>${esc(i.desc)}${i.tipo==='mo'?' <span class="tag">Servicio</span>':''}</td><td class="n"><div class="row" style="gap:4px;justify-content:flex-end;flex-wrap:nowrap"><button class="btn sm" onclick="posCant(${k},-1)" aria-label="Restar">−</button><b style="min-width:24px;text-align:center">${i.cant}</b><button class="btn sm" onclick="posCant(${k},1)" aria-label="Sumar">+</button></div></td>
+      <td class="n">${isA()?`<input value="${i.precio}" inputmode="numeric" style="width:100px;text-align:right" onchange="st.pos.items[${k}].precio=num(this.value);st.pos.items[${k}].manual=1;render()" aria-label="Precio">`:gs(i.precio)}</td><td class="n">${gs(i.cant*i.precio)}</td><td><button class="btn sm danger" onclick="st.pos.items.splice(${k},1);render()" aria-label="Quitar">✕</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Agregá productos o servicios.</td></tr>'}</table></div>
+    <div class="fields" style="margin-top:10px"><label class="field"><span>Descuento extra %</span><input value="${p.desc||''}" inputmode="numeric" placeholder="0" onchange="st.pos.desc=Math.min(100,num(this.value));render()"></label>
+    <label class="field"><span>Medio de pago</span><select onchange="st.pos.medio=this.value;render()">${MEDIOS.map(m=>`<option ${p.medio===m?'selected':''}>${m}</option>`).join('')}</select></label>
+    ${p.medio==='Efectivo'?`<label class="field"><span>Paga con</span><input value="${esc(p.pagaCon)}" inputmode="numeric" placeholder="Gs." onchange="st.pos.pagaCon=this.value;render()"></label>`:''}</div>
+    <div class="totals" style="margin-top:10px">${desc?`<span>Subtotal ${gs(sub)} · Descuento −${gs(desc)}</span>`:''}<span class="sub">IVA 10% incluido: ${gs(Math.round(tot/11))}</span><b>${gs(tot)}</b>${p.medio==='Efectivo'&&num(p.pagaCon)?`<span style="font-weight:600;color:${cambio>=0?'var(--ok)':'var(--bad)'}">${cambio>=0?'Vuelto '+gs(cambio):'Faltan '+gs(-cambio)}</span>`:''}</div>
+    <div class="row" style="margin-top:12px"><button class="btn pri" style="flex:1;justify-content:center;padding:14px;font-size:15px" onclick="posCobrar()" ${p.items.length?'':'disabled'}>Cobrar ${gs(tot)}</button></div></div></div>
+  <div class="panel"><h2>Ventas de hoy</h2><div class="tscroll"><table><tr><th>Nº</th><th>Hora</th><th>Cliente</th><th>Medio</th><th class="n">Total</th><th></th></tr>
+  ${hoyV.map(v=>`<tr><td class="mono">${String(v.nro).padStart(5,'0')}</td><td>${esc(v.hora||'')}</td><td>${esc(cliDoc(v).nombre)}</td><td>${esc((v.pagos[0]||{}).medio||'')}</td><td class="n">${gs(total(v))}</td><td><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm" onclick="compModal('recibo','${v.id}',0)">Recibo</button>${v.factura?`<button class="btn sm" onclick="compModal('factura','${v.id}')">Factura</button>`:`<button class="btn sm dark" onclick="facturarVenta('${v.id}')">Facturar</button>`}</div></td></tr>`).join('')||'<tr><td colspan="6" class="empty">Todavía no hay ventas hoy.</td></tr>'}</table></div>
+  <div class="totals" style="margin-top:8px"><b>${gs(hoyV.reduce((a,v)=>a+total(v),0))}</b><span class="sub">${hoyV.length} venta${hoyV.length===1?'':'s'} en mostrador</span></div></div>`}
+function posAdd(id,cant=1){const p=st.pos,s=db.stock.find(x=>x.id===id),ws=workSuc(),n=s.ex[ws]||0,it=p.items.find(i=>i.stockId===id),ya=it?it.cant:0;
+  if(ya+cant>n)return toast(`Solo hay ${n} de ${s.desc} en ${sucN(ws)}.`);
+  if(it)it.cant+=cant;else p.items.push({tipo:'rep',stockId:id,desc:s.desc,cant,precio:precioLista(s,p.lista),costo:s.costo});p.q='';p.focus=1;render()}
+function posServ(id){const x=(db.config.servicios||[]).find(s=>s.id===id);st.pos.items.push({tipo:'mo',desc:x.nombre,cant:1,precio:x.precio});render()}
+function posEnter(){const p=st.pos,q=$('#pos_q').value;p.q=q;const nq=normRef(q),ex=db.stock.filter(s=>refsDe(s).includes(nq)&&(s.ex[workSuc()]||0)>0);
+  if(ex.length===1)return posAdd(ex[0].id);p.focus=1;render()}
+function posCant(k,d){const p=st.pos,i=p.items[k];if(i.tipo==='rep'&&d>0){const s=db.stock.find(x=>x.id===i.stockId);if(i.cant+1>(s.ex[workSuc()]||0))return toast('No hay más en stock.')}i.cant+=d;if(i.cant<=0)p.items.splice(k,1);render()}
+function posLista(id){const p=st.pos;p.lista=id;p.items.forEach(i=>{if(i.stockId&&!i.manual){const s=db.stock.find(x=>x.id===i.stockId);if(s)i.precio=precioLista(s,id)}});render()}
+function posCliente(v){const p=st.pos;p.ruc=v.trim();const c=buscarCli(v);
+  if(c){p.clienteId=c.id;p.nombre=c.nombre;p.ruc=c.ruc;if(c.lista&&c.lista!==p.lista)return posLista(c.lista);toast('Cliente: '+c.nombre);return render()}
+  p.clienteId=null;const b=rucBase(v);if(b.length<5)return render();
+  dnitBuscar(b).then(x=>{if(x&&!x.err){p.nombre=x.nombre;p.ruc=x.ruc;toast('Encontrado en DNIT: '+x.nombre)}render()})}
+async function posCobrar(){const p=st.pos,ws=workSuc();if(!p.items.length||st.cobrando)return;
+  for(const i of p.items)if(i.tipo==='rep'){const s=db.stock.find(x=>x.id===i.stockId);if(!s||(s.ex[ws]||0)<i.cant)return toast(`Stock insuficiente: ${i.desc}`)}
+  st.cobrando=true;const sub=p.items.reduce((a,i)=>a+i.cant*i.precio,0),desc=Math.round(sub*(p.desc||0)/100);
+  const items=p.items.map(i=>({...i}));if(desc)items.push({tipo:'desc',desc:`Descuento ${p.desc}%`,cant:1,precio:-desc});
+  const nro=await contador('nextVenta'),rec=await nuevoRecibo();
+  let clienteId=p.clienteId;if(!clienteId&&p.ruc&&p.nombre){const c={id:uid(),nombre:p.nombre,ruc:p.ruc,tel:'',lista:p.lista};db.clientes.push(c);clienteId=c.id}
+  const ahora=new Date(),v={id:uid(),venta:true,nro,fecha:hoy(),hora:ahora.toTimeString().slice(0,5),sucursalId:ws,clienteId:clienteId||null,nombreCliente:clienteId?'':(p.nombre||'Consumidor final'),rucCliente:clienteId?'':p.ruc,lista:p.lista,usuario:(me()||{}).nombre||'',
+    items:items.map(i=>{const x={tipo:i.tipo,desc:i.desc,cant:i.cant,precio:i.precio};if(i.stockId){x.stockId=i.stockId;x.costo=i.costo}return x}),pagos:[{fecha:hoy(),monto:sub-desc,medio:p.medio,recibo:rec}]};
+  v.items.forEach(i=>{if(i.stockId){const s=db.stock.find(x=>x.id===i.stockId);s.ex[ws]=(s.ex[ws]||0)-i.cant;mov(s.id,ws,-i.cant,'venta','Mostrador Nº '+nro)}});
+  db.ventas.push(v);const vuelto=p.medio==='Efectivo'&&num(p.pagaCon)?num(p.pagaCon)-(sub-desc):0;st.pos=null;st.cobrando=false;save();render();
+  modalHTML(`<h2>Venta Nº ${String(nro).padStart(5,'0')} cobrada</h2><p style="margin:0;font-size:18px">Total <b>${gs(total(v))}</b> · ${esc(v.pagos[0].medio)}${vuelto>0?` · <b style="color:var(--ok)">Vuelto ${gs(vuelto)}</b>`:''}</p>
+  <div class="row"><button class="btn pri" onclick="compModal('recibo','${v.id}',0)">Imprimir recibo</button><button class="btn dark" onclick="facturarVenta('${v.id}')">Emitir factura</button><button class="btn" onclick="closeM();st.pos=null;render()">Nueva venta</button></div>`)}
+function facturarVenta(id){const v=db.ventas.find(x=>x.id===id);if(!v.factura)emitirFactura(v);else compModal('factura',id)}
+
+/* ---------- CAJA: INGRESOS Y EGRESOS ---------- */
+function cajaDia(f){const ing=[];db.ots.filter(inSuc).forEach(o=>o.pagos.forEach(p=>{if(p.fecha===f)ing.push({hora:(p.hora||'').slice(11,16),det:`OT #${o.nro} · ${cli(o.clienteId).nombre}`,medio:p.medio,monto:p.monto,ref:o.id,tipo:'ot'})}));
+  db.ventas.filter(inSuc).forEach(v=>v.pagos.forEach(p=>{if(p.fecha===f)ing.push({hora:v.hora||'',det:`Mostrador Nº ${v.nro} · ${cliDoc(v).nombre}`,medio:p.medio,monto:p.monto,ref:v.id,tipo:'venta'})}));
+  const eg=db.egresos.filter(e=>e.fecha===f&&(st.suc==='*'||e.sucursalId===st.suc));return {ing,eg}}
+function cajaPanel(){const f=st.cajaF||hoy(),{ing,eg}=cajaDia(f),ti=ing.reduce((a,x)=>a+x.monto,0),te=eg.reduce((a,x)=>a+x.monto,0);
+  const ef=ing.filter(x=>x.medio==='Efectivo').reduce((a,x)=>a+x.monto,0)-eg.filter(x=>x.medio==='Efectivo').reduce((a,x)=>a+x.monto,0);
+  const porMedio={};ing.forEach(x=>porMedio[x.medio]=(porMedio[x.medio]||0)+x.monto);
+  return `<div class="panel"><div class="row between"><h2>Caja del día</h2><div class="row"><input type="date" value="${f}" style="width:auto" onchange="st.cajaF=this.value;render()" aria-label="Fecha"><button class="btn pri" onclick="egresoModal()">+ Registrar egreso</button></div></div>
+  <div class="grid kpis"><div class="kpi good"><b class="m">${gs(ti)}</b><span>Ingresos</span></div><div class="kpi ${te?'alert':''}"><b class="m">${gs(te)}</b><span>Egresos</span></div><div class="kpi"><b class="m">${gs(ti-te)}</b><span>Resultado del día</span></div><div class="kpi"><b class="m">${gs(ef)}</b><span>Efectivo en caja</span></div></div>
+  ${Object.keys(porMedio).length?`<div class="row" style="margin-top:10px">${Object.entries(porMedio).map(([k,v])=>`<span class="tag">${esc(k)}</span><b class="mono">${gs(v)}</b>`).join('<span class="sub">·</span>')}</div>`:''}
+  <div class="grid g2" style="margin-top:12px"><div><h3>Ingresos</h3><div class="tscroll"><table><tr><th>Detalle</th><th>Medio</th><th class="n">Monto</th></tr>${ing.map(x=>`<tr class="click" onclick="${x.tipo==='ot'?`go('ot','${x.ref}')`:`compModal('recibo','${x.ref}',0)`}"><td>${esc(x.det)}</td><td>${esc(x.medio)}</td><td class="n">${gs(x.monto)}</td></tr>`).join('')||'<tr><td colspan="3" class="empty">Sin ingresos.</td></tr>'}</table></div></div>
+  <div><h3>Egresos</h3><div class="tscroll"><table><tr><th>Concepto</th><th>Categoría</th><th>Medio</th><th class="n">Monto</th><th></th></tr>${eg.map(e=>`<tr><td>${esc(e.concepto)}</td><td class="sub">${esc(e.cat)}</td><td>${esc(e.medio)}</td><td class="n">${gs(e.monto)}</td><td>${isA()?`<button class="btn sm danger" onclick="db.egresos=db.egresos.filter(x=>x.id!=='${e.id}');save();render()" aria-label="Borrar egreso">✕</button>`:''}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Sin egresos.</td></tr>'}</table></div></div></div></div>`}
+function egresoModal(){modalHTML(`<h2>Registrar egreso</h2><div class="fields"><label class="field" style="grid-column:1/-1"><span>Concepto</span><input id="eg_c" placeholder="Ej.: Compra de filtros a Filtros Paraguay"></label>
+  <label class="field"><span>Categoría</span><select id="eg_k">${CAT_EGRESO.map(c=>`<option>${c}</option>`).join('')}</select></label><label class="field"><span>Medio</span><select id="eg_m">${MEDIOS.map(m=>`<option>${m}</option>`).join('')}</select></label>
+  <label class="field"><span>Monto (Gs.)</span><input id="eg_v" inputmode="numeric"></label><label class="field"><span>Fecha</span><input type="date" id="eg_f" value="${st.cajaF||hoy()}"></label></div>
+  <div class="row"><button class="btn pri" onclick="const c=$('#eg_c').value.trim(),v=num($('#eg_v').value);if(!c||v<=0)return toast('Completá concepto y monto.');db.egresos.push({id:uid(),fecha:$('#eg_f').value||hoy(),concepto:c,cat:$('#eg_k').value,medio:$('#eg_m').value,monto:v,sucursalId:workSuc(),usuario:(me()||{}).nombre||''});save();closeM();render();toast('Egreso registrado')">Guardar</button><button class="btn" onclick="closeM()">Cancelar</button></div>`);$('#eg_c').focus()}
+
 function traspaso(pre){const o=db.sucursales;
   modalHTML(`<h2>Traspaso de stock</h2><div class="fields">
   <label class="field" style="grid-column:1/-1"><span>Artículo</span><select id="tr_s" onchange="trInfo()">${db.stock.map(s=>`<option value="${s.id}" ${pre===s.id?'selected':''}>${esc(s.cod)} · ${esc(s.desc)}</option>`).join('')}</select></label>
@@ -1295,7 +1477,7 @@ function marcarRec(id){const o=db.ots.find(x=>x.id===id);o.recordado=hoy();save(
 /* ---------- REPORTES ---------- */
 function rotacion(){
   const T=hoy(),D=db.config.diasEstancado,cov=db.config.coberturaDias;
-  return db.stock.map(s=>{const us=db.movs.filter(m=>m.stockId===s.id&&m.tipo==='uso'&&(st.suc==='*'||m.suc===st.suc));
+  return db.stock.map(s=>{const us=db.movs.filter(m=>m.stockId===s.id&&(m.tipo==='uso'||m.tipo==='venta')&&(st.suc==='*'||m.suc===st.suc));
     const u90=-us.filter(m=>dias(m.fecha,T)<=90).reduce((a,m)=>a+m.cant,0);const last=us.map(m=>m.fecha).sort().pop();
     const q=qty(s),diario=u90/90,cobertura=diario?q/diario:Infinity,sug=Math.max(0,Math.ceil(diario*cov*1.5-q));
     const sinMov=last?dias(last,T):999;
@@ -1686,17 +1868,19 @@ function finanzas(){
   const fac=os.filter(o=>o.factura).sort((a,b)=>b.factura.nro.localeCompare(a.factura.nro));
   const cc=db.clientes.map(c=>{const x=os.filter(o=>o.clienteId===c.id&&o.aprob==='aprobado');return {c,os:x,deuda:x.reduce((a,o)=>a+saldo(o),0),tot:x.reduce((a,o)=>a+total(o),0)}}).filter(x=>x.os.length).sort((a,b)=>b.deuda-a.deuda);
   const pend=os.filter(o=>o.aprob==='pendiente'&&o.items.length);
-  const ventas=fac.reduce((a,o)=>a+total(o),0);
-  const hoyP=os.flatMap(o=>o.pagos).filter(p=>p.fecha===hoy());
+  const ventas=fac.reduce((a,o)=>a+total(o),0)+db.ventas.filter(v=>v.factura&&inSuc(v)).reduce((a,v)=>a+total(v),0);
+  const hoyP=[...os.flatMap(o=>o.pagos),...db.ventas.filter(inSuc).flatMap(v=>v.pagos)].filter(p=>p.fecha===hoy());
   const medios={};hoyP.forEach(p=>medios[p.medio]=(medios[p.medio]||0)+p.monto);
+  const facV=db.ventas.filter(v=>v.factura&&inSuc(v));
   return `<h1>Caja y facturas</h1>
+  ${cajaPanel()}
   <div class="grid kpis"><div class="kpi"><b class="m">${gs(hoyP.reduce((a,p)=>a+p.monto,0))}</b><span>Caja de hoy</span></div><div class="kpi"><b class="m">${gs(ventas)}</b><span>Total facturado</span></div><div class="kpi"><b class="m">${gs(ventas/11)}</b><span>IVA débito 10%</span></div>
   <div class="kpi ${cc.some(x=>x.deuda>0)?'alert':''}"><b class="m">${gs(cc.reduce((a,x)=>a+Math.max(0,x.deuda),0))}</b><span>Cuentas por cobrar</span></div><div class="kpi"><b>${pend.length}</b><span>Presupuestos abiertos</span></div></div>
-  ${Object.keys(medios).length?`<div class="panel"><h2>Caja de hoy por medio de pago</h2><div class="row">${Object.entries(medios).map(([k,v])=>`<span class="tag">${esc(k)}</span><b class="mono">${gs(v)}</b>`).join('<span class="sub">·</span>')}</div></div>`:''}
+  ${false?`<div class="panel"><h2>Caja de hoy por medio de pago</h2><div class="row">${Object.entries(medios).map(([k,v])=>`<span class="tag">${esc(k)}</span><b class="mono">${gs(v)}</b>`).join('<span class="sub">·</span>')}</div></div>`:''}
   <div class="panel"><h2>Cuentas corrientes</h2><div class="tscroll"><table><tr><th>Cliente</th><th>RUC/CI</th><th class="n">OTs</th><th class="n">Total</th><th class="n">Saldo</th></tr>
   ${cc.map(x=>`<tr><td>${esc(x.c.nombre)}<div class="sub" style="font-size:12px">${x.os.filter(o=>saldo(o)>0).map(o=>`<a href="#" onclick="go('ot','${o.id}');return false" style="color:inherit">#${o.nro}</a>`).join(' · ')}</div></td><td class="mono">${esc(x.c.ruc)}</td><td class="n">${x.os.length}</td><td class="n">${gs(x.tot)}</td><td class="n" style="font-weight:600;color:${x.deuda>0?'var(--bad)':'var(--ok)'}">${gs(x.deuda)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Sin movimientos.</td></tr>'}</table></div></div>
   <div class="grid g2"><div class="panel"><h2>Facturas emitidas</h2><div class="tscroll"><table><tr><th>Número</th><th>Fecha</th><th>Cliente</th><th class="n">Total</th></tr>
-  ${fac.map(o=>`<tr class="click" onclick="verKude('${o.id}')"><td class="mono">${o.factura.nro}</td><td>${fdate(o.factura.fecha)}</td><td>${esc(cli(o.clienteId).nombre)}</td><td class="n">${gs(total(o))}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">Aún no hay facturas.</td></tr>'}</table></div></div>
+  ${[...fac,...facV].sort((a,b)=>b.factura.nro.localeCompare(a.factura.nro)).map(o=>`<tr class="click" onclick="verKude('${o.id}')"><td class="mono">${o.factura.nro}</td><td>${fdate(o.factura.fecha)}</td><td>${esc(cliDoc(o).nombre)}${o.venta?' <span class="tag">Mostrador</span>':''}</td><td class="n">${gs(total(o))}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">Aún no hay facturas.</td></tr>'}</table></div></div>
   <div class="panel"><h2>Presupuestos esperando respuesta</h2>${pend.map(o=>`<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line)"><span class="row">${plate(veh(o.vehiculoId).chapa)} <span>OT #${o.nro} · ${esc(cli(o.clienteId).nombre)}</span></span><span class="row"><b class="mono">${gs(total(o))}</b><button class="btn sm" onclick="go('ot','${o.id}')">Abrir</button></span></div>`).join('')||'<p class="empty">Ningún presupuesto pendiente.</p>'}</div></div>`;
 }
 
@@ -1712,6 +1896,15 @@ function configView(){const c=db.config;
   <input type="color" value="${esc(c.colorDoc||'#C8102E')}" onchange="db.config.colorDoc=this.value;save();render()" style="width:46px;height:34px;padding:2px" aria-label="Otro color"></div>
   <span class="sub" style="font-size:12px">Detalle: <input type="color" value="${esc(c.colorDoc2||'#F2B705')}" onchange="db.config.colorDoc2=this.value;save();render()" style="width:46px;height:30px;padding:2px;vertical-align:middle" aria-label="Color de detalle"></span></div>
   <div class="row" style="margin-top:12px"><button class="btn pri" onclick="saveCfg()">Guardar</button></div></div>
+  <div class="panel"><h2>Listas de precios</h2><p class="note" style="margin:-4px 0 8px">Descuento automático sobre el precio público según el tipo de cliente. Cada artículo puede tener además un precio fijo por lista.</p>
+  <div class="tscroll"><table><tr><th>Lista</th><th class="n">Descuento %</th></tr>${(c.listas||LISTAS_DEF).map((l,i)=>`<tr><td><input value="${esc(l.nombre)}" onchange="db.config.listas[${i}].nombre=this.value;save()"></td><td class="n">${l.id==='publico'?'0':`<input value="${l.desc}" inputmode="numeric" style="width:80px;text-align:right" onchange="db.config.listas[${i}].desc=Math.min(90,num(this.value));save()">`}</td></tr>`).join('')}</table></div></div>
+  <div class="panel"><h2>Servicios con precio fijo (mano de obra)</h2><div class="tscroll"><table><tr><th>Servicio</th><th>Vehículo</th><th class="n">Precio (Gs.)</th><th class="n">Horas</th><th></th></tr>
+  ${(c.servicios||[]).map((x,i)=>`<tr><td><input value="${esc(x.nombre)}" onchange="db.config.servicios[${i}].nombre=this.value;save()"></td><td><select onchange="db.config.servicios[${i}].tipo=this.value;save()">${[['todos','Todos'],['auto','Autos'],['moto','Motos']].map(([k,l])=>`<option value="${k}" ${x.tipo===k?'selected':''}>${l}</option>`).join('')}</select></td>
+  <td class="n"><input value="${x.precio}" inputmode="numeric" style="width:120px;text-align:right" onchange="db.config.servicios[${i}].precio=num(this.value);save()"></td><td class="n"><input value="${String(x.horas).replace('.',',')}" inputmode="decimal" style="width:70px;text-align:right" onchange="db.config.servicios[${i}].horas=dec(this.value);save()"></td>
+  <td><button class="btn sm danger" onclick="db.config.servicios.splice(${i},1);save();render()" aria-label="Quitar">✕</button></td></tr>`).join('')}</table></div>
+  <div class="row" style="margin-top:10px"><button class="btn" onclick="(db.config.servicios=db.config.servicios||[]).push({id:uid(),nombre:'Nuevo servicio',precio:0,horas:1,tipo:'todos'});save();render()">+ Agregar servicio</button></div></div>
+  <div class="panel"><h2>Proveedores</h2><div class="tscroll"><table><tr><th>Proveedor</th><th>WhatsApp</th><th></th></tr>${(c.proveedores||[]).map((x,i)=>`<tr><td><input value="${esc(x.nombre)}" onchange="db.config.proveedores[${i}].nombre=this.value;save()"></td><td><input value="${esc(x.tel)}" inputmode="tel" onchange="db.config.proveedores[${i}].tel=this.value;save()"></td><td><button class="btn sm danger" onclick="db.config.proveedores.splice(${i},1);save();render()" aria-label="Quitar">✕</button></td></tr>`).join('')||'<tr><td colspan="3" class="empty">Sin proveedores.</td></tr>'}</table></div>
+  <div class="row" style="margin-top:10px"><button class="btn" onclick="(db.config.proveedores=db.config.proveedores||[]).push({nombre:'Nuevo proveedor',tel:''});save();render()">+ Agregar proveedor</button></div></div>
   <div class="panel"><h2>Sucursales</h2><div class="tscroll"><table><tr><th>Nombre</th><th>Establecimiento</th><th>Punto exp.</th><th>Próx. factura</th></tr>
   ${db.sucursales.map(s=>`<tr><td><input value="${esc(s.nombre)}" onchange="suc('${s.id}').nombre=this.value;save()"></td><td><input value="${esc(s.est)}" style="width:80px" onchange="suc('${s.id}').est=this.value;save()"></td><td><input value="${esc(s.pto)}" style="width:80px" onchange="suc('${s.id}').pto=this.value;save()"></td><td><input value="${s.nextFac}" style="width:100px" onchange="suc('${s.id}').nextFac=num(this.value)||1;save()"></td></tr>`).join('')}</table></div>
   <div class="row" style="margin-top:10px"><input id="ns" placeholder="Nombre de la nueva sucursal" style="max-width:300px"><button class="btn" onclick="addSucursal()">Agregar sucursal</button></div></div>

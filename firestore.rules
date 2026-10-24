@@ -1,0 +1,150 @@
+rules_version = '2';
+// KEVANIX Taller — reglas de seguridad de Firestore (multi-taller con membresías)
+// Pegar en: Consola Firebase → Firestore Database → Reglas → Publicar
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Identidad ----------
+    function signedIn() { return request.auth != null; }
+    // Cuenta del desarrollador. Debe ser igual a DEV_EMAIL en index.html
+    function esDev() { return signedIn() && request.auth.token.email == 'genesysfastsistems@gmail.com'; }
+
+    function perfilPath() { return /databases/$(database)/documents/usuarios/$(request.auth.uid); }
+    function perfil() { return get(perfilPath()).data; }
+    function esStaff() { return signedIn() && exists(perfilPath()) && perfil().activo == true; }
+    function miTaller() { return perfil().tallerId; }
+    function esAdmin() { return esStaff() && perfil().rol == 'admin'; }
+
+    function plat() { return get(/databases/$(database)/documents/plataforma/config).data; }
+    function tallerPath(tid) { return /databases/$(database)/documents/talleres/$(tid); }
+
+    // Membresía vigente: no suspendido y dentro del vencimiento + días de gracia
+    function vigente(tid) {
+      return get(tallerPath(tid)).data.estado != 'suspendido'
+        && get(tallerPath(tid)).data.limiteTs > request.time;
+    }
+    function staffDe(tid) { return esStaff() && perfil().tallerId == tid; }
+    function leeTaller(tid) { return esDev() || staffDe(tid); }
+    function oficinaDe(tid) { return esDev() || (staffDe(tid) && perfil().rol in ['admin', 'recepcion'] && vigente(tid)); }
+    function adminDe(tid) { return esDev() || (staffDe(tid) && perfil().rol == 'admin' && vigente(tid)); }
+    function escribeDe(tid) { return esDev() || (staffDe(tid) && vigente(tid)); }
+    // Alta de un taller nuevo en el mismo lote que crea el taller
+    function arrancando(tid) {
+      return signedIn() && !exists(tallerPath(tid))
+        && getAfter(tallerPath(tid)).data.ownerUid == request.auth.uid;
+    }
+
+    // ---------- Plataforma (solo el desarrollador escribe) ----------
+    match /plataforma/config { allow read: if true; allow write: if esDev(); }
+    match /plataforma/{doc} { allow read, write: if esDev(); }
+
+    match /pagos/{id} {
+      allow read: if esDev() || (esAdmin() && resource.data.tallerId == miTaller());
+      allow write: if esDev();
+    }
+
+    // ---------- Talleres ----------
+    match /talleres/{tid} {
+      allow read: if leeTaller(tid);
+      // Registro propio con prueba gratis (si el desarrollador lo habilitó)
+      allow create: if esDev() || (signedIn()
+        && plat().registroAbierto == true
+        && !exists(perfilPath())
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.plan == 'prueba'
+        && request.resource.data.estado == 'prueba'
+        && request.resource.data.limiteTs < request.time + duration.value(plat().diasPrueba + plat().diasGracia + 2, 'd'));
+      // El taller solo puede cambiar sus datos de contacto; plan, estado y vencimiento los maneja el desarrollador
+      allow update: if esDev() || (esAdmin() && miTaller() == tid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'tel', 'ruc', 'email']));
+      allow delete: if esDev();
+
+      match /meta/config      { allow read: if leeTaller(tid); allow write: if adminDe(tid) || arrancando(tid); }
+      match /meta/contadores  { allow read: if leeTaller(tid); allow write: if oficinaDe(tid) || arrancando(tid); }
+      match /sucursales/{id}  { allow read: if leeTaller(tid); allow write: if adminDe(tid) || arrancando(tid); }
+      match /mecanicos/{id}   { allow read: if leeTaller(tid); allow write: if adminDe(tid); }
+      match /clientes/{id}    { allow read: if leeTaller(tid); allow write: if oficinaDe(tid); }
+      match /vehiculos/{id}   { allow read: if leeTaller(tid); allow write: if oficinaDe(tid); }
+      match /stock/{id} {
+        allow read: if leeTaller(tid);
+        allow update: if oficinaDe(tid);
+        allow create, delete: if adminDe(tid);
+      }
+      match /movs/{id} {
+        allow read: if leeTaller(tid);
+        allow create: if oficinaDe(tid);
+        allow update, delete: if adminDe(tid);
+      }
+      match /ots/{id} {
+        allow read: if leeTaller(tid);
+        allow create, delete: if oficinaDe(tid);
+        // El mecánico solo cambia estado, notas y horas de SUS órdenes
+        allow update: if oficinaDe(tid) || (
+          staffDe(tid) && perfil().rol == 'mecanico' && vigente(tid)
+          && resource.data.mecanicoId == perfil().mecanicoId
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['estado', 'estadoDesde', 'notas', 'horasReal', 'trabajando', 'faltante'])
+          && request.resource.data.estado in ['diagnostico', 'repuestos', 'reparacion', 'calidad', 'listo']);
+      }
+      match /mensajes/{id} { allow read: if leeTaller(tid); allow create: if escribeDe(tid); allow update, delete: if oficinaDe(tid); }
+      match /alertas/{id}  { allow read: if leeTaller(tid); allow create: if escribeDe(tid); allow update, delete: if oficinaDe(tid); }
+      // Ventas de mostrador y egresos de caja
+      match /ventas/{id}   { allow read: if leeTaller(tid); allow create, update: if oficinaDe(tid); allow delete: if adminDe(tid); }
+      match /egresos/{id}  { allow read: if leeTaller(tid); allow create, update: if oficinaDe(tid); allow delete: if adminDe(tid); }
+    }
+
+    // ---------- Usuarios (índice global: a qué taller pertenece cada cuenta) ----------
+    match /usuarios/{uid} {
+      allow read: if esDev() || (signedIn() && request.auth.uid == uid)
+        || (esStaff() && resource.data.tallerId == miTaller());
+      allow create: if esDev()
+        // El administrador crea empleados de su propio taller
+        || (esAdmin() && request.resource.data.tallerId == miTaller() && vigente(miTaller()))
+        // El dueño se crea a sí mismo al registrar su taller
+        || (signedIn() && request.auth.uid == uid && request.resource.data.rol == 'admin'
+            && arrancando(request.resource.data.tallerId));
+      allow update: if esDev()
+        || (esAdmin() && resource.data.tallerId == miTaller() && vigente(miTaller())
+            && request.resource.data.tallerId == resource.data.tallerId
+            && (uid != request.auth.uid
+                || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rol', 'activo', 'tallerId'])))
+        // Cada uno puede marcar que ya cambió su contraseña temporal
+        || (signedIn() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cambiarClave'])
+            && request.resource.data.cambiarClave == false);
+      allow delete: if esDev();
+    }
+
+    // ---------- Vista pública del cliente (seguimiento, presupuesto, encuesta) ----------
+    // Se accede solo con el token secreto del enlace.
+    match /publico/{token} {
+      function respuestaCliente() {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['respuesta', 'procesado'])
+          && resource.data.aprob == 'pendiente'
+          && resource.data.get('respuesta', null) == null
+          && request.resource.data.respuesta.aprob in ['aprobado', 'rechazado']
+          && request.resource.data.respuesta.nota is string
+          && request.resource.data.respuesta.nota.size() <= 400
+          && request.resource.data.procesado == false;
+      }
+      function encuestaCliente() {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['encuestaResp', 'procesado'])
+          && resource.data.encuesta.pedida == true
+          && resource.data.get('encuestaResp', null) == null
+          && request.resource.data.encuestaResp.nota is int
+          && request.resource.data.encuestaResp.nota >= 1
+          && request.resource.data.encuestaResp.nota <= 5
+          && request.resource.data.encuestaResp.comentario is string
+          && request.resource.data.encuestaResp.comentario.size() <= 800
+          && request.resource.data.procesado == false;
+      }
+      allow get: if true;
+      allow list: if esDev() || (esStaff() && resource.data.tallerId == miTaller());
+      allow create: if esDev() || (esStaff() && request.resource.data.tallerId == miTaller());
+      allow update: if esDev()
+        || (esStaff() && resource.data.tallerId == miTaller() && request.resource.data.tallerId == resource.data.tallerId)
+        || respuestaCliente() || encuestaCliente();
+      allow delete: if esDev();
+    }
+  }
+}
