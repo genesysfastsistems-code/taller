@@ -82,12 +82,12 @@ service cloud.firestore {
       match /ots/{id} {
         allow read: if leeTaller(tid);
         allow create, delete: if oficinaDe(tid);
-        // El técnico (mecánico, chapista, pintor, ayudante) solo cambia estado, notas y horas de SUS órdenes
+        // El técnico (mecánico, chapista, pintor, ayudante) solo cambia estado, notas, horas, sus tareas y pedidos de materiales de las órdenes donde está asignado
         allow update: if oficinaDe(tid) || (
           staffDe(tid) && tecnico() && vigente(tid)
-          && resource.data.mecanicoId == perfil().mecanicoId
+          && (resource.data.mecanicoId == perfil().mecanicoId || perfil().mecanicoId in resource.data.get('asignados', []))
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['estado', 'estadoDesde', 'notas', 'horasReal', 'trabajando', 'faltante'])
+               .hasOnly(['estado', 'estadoDesde', 'notas', 'horasReal', 'trabajando', 'faltante', 'tareas', 'pedidos'])
           && request.resource.data.estado in ['diagnostico', 'repuestos', 'reparacion', 'calidad', 'listo']);
       }
       match /mensajes/{id} { allow read: if leeTaller(tid); allow create: if escribeDe(tid); allow update, delete: if oficinaDe(tid); }

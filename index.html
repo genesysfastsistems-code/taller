@@ -407,12 +407,29 @@ const ROLES={admin:'Administrador',gerente:'Encargado o Gerente',recepcion:'Rece
 const ROL_DESC={admin:'Todo, incluida la configuración y los usuarios.',gerente:'Todo menos configuración y usuarios: ve costos, caja y reportes.',recepcion:'Recepción, órdenes, mostrador, lavadero, stock y postventa.',vendedor:'Mostrador, lavadero, stock e historial.',
   mecanico:'Solo sus órdenes asignadas.',chapista:'Solo sus órdenes asignadas.',pintor:'Solo sus órdenes asignadas.',ayudante:'Solo sus órdenes asignadas.',lavador:'Cola del lavadero: empezar y terminar lavados.',detailer:'Cola del lavadero: empezar y terminar lavados.'};
 const TEC=['mecanico','chapista','pintor','ayudante'];
+const AREAS={mecanica:'Mecánica',desarmado:'Desarmado',chapa:'Chapería',pintura:'Pintura',armado:'Armado',electricidad:'Electricidad',ayudante:'Ayudante',encargado:'Encargado',vendedor:'Vendedor',lavado:'Lavado / detailing'};
+const AREAS_TAREA=['mecanica','desarmado','chapa','pintura','armado','electricidad','ayudante','lavado'];
+const TIPOS_TALLER={mecanica:'Mecánica general',chapa:'Chapería y pintura',electricidad:'Electricidad automotriz',gomeria:'Gomería y alineación',motos:'Motos',lavadero:'Lavadero / detailing'};
+const ETAPAS={mecanica:[['mecanica','Diagnóstico'],['mecanica','Reparación']],chapa:[['desarmado','Desarmado'],['chapa','Chapería'],['pintura','Pintura'],['armado','Armado']],electricidad:[['electricidad','Revisión eléctrica']],gomeria:[['mecanica','Alineación y balanceo']]};
+const PED_EST={pendiente:['Pendiente','c-warn'],aprobado:['Aprobado','c-info'],comprado:['Comprado / entregado','c-ok'],rechazado:['Rechazado','c-bad']};
+const miMec=()=>(me()||{}).mecanicoId||'';
+const asignadoA=(o,mid)=>!!mid&&(o.mecanicoId===mid||(o.tareas||[]).some(t=>t.mecId===mid));
+const faltan=o=>o.retiro?dias(hoy(),o.retiro):null;
+function entChip(o){const d=faltan(o);if(d===null)return '<span class="chip c-mut">Sin fecha</span>';
+  return d<0?`<span class="chip c-bad">Atrasado ${-d} día${d===-1?'':'s'}</span>`:d===0?'<span class="chip c-bad">Entrega HOY</span>':d===1?'<span class="chip c-warn">Mañana</span>':`<span class="chip ${d<=3?'c-warn':'c-info'}">Faltan ${d} días</span>`}
+const otActivas=()=>db.ots.filter(o=>o.estado!=='entregado'&&inSuc(o));
+const esEncargado=o=>(o.recibeId&&o.recibeId===st.user)||(!o.recibeId&&o.recibe&&o.recibe===miNombre());
+function avisosEntrega(){const A=otActivas().filter(o=>o.retiro),mias=A.filter(esEncargado),L=mias.length?mias:A;
+  return {L,mias:!!mias.length,atr:L.filter(o=>faltan(o)<0),hoyE:L.filter(o=>faltan(o)===0),man:L.filter(o=>faltan(o)===1)}}
+const pedPend=()=>otActivas().flatMap(o=>(o.pedidos||[]).filter(p=>p.estado==='pendiente').map(p=>({o,p})));
+const asignarIds=o=>{o.asignados=[...new Set([o.mecanicoId,...(o.tareas||[]).map(t=>t.mecId)].filter(Boolean))]};
 const NAVS={
   admin:[['tablero','Tablero'],['recepcion','Recepción'],['pos','Mostrador'],['lavadero','Lavadero'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa'],['reportes','Reportes'],['finanzas','Caja y facturas'],['config','Configuración']],
   recepcion:[['tablero','Tablero'],['recepcion','Recepción'],['pos','Mostrador'],['lavadero','Lavadero'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa']],
   mecanico:[['ots','Mis tareas'],['historial','Historial']],
   vendedor:[['pos','Mostrador'],['lavadero','Lavadero'],['stock','Stock'],['historial','Historial']],
   lavador:[['lavadero','Lavadero']]};
+[NAVS.admin,NAVS.recepcion].forEach(N=>N.splice(N.findIndex(n=>n[0]==='ots')+1,0,['produccion','En taller']));
 NAVS.gerente=NAVS.admin.filter(n=>n[0]!=='config');['chapista','pintor','ayudante'].forEach(r=>NAVS[r]=NAVS.mecanico);NAVS.detailer=NAVS.lavador;
 
 const LANES=[
@@ -591,7 +608,7 @@ const LAV_DEF=[{id:'lv1',nombre:'Lavado exterior',min:30,precios:{moto:15000,chi
  {id:'lv6',nombre:'Lavado de chasis',min:40,precios:{moto:0,chico:40000,auto:50000,camioneta:70000,gransuv:90000,furgon:90000,camion:120000}}];
 const CAT_EGRESO=['Compra a proveedor','Sueldos y comisiones','Alquiler','Luz, agua e internet','Combustible','Impuestos','Otros'];
 const MEDIOS=['Efectivo','Transferencia','Tarjeta de débito','Tarjeta de crédito','Billetera (Tigo/Personal)','Cheque'];
-function defCfg(){return {termRecepcion:TERM_REC_DEF,termEntrega:TERM_ENT_DEF,garantiaCond:GAR_COND_DEF,taller:'Mi taller',ruc:'',dir:'',tel:'',timbrado:'',vigDesde:'',bono:5,garantiaDef:90,diasEstancado:90,coberturaDias:30,elevadores:4,telCompras:'',urlPublica:'',ejemplo:false,
+function defCfg(){return {tiposTaller:['mecanica'],puestos:6,termRecepcion:TERM_REC_DEF,termEntrega:TERM_ENT_DEF,garantiaCond:GAR_COND_DEF,taller:'Mi taller',ruc:'',dir:'',tel:'',timbrado:'',vigDesde:'',bono:5,garantiaDef:90,diasEstancado:90,coberturaDias:30,elevadores:4,telCompras:'',urlPublica:'',ejemplo:false,
   autoWA:{ingreso:true,presupuesto:true,retiro:true},plantillas:{...TPL_DEF},
   listas:LISTAS_DEF.map(x=>({...x})),servicios:SERV_DEF.map(x=>({...x})),proveedores:[],lavados:LAV_DEF.map(x=>({...x,precios:{...x.precios}})),lavadores:[]}}
 const emptyDB=()=>({clientes:[],vehiculos:[],stock:[],movs:[],mecanicos:[],ots:[],sucursales:[],usuarios:[],mensajes:[],alertas:[],ventas:[],egresos:[],config:defCfg(),nextOT:1});
@@ -739,7 +756,7 @@ function mov(stockId,sucId,cant,tipo,ref){db.movs.push({id:uid(),fecha:hoy(),sto
 
 /* ---------- NAVEGACIÓN ---------- */
 const PUB=['cliente','encuesta','seguimiento'];
-function navBadge(k){const n=k==='mensajes'?db.mensajes.filter(m=>m.estado==='pendiente').length:k==='stock'?db.alertas.filter(a=>!a.resuelta).length:0;return n?`<span class="badge">${n}</span>`:''}
+function navBadge(k){const n=k==='mensajes'?db.mensajes.filter(m=>m.estado==='pendiente').length:k==='stock'?db.alertas.filter(a=>!a.resuelta).length:k==='produccion'?(()=>{const a=avisosEntrega();return a.atr.length+a.hoyE.length+pedPend().length})():0;return n?`<span class="badge">${n}</span>`:''}
 function allowed(v){if(PUB.includes(v))return true;if(!me()||!NAVS[rol()])return false;if(v==='ot')return true;return NAVS[rol()].some(n=>n[0]===v)}
 function go(v,p){if(!allowed(v)){if(!NAVS[rol()])return;v=NAVS[rol()][0][0];p=null}st.view=v;st.param=p??null;render();window.scrollTo(0,0)}
 function render(){
@@ -752,8 +769,8 @@ function render(){
       <span><b>${esc(u.nombre)}</b> · ${ROLES[u.rol]||''}</span>${st.soporte?'':'<button class="out" onclick="cambiarClaveModal()">Clave</button>'}<button class="out" onclick="salir()">Salir</button>`;
     $('#nav').innerHTML=NAVS[u.rol].map(([k,l])=>`<button class="${st.view===k||(st.view==='ot'&&k==='ots')?'on':''}" onclick="go('${k}')">${l}${isM()?'':navBadge(k)}</button>`).join('');
   } else {$('#who').innerHTML='';$('#nav').innerHTML=''}
-  const V={tablero,recepcion,ots:otsView,ot:otView,historial,stock:stockView,crm:crmView,reportes:reportesView,finanzas,pos:posView,lavadero:lavaderoView,config:configView,cliente:clienteView,encuesta:encuestaView,seguimiento:seguimientoView,mensajes:mensajesView}[st.view]||tablero;
-  $('#app').innerHTML=(pub?'':membBanner())+(db.config.ejemplo&&!pub&&isAdm()?`<div class="banner row between"><span>Hay datos de ejemplo cargados.</span><button class="btn sm" onclick="confirmLimpiar()">Borrar datos de ejemplo</button></div>`:'')+V();
+  const V={tablero,recepcion,ots:otsView,ot:otView,historial,stock:stockView,crm:crmView,reportes:reportesView,finanzas,pos:posView,lavadero:lavaderoView,produccion:produccionView,config:configView,cliente:clienteView,encuesta:encuestaView,seguimiento:seguimientoView,mensajes:mensajesView}[st.view]||tablero;
+  $('#app').innerHTML=(pub?'':membBanner()+entBanner())+(db.config.ejemplo&&!pub&&isAdm()?`<div class="banner row between"><span>Hay datos de ejemplo cargados.</span><button class="btn sm" onclick="confirmLimpiar()">Borrar datos de ejemplo</button></div>`:'')+V();
   if(st.view==='recepcion') bindRec();
   if(st.view==='pos'&&st.pos&&st.pos.focus){st.pos.focus=0;const i=$('#pos_q');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   if(st.view==='ots'&&me()&&!isM()) bindSem();
@@ -968,7 +985,7 @@ function recepcion(){
       <label class="field"><span>Encargado del trabajo</span><select id="r_mec">${db.mecanicos.filter(m=>m.sucursalId===ws).map(m=>`<option value="${m.id}">${esc(m.nombre)}</option>`).join('')}</select></label>
       <label class="field"><span>Hora de ingreso</span><input id="r_hora" type="time"></label>
       <label class="field"><span>Recibido por</span><input id="r_recibe" placeholder="Quién recibe el vehículo"></label>
-      <label class="field"><span>Retirar el día</span><input id="r_retiro" type="date"></label></div>
+      <label class="field"><span>Fecha de entrega prometida</span><input id="r_retiro" type="date"></label></div>
     <div class="field" style="margin-top:12px"><span>Combustible: <b id="r_fuelv">${r.combustible}/8</b></span><div class="row"><input type="range" id="r_fuel" min="0" max="8" value="${r.combustible}" style="max-width:220px">${fuel(r.combustible)}</div></div>
     <label class="field" style="margin-top:12px"><span>Trabajos solicitados / falla reportada</span><textarea id="r_falla" placeholder="Ej.: ruido en tren delantero al girar"></textarea></label>
     <label class="field" style="margin-top:10px"><span>Observaciones a tener en cuenta para el trabajo</span><textarea id="r_obsTrab" placeholder="Ej.: el cliente pide conservar las piezas cambiadas"></textarea></label>
@@ -1059,7 +1076,7 @@ async function guardarRec(){
   const g=garantiaPrev(v.id);
   st.guardando=true;const nro=await nuevoNro();st.guardando=false;
   const o={id:uid(),nro,tipo:r.tipo,sucursalId:workSuc(),vehiculoId:v.id,clienteId:c.id,fecha:hoy(),km:num(r.km),combustible:r.combustible,checklist:r.checklist,danos:r.danos,fotos:r.fotos,
-    falla:r.falla,insp:r.insp||{},hora:r.hora||'',recibe:(r.recibe||'').trim(),retiro:r.retiro||'',valores:(r.valores||'').trim(),obsTrab:(r.obsTrab||'').trim(),matCli:(r.matCli||'').trim(),matComp:(r.matComp||'').trim(),limpieza:r.limpieza||'',inspObs:(r.inspObs||'').trim(),obsAd:'',trabAd:'',recom:'',
+    falla:r.falla,insp:r.insp||{},hora:r.hora||'',recibe:(r.recibe||'').trim(),recibeId:st.user||'',tareas:[],pedidos:[],retiro:r.retiro||'',valores:(r.valores||'').trim(),obsTrab:(r.obsTrab||'').trim(),matCli:(r.matCli||'').trim(),matComp:(r.matComp||'').trim(),limpieza:r.limpieza||'',inspObs:(r.inspObs||'').trim(),obsAd:'',trabAd:'',recom:'',
     mecanicoId:r.mec,estado:r.tipo==='express'?'reparacion':'diagnostico',items:[],aprob:r.tipo==='express'?'aprobado':'pendiente',token:uid()+uid(),pagos:[],factura:null,entrega:r.entrega,notas:'',
     horasEst:r.tipo==='express'?1:0,horasReal:0,trabajando:null,garantiaDias:db.config.garantiaDef,proxServ:null,recordado:null,encuesta:null,garantiaDe:g?g.id:null};
   o.estadoDesde=new Date().toISOString();
@@ -1071,7 +1088,7 @@ function otsView(){
   if(!isM())return semaforoView();
   const f=st.otFiltro;
   let list=db.ots.filter(o=>inSuc(o)&&(f==='todas'||(f==='activas'?o.estado!=='entregado':o.tipo===f)));
-  if(isM()){list=db.ots.filter(o=>o.mecanicoId===me().mecanicoId&&o.estado!=='entregado')}
+  if(isM()){list=db.ots.filter(o=>asignadoA(o,miMec())&&o.estado!=='entregado')}
   const cols=ESTADOS.filter(e=>(isM()||f==='activas')?e[0]!=='entregado':true);
   return `<div class="row between"><h1>${isM()?'Mis tareas':'Órdenes de trabajo'}</h1>${isM()?scanBox():`<button class="btn pri" onclick="go('recepcion')">+ Nueva OT</button>`}</div>
   ${isM()?'':`<div class="row">${[['activas','Activas'],['express','Express'],['tradicional','Tradicionales'],['todas','Todas']].map(([k,l])=>`<button class="btn sm ${f===k?'dark':''}" onclick="st.otFiltro='${k}';render()">${l}</button>`).join('')}</div>`}
@@ -1083,7 +1100,7 @@ function otsView(){
 function ot(){return db.ots.find(o=>o.id===st.param)}
 function otView(){
   const o=ot();if(!o)return '<p class="empty">Orden no encontrada.</p>';
-  if(isM()&&o.mecanicoId!==me().mecanicoId)return '<p class="empty">Esta orden no está asignada a vos.</p>';
+  if(isM()&&!asignadoA(o,miMec()))return '<p class="empty">Esta orden no está asignada a vos.</p>';
   const v=veh(o.vehiculoId),c=cli(o.clienteId),idx=ESTADOS.findIndex(e=>e[0]===o.estado);
   const T=total(o),P=pagado(o),lock=!!o.factura,M=isM(),A=isA();
   const ck=Object.entries(o.checklist).filter(([,x])=>x).map(([k])=>k);
@@ -1114,6 +1131,7 @@ function otView(){
       <div class="grid g2" style="margin-top:12px;align-items:start"><div class="grid${o.danos.some(d=>d.z==='i')?' g2':''}" style="gap:8px">${dmgMap(o.danos,1,vtipoDe(v))}${o.danos.some(d=>d.z==='i')?dmgMap(o.danos,1,vtipoDe(v),'i'):''}</div><div class="dmglist">${o.danos.length?o.danos.map((d,i)=>`<div><b>${i+1}</b>${esc(d.nota||'Sin descripción')}${dnLbl(d)}</div>`).join(''):'<p class="sub">Sin daños previos.</p>'}
       ${o.fotos.length?`<div class="photos" style="margin-top:8px">${o.fotos.map(f=>`<figure><img src="${f}" alt="Foto de ingreso"></figure>`).join('')}</div>`:''}</div></div></div>
   </div>
+  ${tareasPanel(o,M)}
   ${planillaPanel(o,v,M)}
   <div class="panel"><div class="row between"><h2>${M?'Trabajos a realizar':'Presupuesto y trabajos'}</h2>${lock||M?(lock?'<span class="sub">Facturada: no se puede editar</span>':''):`<div class="row"><button class="btn sm" onclick="addMO()">+ Mano de obra</button><button class="btn sm" onclick="addRep()">+ Repuesto de stock</button><button class="btn sm" onclick="addRepLibre()">+ Repuesto externo</button></div>`}</div>
     <div class="tscroll"><table><tr><th>Tipo</th><th>Descripción</th><th class="n">Cant.</th>${M?'':`<th class="n">Precio</th><th class="n">Subtotal</th>${A?'<th class="n">Costo</th>':''}<th></th>`}</tr>
@@ -1362,7 +1380,7 @@ async function enviarCalif(){if(!st.nota)return toast('Elegí de 1 a 5 estrellas
 
 /* ---------- HISTORIAL ---------- */
 function historial(){
-  const q=(st.hq||'').toUpperCase(),mine=isM()?new Set(db.ots.filter(o=>o.mecanicoId===me().mecanicoId).map(o=>o.vehiculoId)):null;
+  const q=(st.hq||'').toUpperCase(),mine=isM()?new Set(db.ots.filter(o=>asignadoA(o,miMec())).map(o=>o.vehiculoId)):null;
   const vs=db.vehiculos.filter(v=>(!mine||mine.has(v.id))&&(!q||v.chapa.includes(q)||(v.chasis||'').includes(q)));
   return `<h1>Historial del vehículo</h1>
   <input id="hq" placeholder="Buscar por chapa o nº de chasis" value="${esc(st.hq||'')}" oninput="st.hq=this.value;clearTimeout(window._h);window._h=setTimeout(()=>{render();const i=$('#hq');i.focus();i.setSelectionRange(i.value.length,i.value.length)},250)" style="max-width:420px">
@@ -1753,7 +1771,7 @@ function buscarOT(q){q=(q||'').trim();if(!q)return;let o;const mh=q.match(/#ot-(
   if(!o){const mn=q.match(/^(?:OT)?[-\s#]*0*(\d+)$/i);if(mn)o=db.ots.find(x=>x.nro===+mn[1])}
   if(!o){const c=q.toUpperCase().replace(/\s/g,'');o=db.ots.filter(x=>veh(x.vehiculoId).chapa.replace(/\s/g,'').includes(c)).sort((a,b)=>(a.estado==='entregado')-(b.estado==='entregado')||b.nro-a.nro)[0]}
   if(!o)return toast('No se encontró ninguna OT con “'+q+'”.');
-  if(isM()&&o.mecanicoId!==me().mecanicoId)return toast(`La OT #${o.nro} no está asignada a vos.`);go('ot',o.id)}
+  if(isM()&&!asignadoA(o,miMec()))return toast(`La OT #${o.nro} no está asignada a vos.`);go('ot',o.id)}
 function copiarTxt(t,ok){const fb=()=>modalHTML(`<h2>Copiar enlace</h2><input id="cp" value="${esc(t)}" readonly><div class="row"><button class="btn" onclick="closeM()">Cerrar</button></div>`)||setTimeout(()=>$('#cp')?.select(),0);
   if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast(ok),fb);else fb()}
 function comprasPanel(){const al=db.alertas.filter(a=>!a.resuelta&&inSuc(db.ots.find(x=>x.id===a.otId)||{sucursalId:st.suc}));if(!al.length)return '';
@@ -1825,11 +1843,75 @@ function plantillasPanel(){const A=isAdm(),P=db.config.plantillas;
   <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Envío 100 % automático en el servidor (ejemplo)</summary><pre class="code" style="margin-top:8px">${esc(SERVER_SNIPPET)}</pre></details></div>`;
 }
 
+/* ---------- PRODUCCIÓN: TAREAS, ENTREGAS Y MATERIALES ---------- */
+function tallerCfgPanel(){const c=db.config,T=c.tiposTaller||[],A=isAdm(),cnt={};db.mecanicos.forEach(m=>{const a=m.area||'mecanica';cnt[a]=(cnt[a]||0)+1});
+  return `<div class="panel"><h2>Tipo de taller y capacidad</h2><p class="note" style="margin:-4px 0 8px">Marcá lo que hace el taller: se ofrecen las etapas de trabajo que corresponden (por ejemplo, chapería y pintura: desarmado → chapería → pintura → armado).</p>
+    <div class="checks">${Object.entries(TIPOS_TALLER).map(([k,l])=>`<label><input type="checkbox" ${T.includes(k)?'checked':''} ${A?'':'disabled'} onchange="const t=new Set(db.config.tiposTaller||[]);this.checked?t.add('${k}'):t.delete('${k}');db.config.tiposTaller=[...t];save()"> ${l}</label>`).join('')}</div>
+    <div class="fields" style="margin-top:12px"><label class="field"><span>Puestos disponibles</span><input inputmode="numeric" value="${c.puestos||0}" ${A?'':'readonly'} onchange="db.config.puestos=num(this.value);save();render()"></label>
+      <label class="field"><span>Elevadores</span><input inputmode="numeric" value="${c.elevadores||0}" ${A?'':'readonly'} onchange="db.config.elevadores=num(this.value);save();render()"></label></div>
+    <div class="row" style="margin-top:12px;gap:8px">${Object.entries(AREAS).map(([k,l])=>`<span class="chip ${cnt[k]?'c-info':'c-mut'}">${l}: <b>${cnt[k]||0}</b></span>`).join('')}</div>
+    <p class="note" style="margin:8px 0 0">El personal por área se carga en “Personal del taller”, aquí abajo.</p></div>`}
+function entBanner(){if(!me()||isM()||isL()||!NAVS[rol()]||!NAVS[rol()].some(n=>n[0]==='produccion'))return '';const a=avisosEntrega(),pp=pedPend();
+  const parts=[a.atr.length?`<b style="color:var(--bad)">${a.atr.length} atrasada${a.atr.length>1?'s':''}</b>`:'',a.hoyE.length?`<b>${a.hoyE.length} para hoy</b>`:'',a.man.length?`${a.man.length} para mañana`:'',pp.length?`<b>${pp.length} pedido${pp.length>1?'s':''} de materiales</b>`:''].filter(Boolean);
+  if(!parts.length||st.view==='produccion')return '';
+  return `<div class="alertbar" style="border-color:var(--warn)"><strong>${a.mias?'Tus entregas':'Entregas'}</strong><span>${parts.join(' · ')}</span><button class="btn sm" onclick="go('produccion')">Ver en taller</button></div>`}
+function tareasPanel(o,M){const mid=miMec(),T=o.tareas||[],P=o.pedidos||[],tipos=db.config.tiposTaller||[],A=!M;
+  const per=area=>db.mecanicos.filter(m=>m.sucursalId===o.sucursalId);
+  const t0=x=>x?new Date(x).toTimeString().slice(0,5)+' '+fdate(x.slice(0,10)).slice(0,5):'—';
+  return `<div class="panel"><div class="row between"><h2>Tareas por área y entrega</h2><div class="row" style="gap:8px">${entChip(o)}${A?`<label class="row" style="gap:6px;font-size:13px">Entrega <input type="date" value="${o.retiro||''}" style="width:auto" onchange="o_set('retiro',this.value)"></label>`:o.retiro?`<b>${fdate(o.retiro)}</b>`:''}</div></div>
+    <div class="sub" style="font-size:13px;margin:-4px 0 8px">Encargado: <b>${esc(o.recibe||'—')}</b></div>
+    <div class="tscroll"><table><tr><th>Área</th><th>Personal</th><th>Trabajo</th><th>Inicio</th><th>Fin</th><th>Estado</th><th></th></tr>
+    ${T.map((t,i)=>{const mine=t.mecId&&t.mecId===mid,puede=A||mine;return `<tr><td><span class="tag">${AREAS[t.area]||t.area}</span></td><td>${A?`<select onchange="tarSet(${i},'mecId',this.value)"><option value="">—</option>${per().map(m=>`<option value="${m.id}" ${m.id===t.mecId?'selected':''}>${esc(m.nombre)} · ${AREAS[m.area||'mecanica']}</option>`).join('')}</select>`:esc(t.mecId?mec(t.mecId):'—')}</td>
+      <td>${A?`<input value="${esc(t.desc)}" onchange="tarSet(${i},'desc',this.value)">`:esc(t.desc)}</td><td class="mono" style="font-size:12px">${t0(t.inicio)}</td><td class="mono" style="font-size:12px">${t0(t.fin)}</td>
+      <td>${t.estado==='hecho'?'<span class="chip c-ok">Terminado</span>':t.estado==='curso'?'<span class="chip c-warn">En curso</span>':'<span class="chip c-mut">Pendiente</span>'}</td>
+      <td class="n" style="white-space:nowrap">${puede&&t.estado==='pendiente'?`<button class="btn sm pri" onclick="tarEstado(${i},'curso')">Iniciar</button>`:''}${puede&&t.estado==='curso'?`<button class="btn sm pri" onclick="tarEstado(${i},'hecho')">Terminar</button>`:''}${A&&t.estado==='hecho'?`<button class="btn sm" onclick="tarEstado(${i},'curso')">Reabrir</button>`:''}${A?` <button class="btn sm danger" onclick="tarDel(${i})" aria-label="Quitar">✕</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="7" class="empty">Sin tareas cargadas. Agregá las etapas del trabajo y asigná a cada persona.</td></tr>'}</table></div>
+    ${A?`<div class="row" style="margin-top:10px"><button class="btn sm" onclick="tarNueva()">+ Tarea</button>${tipos.filter(k=>ETAPAS[k]).map(k=>`<button class="btn sm" onclick="tarEtapas('${k}')">+ Etapas de ${TIPOS_TALLER[k].toLowerCase()}</button>`).join('')}</div>`:''}
+    <h3 style="margin:16px 0 6px">Materiales solicitados por el personal</h3>
+    <div class="tscroll"><table><tr><th>Fecha</th><th>Pedido por</th><th class="n">Cant.</th><th>Material</th><th>Estado</th><th></th></tr>
+    ${P.map((x,i)=>`<tr><td class="mono" style="font-size:12px">${fdate(x.fecha)}</td><td>${esc(x.mecId?mec(x.mecId):x.por||'—')}</td><td class="n">${x.cant}</td><td>${esc(x.desc)}</td><td><span class="chip ${PED_EST[x.estado][1]}">${PED_EST[x.estado][0]}</span></td>
+      <td class="n" style="white-space:nowrap">${A&&x.estado==='pendiente'?`<button class="btn sm" onclick="pedEstado('${o.id}',${i},'aprobado')">Aprobar</button><button class="btn sm danger" onclick="pedEstado('${o.id}',${i},'rechazado')">Rechazar</button>`:''}${A&&x.estado==='aprobado'?`<button class="btn sm pri" onclick="pedEstado('${o.id}',${i},'comprado')">Entregado</button><button class="btn sm" onclick="pedPresu(${i})">Al presupuesto</button>`:''}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sin pedidos de materiales.</td></tr>'}</table></div>
+    <form class="row" style="margin-top:10px;gap:6px" onsubmit="event.preventDefault();pedNuevo()"><input id="pd_c" inputmode="decimal" placeholder="Cant." style="width:80px"><input id="pd_d" placeholder="Material que necesitás (ej.: masilla, lija 320, pintura base gris)" style="flex:1;min-width:220px"><button class="btn">Pedir al encargado</button></form></div>`}
+function tarSet(i,k,v){const o=ot();o.tareas[i][k]=v;asignarIds(o);save();render()}
+function tarDel(i){const o=ot();o.tareas.splice(i,1);asignarIds(o);save();render()}
+function tarNueva(){modalHTML(`<h2>Nueva tarea</h2><div class="fields"><label class="field"><span>Área</span><select id="tn_a">${AREAS_TAREA.map(k=>`<option value="${k}">${AREAS[k]}</option>`).join('')}</select></label>
+  <label class="field"><span>Personal</span><select id="tn_m"><option value="">— Sin asignar</option>${db.mecanicos.filter(m=>m.sucursalId===ot().sucursalId).map(m=>`<option value="${m.id}">${esc(m.nombre)} · ${AREAS[m.area||'mecanica']}</option>`).join('')}</select></label>
+  <label class="field" style="grid-column:span 2"><span>Trabajo / servicio</span><input id="tn_d" placeholder="Ej.: pintar puerta delantera izquierda"></label></div>
+  <div class="row"><button class="btn pri" onclick="const o=ot();(o.tareas=o.tareas||[]).push({id:uid(),area:$('#tn_a').value,mecId:$('#tn_m').value,desc:$('#tn_d').value.trim()||AREAS[$('#tn_a').value],estado:'pendiente',inicio:null,fin:null});asignarIds(o);save();closeM();render()">Agregar</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
+function tarEtapas(k){const o=ot(),byArea=a=>(db.mecanicos.find(m=>(m.area||'mecanica')===a&&m.sucursalId===o.sucursalId)||{}).id||'';
+  o.tareas=o.tareas||[];ETAPAS[k].forEach(([a,d])=>o.tareas.push({id:uid(),area:a,mecId:byArea(a),desc:d,estado:'pendiente',inicio:null,fin:null}));asignarIds(o);save();render();toast('Etapas agregadas: revisá el personal asignado')}
+function tarEstado(i,e){const o=ot(),t=o.tareas[i],now=new Date().toISOString();t.estado=e;if(e==='curso'){t.inicio=t.inicio||now;t.fin=null}if(e==='hecho')t.fin=now;
+  if(e==='curso'&&['recepcion','diagnostico','presupuesto'].includes(o.estado)&&o.aprob==='aprobado'){o.estado='reparacion';o.estadoDesde=now}save();render()}
+function pedNuevo(){const o=ot(),c=dec($('#pd_c').value)||1,d=$('#pd_d').value.trim();if(!d)return toast('Escribí el material que necesitás.');
+  (o.pedidos=o.pedidos||[]).push({id:uid(),cant:c,desc:d,mecId:miMec(),por:miNombre(),fecha:hoy(),estado:'pendiente'});save();render();toast('Pedido enviado al encargado'+(o.recibe?' ('+o.recibe+')':''))}
+function pedEstado(oid,i,e){const o=db.ots.find(x=>x.id===oid);o.pedidos[i].estado=e;save();render()}
+function pedPresu(i){const o=ot(),x=o.pedidos[i];modalHTML(`<h2>Agregar al presupuesto</h2><div class="fields"><label class="field"><span>Descripción</span><input id="pp_d" value="${esc(x.desc)}"></label><label class="field"><span>Cantidad</span><input id="pp_c" value="${x.cant}" inputmode="decimal"></label><label class="field"><span>Precio unitario (Gs.)</span><input id="pp_p" inputmode="numeric"></label></div>
+  <div class="row"><button class="btn pri" onclick="const o=ot(),p=num($('#pp_p').value);if(!p)return toast('Poné el precio.');o.items.push({tipo:'rep',desc:$('#pp_d').value.trim(),cant:dec($('#pp_c').value)||1,precio:p,costo:Math.round(p*.65)});o.pedidos[${i}].estado='comprado';save();closeM();render()">Agregar</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
+function produccionView(){const act=otActivas(),cap=db.config.puestos||0,elev=db.config.elevadores||0;
+  const occElev=act.filter(o=>laneOf(o.estado)?.lift&&o.estado!=='listo').length;
+  const tareas=act.flatMap(o=>(o.tareas||[]).map(t=>({o,t}))),enCurso=tareas.filter(x=>x.t.estado==='curso'),pend=tareas.filter(x=>x.t.estado==='pendiente');
+  const ent=act.slice().sort((a,b)=>(a.retiro||'9999').localeCompare(b.retiro||'9999')),a=avisosEntrega(),pp=pedPend();
+  const ocup=new Map();enCurso.forEach(x=>{if(x.t.mecId)ocup.set(x.t.mecId,x)});
+  const dur=x=>{const m=Math.round((Date.now()-new Date(x).getTime())/60000);return m<60?m+' min':Math.floor(m/60)+' h '+m%60+' min'};
+  const vrow=o=>{const v=veh(o.vehiculoId);return `${plate(v.chapa)} <span style="font-size:13px">${esc(v.marca)} ${esc(v.modelo)}</span>`};
+  return `<div class="row between"><h1>En taller</h1><span class="sub">${fdate(hoy())}</span></div>
+  <div class="grid kpis"><div class="kpi ${act.length>cap&&cap?'alert':''}"><b>${act.length}${cap?' / '+cap:''}</b><span>Puestos ocupados</span></div><div class="kpi"><b>${occElev}${elev?' / '+elev:''}</b><span>Elevadores en uso</span></div>
+    <div class="kpi"><b>${enCurso.length}</b><span>Tareas en curso</span></div><div class="kpi"><b>${pend.length}</b><span>Tareas pendientes</span></div>
+    <div class="kpi ${a.atr.length?'alert':''}"><b>${a.atr.length}</b><span>Entregas atrasadas</span></div><div class="kpi ${pp.length?'alert':''}"><b>${pp.length}</b><span>Pedidos de materiales</span></div></div>
+  ${pp.length?`<div class="panel"><h2>Pedidos de materiales pendientes</h2><div class="tscroll"><table><tr><th>OT</th><th>Vehículo</th><th>Encargado</th><th>Pedido por</th><th class="n">Cant.</th><th>Material</th><th></th></tr>
+    ${pp.map(({o,p})=>{const i=o.pedidos.indexOf(p);return `<tr><td><button class="btn sm" onclick="go('ot','${o.id}')">#${o.nro}</button></td><td>${vrow(o)}</td><td>${esc(o.recibe||'—')}</td><td>${esc(p.mecId?mec(p.mecId):p.por||'—')}</td><td class="n">${p.cant}</td><td>${esc(p.desc)}</td><td class="n" style="white-space:nowrap"><button class="btn sm" onclick="pedEstado('${o.id}',${i},'aprobado')">Aprobar</button><button class="btn sm danger" onclick="pedEstado('${o.id}',${i},'rechazado')">Rechazar</button></td></tr>`}).join('')}</table></div></div>`:''}
+  <div class="panel"><h2>Trabajos en curso</h2><div class="tscroll"><table><tr><th>OT</th><th>Vehículo</th><th>Cliente</th><th>Área</th><th>Personal</th><th>Trabajo</th><th>Inicio</th><th>Tiempo</th></tr>
+    ${enCurso.map(({o,t})=>`<tr><td><button class="btn sm" onclick="go('ot','${o.id}')">#${o.nro}</button></td><td>${vrow(o)}</td><td>${esc(cli(o.clienteId).nombre)}</td><td><span class="tag">${AREAS[t.area]||t.area}</span></td><td>${esc(t.mecId?mec(t.mecId):'—')}</td><td>${esc(t.desc)}</td><td class="mono" style="font-size:12px">${new Date(t.inicio).toTimeString().slice(0,5)}</td><td class="mono" style="font-size:12px">${dur(t.inicio)}</td></tr>`).join('')||'<tr><td colspan="8" class="empty">Nadie tiene una tarea iniciada ahora.</td></tr>'}</table></div></div>
+  <div class="panel"><h2>Entregas</h2><div class="tscroll"><table><tr><th>OT</th><th>Vehículo</th><th>Cliente</th><th>Encargado</th><th>Etapa actual</th><th>Avance</th><th>Entrega</th><th></th></tr>
+    ${ent.map(o=>{const T=o.tareas||[],h=T.filter(t=>t.estado==='hecho').length,cur=T.find(t=>t.estado==='curso')||T.find(t=>t.estado==='pendiente');return `<tr><td><button class="btn sm" onclick="go('ot','${o.id}')">#${o.nro}</button></td><td>${vrow(o)}</td><td>${esc(cli(o.clienteId).nombre)}</td><td>${esc(o.recibe||'—')}</td>
+      <td>${cur?`<span class="tag">${AREAS[cur.area]||cur.area}</span> ${esc(cur.desc)}`:`<span class="sub">${esc((ESTADOS.find(e=>e[0]===o.estado)||[,''])[1])}</span>`}</td><td class="mono">${T.length?h+'/'+T.length:'—'}</td><td>${o.retiro?fdate(o.retiro):''}</td><td>${entChip(o)}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">No hay vehículos en el taller.</td></tr>'}</table></div></div>
+  <div class="panel"><h2>Personal</h2><div class="grid g2" style="gap:6px">${db.mecanicos.filter(m=>st.suc==='*'||m.sucursalId===workSuc()).map(m=>{const x=ocup.get(m.id),pn=pend.filter(y=>y.t.mecId===m.id).length;
+    return `<div class="row between" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px"><span><b>${esc(m.nombre)}</b> <span class="tag">${AREAS[m.area||'mecanica']}</span></span><span style="font-size:13px">${x?`<span class="chip c-warn">Trabajando</span> OT #${x.o.nro} · ${esc(veh(x.o.vehiculoId).chapa)} · ${esc(x.t.desc)}`:'<span class="chip c-ok">Libre</span>'}${pn?` <span class="sub">${pn} pendiente${pn>1?'s':''}</span>`:''}</span></div>`}).join('')||'<p class="empty">Cargá el personal en Configuración.</p>'}</div></div>`}
+
 /* ---------- PLANILLA DE RECEPCIÓN COMPLETA ---------- */
 function planillaPanel(o,v,M){const t=vtipoDe(v),ro=M?'readonly':'',e=o.entregaInfo;
   const fld=(k,l,ph,ta)=>ta?`<label class="field"><span>${l}</span><textarea ${ro} placeholder="${ph||''}" onchange="o_set('${k}',this.value.trim())">${esc(o[k]||'')}</textarea></label>`:`<label class="field"><span>${l}</span><input ${ro} value="${esc(o[k]||'')}" placeholder="${ph||''}" onchange="o_set('${k}',this.value.trim())"></label>`;
   return `<div class="panel"><div class="row between"><h2>Planilla de recepción</h2>${M?'':`<div class="row"><button class="btn sm" onclick="inspEditar()">Editar inspección</button><button class="btn sm" onclick="plModal('${o.id}')">Imprimir planilla</button></div>`}</div>
-    <div class="row" style="gap:22px;font-size:13px"><div><div class="sub" style="font-size:12px">HORA</div><b>${esc(o.hora||'—')}</b></div><div><div class="sub" style="font-size:12px">RECIBIDO POR</div><b>${esc(o.recibe||'—')}</b></div><div><div class="sub" style="font-size:12px">RETIRAR EL DÍA</div><b>${o.retiro?fdate(o.retiro):'—'}</b></div><div><div class="sub" style="font-size:12px">LIMPIEZA</div><b>${esc(o.limpieza||'—')}</b></div></div>
+    <div class="row" style="gap:22px;font-size:13px"><div><div class="sub" style="font-size:12px">HORA</div><b>${esc(o.hora||'—')}</b></div><div><div class="sub" style="font-size:12px">RECIBIDO POR</div><b>${esc(o.recibe||'—')}</b></div><div><div class="sub" style="font-size:12px">ENTREGA PROMETIDA</div><b>${o.retiro?fdate(o.retiro):'—'}</b></div><div><div class="sub" style="font-size:12px">LIMPIEZA</div><b>${esc(o.limpieza||'—')}</b></div></div>
     ${inspResumen(o,t)}${o.inspObs?`<p class="note" style="margin:6px 0 0">Otros detalles: ${esc(o.inspObs)}</p>`:''}
     <div class="grid g2" style="margin-top:12px;align-items:start"><div class="grid" style="gap:10px">
       ${fld('valores','Objetos de valor declarados')}${fld('obsTrab','Observaciones para el trabajo','',1)}${fld('matCli','Materiales proporcionados por el cliente','',1)}${fld('matComp','Materiales a utilizar o comprar','',1)}</div>
@@ -2176,10 +2258,11 @@ function configView(){const c=db.config;
   <div class="panel"><h2>Sucursales</h2><div class="tscroll"><table><tr><th>Nombre</th><th>Establecimiento</th><th>Punto exp.</th><th>Próx. factura</th></tr>
   ${db.sucursales.map(s=>`<tr><td><input value="${esc(s.nombre)}" onchange="suc('${s.id}').nombre=this.value;save()"></td><td><input value="${esc(s.est)}" style="width:80px" onchange="suc('${s.id}').est=this.value;save()"></td><td><input value="${esc(s.pto)}" style="width:80px" onchange="suc('${s.id}').pto=this.value;save()"></td><td><input value="${s.nextFac}" style="width:100px" onchange="suc('${s.id}').nextFac=num(this.value)||1;save()"></td></tr>`).join('')}</table></div>
   <div class="row" style="margin-top:10px"><input id="ns" placeholder="Nombre de la nueva sucursal" style="max-width:300px"><button class="btn" onclick="addSucursal()">Agregar sucursal</button></div></div>
-  <div class="panel"><h2>Mecánicos</h2><div class="tscroll"><table><tr><th>Nombre</th><th>Sucursal</th><th>Costo por hora (Gs.)</th><th>Comisión %</th></tr>
-  ${db.mecanicos.map(m=>`<tr><td><input value="${esc(m.nombre)}" onchange="mecO('${m.id}').nombre=this.value;save()"></td><td><select onchange="mecO('${m.id}').sucursalId=this.value;save()">${db.sucursales.map(s=>`<option value="${s.id}" ${s.id===m.sucursalId?'selected':''}>${esc(s.nombre)}</option>`).join('')}</select></td>
+  ${tallerCfgPanel()}
+  <div class="panel"><h2>Personal del taller</h2><p class="note" style="margin:-4px 0 8px">Cada persona con su área. Se les asignan órdenes y tareas (desarmado, chapería, pintura, armado…). Para que vean sus tareas, creales un usuario y vinculalo aquí.</p><div class="tscroll"><table><tr><th>Nombre</th><th>Área</th><th>Sucursal</th><th>Costo por hora (Gs.)</th><th>Comisión %</th></tr>
+  ${db.mecanicos.map(m=>`<tr><td><input value="${esc(m.nombre)}" onchange="mecO('${m.id}').nombre=this.value;save()"></td><td><select onchange="mecO('${m.id}').area=this.value;save();render()">${Object.entries(AREAS).map(([k,l])=>`<option value="${k}" ${(m.area||'mecanica')===k?'selected':''}>${l}</option>`).join('')}</select></td><td><select onchange="mecO('${m.id}').sucursalId=this.value;save()">${db.sucursales.map(s=>`<option value="${s.id}" ${s.id===m.sucursalId?'selected':''}>${esc(s.nombre)}</option>`).join('')}</select></td>
   <td><input value="${m.costoHora}" inputmode="numeric" onchange="mecO('${m.id}').costoHora=num(this.value);save()"></td><td><input value="${m.comision}" inputmode="numeric" style="width:70px" onchange="mecO('${m.id}').comision=num(this.value);save()"></td></tr>`).join('')}</table></div>
-  <div class="row" style="margin-top:10px"><input id="nm" placeholder="Nombre del nuevo mecánico" style="max-width:300px"><button class="btn" onclick="const n=$('#nm').value.trim();if(n){db.mecanicos.push({id:uid(),nombre:n,sucursalId:workSuc(),costoHora:30000,comision:8});save();render()}">Agregar mecánico</button></div></div>
+  <div class="row" style="margin-top:10px"><input id="nm" placeholder="Nombre de la persona" style="max-width:300px"><select id="nm_a" style="max-width:200px">${Object.entries(AREAS).map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select><button class="btn" onclick="const n=$('#nm').value.trim();if(n){db.mecanicos.push({id:uid(),nombre:n,area:$('#nm_a').value,sucursalId:workSuc(),costoHora:30000,comision:8});save();render()}">Agregar persona</button></div></div>
   <div class="panel"><div class="row between"><h2>Usuarios y permisos</h2><span class="sub">${db.usuarios.filter(u=>u.activo).length} de ${limiteUsuarios()} usuarios activos</span></div>
   <div class="tscroll"><table><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Sucursal</th><th>Técnico vinculado</th><th>Activo</th></tr>
   ${db.usuarios.slice().sort((a,b)=>(b.activo?1:0)-(a.activo?1:0)||a.nombre.localeCompare(b.nombre)).map(u=>{const yo=u.id===st.user;return `<tr><td><input value="${esc(u.nombre)}" onchange="usr('${u.id}').nombre=this.value;save()"></td><td class="mono" style="font-size:12px">${esc(u.usuario||userName(u.email))}${u.cambiarClave?' <span class="chip c-warn">Clave temporal</span>':''}</td>
