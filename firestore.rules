@@ -98,7 +98,7 @@ service cloud.firestore {
         allow create: if oficinaDe(tid);
         // El lavador / detailer solo avanza el estado de los lavados
         allow update: if oficinaDe(tid) || (lavadorDe(tid) && resource.data.lavado == true
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'horaInicio', 'horaFin'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'horaInicio', 'horaFin', 'lavador'])
           && request.resource.data.estado in ['espera', 'lavando', 'listo']);
         allow delete: if gerDe(tid);
       }
