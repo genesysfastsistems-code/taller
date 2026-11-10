@@ -25,7 +25,11 @@ service cloud.firestore {
     }
     function staffDe(tid) { return esStaff() && perfil().tallerId == tid; }
     function leeTaller(tid) { return esDev() || staffDe(tid); }
-    function oficinaDe(tid) { return esDev() || (staffDe(tid) && perfil().rol in ['admin', 'recepcion'] && vigente(tid)); }
+    function oficinaDe(tid) { return esDev() || (staffDe(tid) && perfil().rol in ['admin', 'gerente', 'recepcion', 'vendedor'] && vigente(tid)); }
+    // Administrador o encargado/gerente (todo menos configuración, sucursales y usuarios)
+    function gerDe(tid) { return esDev() || (staffDe(tid) && perfil().rol in ['admin', 'gerente'] && vigente(tid)); }
+    function tecnico() { return perfil().rol in ['mecanico', 'chapista', 'pintor', 'ayudante']; }
+    function lavadorDe(tid) { return staffDe(tid) && perfil().rol in ['lavador', 'detailer'] && vigente(tid); }
     function adminDe(tid) { return esDev() || (staffDe(tid) && perfil().rol == 'admin' && vigente(tid)); }
     function escribeDe(tid) { return esDev() || (staffDe(tid) && vigente(tid)); }
     // Alta de un taller nuevo en el mismo lote que crea el taller
@@ -68,19 +72,19 @@ service cloud.firestore {
       match /stock/{id} {
         allow read: if leeTaller(tid);
         allow update: if oficinaDe(tid);
-        allow create, delete: if adminDe(tid);
+        allow create, delete: if gerDe(tid);
       }
       match /movs/{id} {
         allow read: if leeTaller(tid);
         allow create: if oficinaDe(tid);
-        allow update, delete: if adminDe(tid);
+        allow update, delete: if gerDe(tid);
       }
       match /ots/{id} {
         allow read: if leeTaller(tid);
         allow create, delete: if oficinaDe(tid);
-        // El mecánico solo cambia estado, notas y horas de SUS órdenes
+        // El técnico (mecánico, chapista, pintor, ayudante) solo cambia estado, notas y horas de SUS órdenes
         allow update: if oficinaDe(tid) || (
-          staffDe(tid) && perfil().rol == 'mecanico' && vigente(tid)
+          staffDe(tid) && tecnico() && vigente(tid)
           && resource.data.mecanicoId == perfil().mecanicoId
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['estado', 'estadoDesde', 'notas', 'horasReal', 'trabajando', 'faltante'])
@@ -89,8 +93,16 @@ service cloud.firestore {
       match /mensajes/{id} { allow read: if leeTaller(tid); allow create: if escribeDe(tid); allow update, delete: if oficinaDe(tid); }
       match /alertas/{id}  { allow read: if leeTaller(tid); allow create: if escribeDe(tid); allow update, delete: if oficinaDe(tid); }
       // Ventas de mostrador y egresos de caja
-      match /ventas/{id}   { allow read: if leeTaller(tid); allow create, update: if oficinaDe(tid); allow delete: if adminDe(tid); }
-      match /egresos/{id}  { allow read: if leeTaller(tid); allow create, update: if oficinaDe(tid); allow delete: if adminDe(tid); }
+      match /ventas/{id} {
+        allow read: if leeTaller(tid);
+        allow create: if oficinaDe(tid);
+        // El lavador / detailer solo avanza el estado de los lavados
+        allow update: if oficinaDe(tid) || (lavadorDe(tid) && resource.data.lavado == true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'horaInicio', 'horaFin'])
+          && request.resource.data.estado in ['espera', 'lavando', 'listo']);
+        allow delete: if gerDe(tid);
+      }
+      match /egresos/{id}  { allow read: if leeTaller(tid); allow create, update: if oficinaDe(tid); allow delete: if gerDe(tid); }
     }
 
     // ---------- Usuarios (índice global: a qué taller pertenece cada cuenta) ----------

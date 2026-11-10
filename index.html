@@ -403,11 +403,17 @@ function inspLeer(attr){const o={};document.querySelectorAll('select['+attr+']')
 function inspResumen(o,tipo){const d=o.insp||{};if(!Object.keys(d).length)return '<p class="sub" style="margin:4px 0">Sin inspección detallada.</p>';
   return inspDe(tipo).map(([g,L])=>{const it=L.filter(k=>d[k]);return it.length?`<div class="k sub" style="margin-top:8px;font-size:12px;font-weight:600">${g}</div><div class="inspr">${it.map(k=>`<span style="color:${['x','rot'].includes(d[k])?'var(--bad)':d[k]==='ray'?'var(--warn)':'inherit'}"><b>${SIMB[d[k]]}</b> ${esc(k)}</span>`).join('')}</div>`:''}).join('')}
 const vtag=v=>{const t=vtipoDe(v);return t==='moto'?'<span class="tag moto">Moto</span>':t==='auto'?'':`<span class="tag">${VTIPOS[t]||t}</span>`};
-const ROLES={admin:'Administrador',recepcion:'Recepción',mecanico:'Mecánico',pendiente:'Pendiente'};
+const ROLES={admin:'Administrador',gerente:'Encargado o Gerente',recepcion:'Recepción',vendedor:'Vendedor',mecanico:'Mecánico',chapista:'Chapista',pintor:'Pintor',ayudante:'Ayudante',lavador:'Lavador',detailer:'Detailer',pendiente:'Pendiente'};
+const ROL_DESC={admin:'Todo, incluida la configuración y los usuarios.',gerente:'Todo menos configuración y usuarios: ve costos, caja y reportes.',recepcion:'Recepción, órdenes, mostrador, lavadero, stock y postventa.',vendedor:'Mostrador, lavadero, stock e historial.',
+  mecanico:'Solo sus órdenes asignadas.',chapista:'Solo sus órdenes asignadas.',pintor:'Solo sus órdenes asignadas.',ayudante:'Solo sus órdenes asignadas.',lavador:'Cola del lavadero: empezar y terminar lavados.',detailer:'Cola del lavadero: empezar y terminar lavados.'};
+const TEC=['mecanico','chapista','pintor','ayudante'];
 const NAVS={
   admin:[['tablero','Tablero'],['recepcion','Recepción'],['pos','Mostrador'],['lavadero','Lavadero'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa'],['reportes','Reportes'],['finanzas','Caja y facturas'],['config','Configuración']],
   recepcion:[['tablero','Tablero'],['recepcion','Recepción'],['pos','Mostrador'],['lavadero','Lavadero'],['ots','Semáforo'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa']],
-  mecanico:[['ots','Mis tareas'],['historial','Historial']]};
+  mecanico:[['ots','Mis tareas'],['historial','Historial']],
+  vendedor:[['pos','Mostrador'],['lavadero','Lavadero'],['stock','Stock'],['historial','Historial']],
+  lavador:[['lavadero','Lavadero']]};
+NAVS.gerente=NAVS.admin.filter(n=>n[0]!=='config');['chapista','pintor','ayudante'].forEach(r=>NAVS[r]=NAVS.mecanico);NAVS.detailer=NAVS.lavador;
 
 const LANES=[
   {id:'rojo',nombre:'En diagnóstico',desc:'Recién ingresados · evaluar ya',estados:['recepcion','diagnostico'],target:'diagnostico',color:'var(--bad)',ink:'#fff',lift:true,limite:4},
@@ -638,7 +644,7 @@ async function onAuth(u){
 function entrarTaller(tid){
   st.tid=tid;st.user=st.authUser.uid;
   let s=null;try{s=localStorage.getItem(KS+tid)}catch(e){}
-  st.suc=st.soporte?'*':st.perfil.rol==='admin'&&s?s:(st.perfil.sucursalId||'central');
+  st.suc=st.soporte?'*':['admin','gerente'].includes(st.perfil.rol)&&s?s:(st.perfil.sucursalId||'central');
   st.fase='cargando';render();
   tUnsub=FS.collection('talleres').doc(tid).onSnapshot(d=>{st.taller=d.exists?Object.assign(d.data(),{id:d.id}):null;
     if(!st.soporte&&!memb(st.taller).ok){stopData();st.fase='bloqueado';closeM();render();return}
@@ -650,7 +656,7 @@ function startSync(){
     unsubs.push(q.onSnapshot(s=>{db[c]=s.docs.map(d=>Object.assign(d.data(),{id:d.id}));last[c]={};db[c].forEach(x=>last[c][x.id]=stable(x));llego(c)},e=>{syncErr(c,e);if(!listos.has(c)){last[c]={};llego(c)}}))});
   unsubs.push(T('meta').doc('config').onSnapshot(d=>{db.config=Object.assign(defCfg(),d.exists?d.data():{});lastCfg=stable(db.config);llego('config')},e=>syncErr('config',e)));
   unsubs.push(T('meta').doc('contadores').onSnapshot(d=>{db.nextOT=(d.exists&&d.data().nextOT)||1;llego('contadores')},e=>syncErr('contadores',e)));
-  if(['admin','recepcion'].includes(st.perfil.rol))unsubs.push(FS.collection('publico').where('tallerId','==',st.tid).where('procesado','==',false).onSnapshot(s=>aplicarRespuestas(s.docs),e=>console.warn(e)));
+  if(['admin','gerente','recepcion'].includes(st.perfil.rol))unsubs.push(FS.collection('publico').where('tallerId','==',st.tid).where('procesado','==',false).onSnapshot(s=>aplicarRespuestas(s.docs),e=>console.warn(e)));
 }
 function syncErr(c,e){console.error(c,e);toast(e.code==='permission-denied'?(['ventas','egresos'].includes(c)?'Falta actualizar las reglas de Firestore para Mostrador y Caja.':'Sin permiso para leer '+c+'. Revisá las reglas de Firestore.'):'Error de conexión: '+(e.code||e.message))}
 function llego(c){if(!st.syncOn)return;listos.add(c);
@@ -703,7 +709,7 @@ function toast(t){const n=document.querySelectorAll('.toast').length,d=document.
 /* ---------- HELPERS ---------- */
 const me=()=>st.user&&st.perfil?(db.usuarios.find(u=>u.id===st.user)||Object.assign({id:st.user},st.perfil)):null;
 const rol=()=>me()?.rol;
-const isA=()=>rol()==='admin', isM=()=>rol()==='mecanico';
+const isA=()=>['admin','gerente'].includes(rol()), isM=()=>TEC.includes(rol()), isAdm=()=>rol()==='admin', isL=()=>['lavador','detailer'].includes(rol());
 const cli=id=>db.clientes.find(c=>c.id===id)||{nombre:'—',ruc:'',tel:''};
 const veh=id=>db.vehiculos.find(v=>v.id===id)||{chapa:'—',marca:'',modelo:''};
 const mecO=id=>db.mecanicos.find(m=>m.id===id);
@@ -747,7 +753,7 @@ function render(){
     $('#nav').innerHTML=NAVS[u.rol].map(([k,l])=>`<button class="${st.view===k||(st.view==='ot'&&k==='ots')?'on':''}" onclick="go('${k}')">${l}${isM()?'':navBadge(k)}</button>`).join('');
   } else {$('#who').innerHTML='';$('#nav').innerHTML=''}
   const V={tablero,recepcion,ots:otsView,ot:otView,historial,stock:stockView,crm:crmView,reportes:reportesView,finanzas,pos:posView,lavadero:lavaderoView,config:configView,cliente:clienteView,encuesta:encuestaView,seguimiento:seguimientoView,mensajes:mensajesView}[st.view]||tablero;
-  $('#app').innerHTML=(pub?'':membBanner())+(db.config.ejemplo&&!pub&&isA()?`<div class="banner row between"><span>Hay datos de ejemplo cargados.</span><button class="btn sm" onclick="confirmLimpiar()">Borrar datos de ejemplo</button></div>`:'')+V();
+  $('#app').innerHTML=(pub?'':membBanner())+(db.config.ejemplo&&!pub&&isAdm()?`<div class="banner row between"><span>Hay datos de ejemplo cargados.</span><button class="btn sm" onclick="confirmLimpiar()">Borrar datos de ejemplo</button></div>`:'')+V();
   if(st.view==='recepcion') bindRec();
   if(st.view==='pos'&&st.pos&&st.pos.focus){st.pos.focus=0;const i=$('#pos_q');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   if(st.view==='ots'&&me()&&!isM()) bindSem();
@@ -846,13 +852,13 @@ function limpiar(){['clientes','vehiculos','stock','movs','ots','mensajes','aler
 function cargarEjemplo(){const D=seed();['clientes','vehiculos','stock','movs','mecanicos','ots','mensajes','alertas','ventas','egresos'].forEach(c=>{db[c]=D[c]});
   const lim=planDe(st.taller?.plan).maxSucursales;db.sucursales=D.sucursales.slice(0,Math.max(1,lim));
   if(db.sucursales.length<2){db.mecanicos.forEach(m=>m.sucursalId='central');db.ots.forEach(o=>o.sucursalId='central');db.stock.forEach(s=>{s.ex={central:(s.ex.central||0)+(s.ex.s2||0)}});db.movs.forEach(m=>m.suc='central')}
-  db.usuarios.filter(u=>u.rol==='mecanico'&&!db.mecanicos.find(m=>m.id===u.mecanicoId)).forEach(u=>u.mecanicoId='m1');
+  db.usuarios.filter(u=>TEC.includes(u.rol)&&!db.mecanicos.find(m=>m.id===u.mecanicoId)).forEach(u=>u.mecanicoId='m1');
   Object.assign(db.config,D.config,{taller:db.config.taller,ejemplo:true});save();T('meta').doc('contadores').set({nextOT:D.nextOT});closeM();go('tablero');toast('Datos de ejemplo cargados.')}
 
 /* ---------- MEMBRESÍA (lado taller) ---------- */
 function membBanner(){const t=st.taller;if(!t||st.soporte)return '';const m=memb(t),p=planDe(t.plan);
   if(m.motivo==='gracia')return `<div class="alertbar"><strong>Membresía vencida</strong><span>Venció el ${fdate(t.vence)}. El sistema se bloquea en ${P().diasGracia+m.dias+1} día(s).${isA()?'':' Avisá al administrador.'}</span>${isA()?`<button class="btn sm pri" onclick="go('config')">Renovar</button>`:''}</div>`;
-  if(!isA())return '';
+  if(!isAdm())return '';
   if(t.estado==='prueba')return `<div class="banner row between" style="border-style:solid;border-color:var(--info)"><span><b style="color:var(--info)">Prueba gratis</b> · ${diasTxt(m.dias)} (hasta ${fdate(t.vence)}).</span><button class="btn sm pri" onclick="go('config')">Ver planes</button></div>`;
   if(m.dias<=7)return `<div class="banner row between" style="border-style:solid;border-color:var(--warn)"><span><b style="color:var(--warn)">Plan ${esc(p.nombre)}</b> · ${diasTxt(m.dias)} (${fdate(t.vence)}).</span><button class="btn sm pri" onclick="go('config')">Renovar</button></div>`;
   return ''}
@@ -869,7 +875,7 @@ function bloqueadoView(){const t=st.taller||{},m=memb(st.taller),adm=(st.perfil|
   return `<div class="login" style="max-width:820px"><div><h1>${m.motivo==='suspendido'?'Taller suspendido':'Membresía vencida'}</h1>
   <p class="sub" style="margin:4px 0 0">${esc(t.nombre||'')} · Plan ${esc(planDe(t.plan).nombre)}${t.vence?' · venció el '+fdate(t.vence):''}. Tus datos están guardados y vuelven a estar disponibles al renovar.</p></div>
   ${adm?`<h2>Elegí un plan para reactivar</h2>${planesCards(t.plan==='prueba'?null:t.plan)}<div class="panel"><h3>Datos para el pago</h3><pre class="cred" style="margin-top:6px">${esc(P().datosPago)}</pre></div>`:'<div class="panel"><p style="margin:0">Avisá al administrador del taller para renovar la membresía.</p></div>'}</div>`}
-function miMembresia(){const t=st.taller;if(!t||!isA())return '';const m=memb(t),p=planDe(t.plan);
+function miMembresia(){const t=st.taller;if(!t||!isAdm())return '';const m=memb(t),p=planDe(t.plan);
   const nu=db.usuarios.filter(u=>u.activo).length,ns=db.sucursales.length;
   if(!st.soporte&&st.misPagosTid!==st.tid){st.misPagosTid=st.tid;FS.collection('pagos').where('tallerId','==',st.tid).get().then(s=>{st.misPagos=s.docs.map(d=>d.data()).sort((a,b)=>b.fecha.localeCompare(a.fecha));remoteRender()},()=>{st.misPagos=[]})}
   return `<div class="panel" id="memb"><div class="row between"><h2>Mi membresía</h2>${t.estado==='prueba'?'<span class="chip c-info">Prueba gratis</span>':m.motivo==='gracia'?'<span class="chip c-bad">Vencida</span>':'<span class="chip c-ok">Activa</span>'}</div>
@@ -1529,25 +1535,25 @@ function lavaderoView(){const L=lavs(),T0=hoy(),act=L.filter(v=>v.estado!=='entr
   const cob=L.flatMap(v=>v.pagos).filter(p=>p.fecha===T0).reduce((a,p)=>a+p.monto,0),mes=T0.slice(0,7),Lm=L.filter(v=>v.fecha.startsWith(mes)&&v.estado==='entregado');
   const porServ={};Lm.forEach(v=>v.items.forEach(i=>{porServ[i.desc]=porServ[i.desc]||[0,0];porServ[i.desc][0]+=i.cant;porServ[i.desc][1]+=i.cant*i.precio}));
   const porLav={};Lm.forEach(v=>{const k=v.lavador||'Sin asignar';porLav[k]=porLav[k]||[0,0];porLav[k][0]++;porLav[k][1]+=total(v)});
-  return `<div class="row between"><h1>Lavadero</h1><button class="btn pri" onclick="lavNuevo()">+ Nuevo lavado</button></div>
+  return `<div class="row between"><h1>Lavadero</h1>${isL()?'':`<button class="btn pri" onclick="lavNuevo()">+ Nuevo lavado</button>`}</div>
   <div class="grid kpis"><div class="kpi"><b>${act.filter(v=>v.estado==='espera').length}</b><span>En espera</span></div><div class="kpi"><b>${act.filter(v=>v.estado==='lavando').length}</b><span>Lavando</span></div>
-  <div class="kpi ${act.some(v=>v.estado==='listo')?'good':''}"><b>${act.filter(v=>v.estado==='listo').length}</b><span>Listos para retirar</span></div><div class="kpi"><b>${ent.length}</b><span>Entregados hoy</span></div><div class="kpi"><b class="m">${gs(cob)}</b><span>Cobrado hoy</span></div></div>
+  <div class="kpi ${act.some(v=>v.estado==='listo')?'good':''}"><b>${act.filter(v=>v.estado==='listo').length}</b><span>Listos para retirar</span></div><div class="kpi"><b>${ent.length}</b><span>Entregados hoy</span></div>${isL()?'':`<div class="kpi"><b class="m">${gs(cob)}</b><span>Cobrado hoy</span></div>`}</div>
   <div class="sem" style="grid-template-columns:repeat(3,minmax(260px,1fr))">${LAV_EST.map(([k,l,c])=>{const it=act.filter(v=>v.estado===k).sort((a,b)=>a.nro-b.nro);
     return `<section class="lane"><header style="background:${c};color:#fff"><h3>${l}<small>${it.length}</small></h3><span>${k==='espera'?'Por orden de llegada':k==='lavando'?'En el box de lavado':'Avisar al cliente y cobrar'}</span></header>
     ${it.map(v=>lavCard(v)).join('')||'<p class="empty">—</p>'}</section>`}).join('')}</div>
-  <div class="grid g2"><div class="panel"><h2>Entregados hoy</h2><div class="tscroll"><table><tr><th>Nº</th><th>Chapa</th><th>Servicio</th><th>Lavador</th><th class="n">Total</th><th></th></tr>
+  ${isL()?'':`<div class="grid g2"><div class="panel"><h2>Entregados hoy</h2><div class="tscroll"><table><tr><th>Nº</th><th>Chapa</th><th>Servicio</th><th>Lavador</th><th class="n">Total</th><th></th></tr>
     ${ent.map(v=>`<tr><td class="mono">${v.nro}</td><td>${plate(v.chapa||'—')}</td><td style="font-size:13px">${esc(v.items.map(i=>i.desc).join(', '))}</td><td>${esc(v.lavador||'—')}</td><td class="n">${v.otId?'<span class="sub">En OT</span>':gs(total(v))}</td><td>${v.pagos.length?`<button class="btn sm" onclick="compModal('recibo','${v.id}',0)">Recibo</button>`:''}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Todavía no se entregó ninguno hoy.</td></tr>'}</table></div></div>
   <div class="panel"><h2>Resumen del mes</h2><div class="row" style="gap:16px;margin-bottom:8px"><span><b class="mono">${Lm.length}</b> lavados</span><span><b class="mono">${gs(Lm.reduce((a,v)=>a+total(v),0))}</b> facturado</span></div>
     <div class="tscroll"><table><tr><th>Servicio</th><th class="n">Cant.</th><th class="n">Total</th></tr>${Object.entries(porServ).sort((a,b)=>b[1][1]-a[1][1]).map(([k,x])=>`<tr><td>${esc(k)}</td><td class="n">${x[0]}</td><td class="n">${gs(x[1])}</td></tr>`).join('')||'<tr><td colspan="3" class="empty">Sin datos.</td></tr>'}</table></div>
-    <h3 style="margin:12px 0 6px">Por lavador</h3><div class="tscroll"><table><tr><th>Lavador</th><th class="n">Lavados</th><th class="n">Total</th><th class="n">Comisión</th></tr>${Object.entries(porLav).map(([k,x])=>{const lv=(db.config.lavadores||[]).find(l=>l.nombre===k);return `<tr><td>${esc(k)}</td><td class="n">${x[0]}</td><td class="n">${gs(x[1])}</td><td class="n">${lv?gs(x[1]*(lv.comision||0)/100):'—'}</td></tr>`}).join('')||'<tr><td colspan="4" class="empty">Sin datos.</td></tr>'}</table></div></div></div>`}
+    <h3 style="margin:12px 0 6px">Por lavador</h3><div class="tscroll"><table><tr><th>Lavador</th><th class="n">Lavados</th><th class="n">Total</th><th class="n">Comisión</th></tr>${Object.entries(porLav).map(([k,x])=>{const lv=(db.config.lavadores||[]).find(l=>l.nombre===k);return `<tr><td>${esc(k)}</td><td class="n">${x[0]}</td><td class="n">${gs(x[1])}</td><td class="n">${lv?gs(x[1]*(lv.comision||0)/100):'—'}</td></tr>`}).join('')||'<tr><td colspan="4" class="empty">Sin datos.</td></tr>'}</table></div></div></div>`}`}
 function lavCard(v){const c=cliDoc(v),min=Math.round((Date.now()-new Date(v.fecha+'T'+(v.estado==='lavando'&&v.horaInicio?v.horaInicio:v.hora)+':00'))/60000);
   return `<div class="card" style="cursor:default"><div class="row between"><span class="mono">Nº ${v.nro} · ${esc(v.hora||'')}</span><span class="row" style="gap:4px">${v.vtipo==='moto'?'<span class="tag moto">Moto</span>':''}${v.otId?`<span class="tag">OT #${(db.ots.find(o=>o.id===v.otId)||{}).nro||''}</span>`:''}</span></div>
   <div class="row" style="gap:8px;flex-wrap:nowrap">${plate(v.chapa||'—')}<span style="min-width:0">${esc(c.nombre)}</span></div>
   <div class="meta">${esc(v.items.map(i=>i.desc).join(' + '))}${v.obs?` · <i>${esc(v.obs)}</i>`:''}</div>
   <div class="row between"><span class="meta">${v.lavador?'Lavador: '+esc(v.lavador):'Sin lavador'}</span><b class="mono">${v.otId?'Va en la OT':gs(total(v))}</b></div>
   <span class="age ${min>90&&v.estado!=='listo'?'late':''}">${min<1?'recién':min<60?min+' min':Math.floor(min/60)+' h '+min%60+' min'} ${v.estado==='espera'?'esperando':v.estado==='lavando'?'lavando':'listo'}</span>
-  <div class="row" style="gap:6px">${v.estado==='espera'?`<button class="btn sm pri" onclick="lavEstado('${v.id}','lavando')">Empezar lavado</button>`:v.estado==='lavando'?`<button class="btn sm pri" onclick="lavEstado('${v.id}','listo')">Terminado</button>`:`<button class="btn sm wa" onclick="lavAvisar('${v.id}')">Avisar por WhatsApp</button><button class="btn sm pri" onclick="lavCobrar('${v.id}')">${v.otId?'Entregar':'Cobrar y entregar'}</button>`}
-  <button class="btn sm" onclick="lavNuevo(null,'${v.id}')">Editar</button></div></div>`}
+  <div class="row" style="gap:6px">${v.estado==='espera'?`<button class="btn sm pri" onclick="lavEstado('${v.id}','lavando')">Empezar lavado</button>`:v.estado==='lavando'?`<button class="btn sm pri" onclick="lavEstado('${v.id}','listo')">Terminado</button>`:`<button class="btn sm wa" onclick="lavAvisar('${v.id}')">Avisar por WhatsApp</button>${isL()?'':`<button class="btn sm pri" onclick="lavCobrar('${v.id}')">${v.otId?'Entregar':'Cobrar y entregar'}</button>`}`}
+  ${isL()?'':`<button class="btn sm" onclick="lavNuevo(null,'${v.id}')">Editar</button>`}</div></div>`}
 function lavNuevo(otId,editId){const v=editId?db.ventas.find(x=>x.id===editId):null,o=otId?db.ots.find(x=>x.id===otId):null,vh=o?veh(o.vehiculoId):v&&v.vehiculoId?veh(v.vehiculoId):null,c=o?cli(o.clienteId):v?cliDoc(v):null;
   st.lav={id:editId||null,otId:otId||(v&&v.otId)||null,chapa:(vh&&vh.chapa)||(v&&v.chapa)||'',vtipo:(vh&&vtipoDe(vh))||(v&&v.vtipo)||'auto',cliente:c?c.nombre:'',tel:c?c.tel||'':'',sel:v?v.items.map(i=>((db.config.lavados||[]).find(x=>x.nombre===i.desc)||{}).id).filter(Boolean):[],lavador:v?v.lavador:'',obs:v?v.obs:'',cargoOT:v?!!v.cargoOT:!!otId};lavForm()}
 function lavForm(){const f=st.lav,L=db.config.lavados||[],tot=L.filter(x=>f.sel.includes(x.id)).reduce((a,x)=>a+lavPrecio(x,f.vtipo),0);
@@ -1807,7 +1813,7 @@ function mensajesView(){
   ${plantillasPanel()}`;
 }
 function msgSet(id,e,now){const m=db.mensajes.find(x=>x.id===id);m.estado=e;if(e==='enviado')m.enviado=new Date().toISOString();save();now?render():setTimeout(render,300)}
-function plantillasPanel(){const A=isA(),P=db.config.plantillas;
+function plantillasPanel(){const A=isAdm(),P=db.config.plantillas;
   const cuando={ingreso:'Se dispara al abrir la OT en recepción.',presupuesto:'Se dispara al pasar la OT a Espera de aprobación.',retiro:'Se dispara al marcar la OT como Listo.'};
   return `<div class="panel"><h2>Plantillas automáticas</h2><p class="note" style="margin:-4px 0 4px">Variables disponibles: ${PH.map(p=>`<span class="mono">${esc(p)}</span>`).join(' ')}</p>
   ${Object.keys(TPL_TIPOS).map(k=>{const m=metaTpl(P[k]);return `<div class="grid g2" style="align-items:start;border-top:1px solid var(--line);padding-top:12px;margin-top:12px">
@@ -2175,11 +2181,11 @@ function configView(){const c=db.config;
   <td><input value="${m.costoHora}" inputmode="numeric" onchange="mecO('${m.id}').costoHora=num(this.value);save()"></td><td><input value="${m.comision}" inputmode="numeric" style="width:70px" onchange="mecO('${m.id}').comision=num(this.value);save()"></td></tr>`).join('')}</table></div>
   <div class="row" style="margin-top:10px"><input id="nm" placeholder="Nombre del nuevo mecánico" style="max-width:300px"><button class="btn" onclick="const n=$('#nm').value.trim();if(n){db.mecanicos.push({id:uid(),nombre:n,sucursalId:workSuc(),costoHora:30000,comision:8});save();render()}">Agregar mecánico</button></div></div>
   <div class="panel"><div class="row between"><h2>Usuarios y permisos</h2><span class="sub">${db.usuarios.filter(u=>u.activo).length} de ${limiteUsuarios()} usuarios activos</span></div>
-  <div class="tscroll"><table><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Sucursal</th><th>Mecánico vinculado</th><th>Activo</th></tr>
+  <div class="tscroll"><table><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Sucursal</th><th>Técnico vinculado</th><th>Activo</th></tr>
   ${db.usuarios.slice().sort((a,b)=>(b.activo?1:0)-(a.activo?1:0)||a.nombre.localeCompare(b.nombre)).map(u=>{const yo=u.id===st.user;return `<tr><td><input value="${esc(u.nombre)}" onchange="usr('${u.id}').nombre=this.value;save()"></td><td class="mono" style="font-size:12px">${esc(u.usuario||userName(u.email))}${u.cambiarClave?' <span class="chip c-warn">Clave temporal</span>':''}</td>
   <td><select onchange="usr('${u.id}').rol=this.value;save();render()" ${yo?'disabled':''}>${Object.entries(ROLES).filter(([k])=>k!=='pendiente').map(([k,l])=>`<option value="${k}" ${u.rol===k?'selected':''}>${l}</option>`).join('')}</select></td>
   <td><select onchange="usr('${u.id}').sucursalId=this.value;save()">${db.sucursales.map(s=>`<option value="${s.id}" ${s.id===u.sucursalId?'selected':''}>${esc(s.nombre)}</option>`).join('')}</select></td>
-  <td>${u.rol==='mecanico'?`<select onchange="usr('${u.id}').mecanicoId=this.value;save()"><option value="">—</option>${db.mecanicos.map(m=>`<option value="${m.id}" ${m.id===u.mecanicoId?'selected':''}>${esc(m.nombre)}</option>`).join('')}</select>`:'<span class="sub">—</span>'}</td>
+  <td>${TEC.includes(u.rol)?`<select onchange="usr('${u.id}').mecanicoId=this.value;save()"><option value="">—</option>${db.mecanicos.map(m=>`<option value="${m.id}" ${m.id===u.mecanicoId?'selected':''}>${esc(m.nombre)}</option>`).join('')}</select>`:'<span class="sub">—</span>'}</td>
   <td>${yo?'<span class="sub">Vos</span>':`<input type="checkbox" style="width:auto" ${u.activo?'checked':''} onchange="activar('${u.id}',this.checked)" aria-label="Activo">`}</td></tr>`}).join('')}</table></div>
   <div class="row" style="margin-top:10px"><button class="btn pri" onclick="nuevoUsuarioModal()">+ Nuevo usuario</button></div>
   <p class="note" style="margin-top:8px">Cada empleado ingresa con su nombre de usuario. Al primer ingreso se le pide cambiar la contraseña temporal. Si alguien olvida la contraseña, desactivalo y creale un usuario nuevo.</p>
@@ -2199,14 +2205,14 @@ function nuevoUsuarioModal(){if(!st.soporte&&db.usuarios.filter(u=>u.activo).len
   <label class="field"><span>Nombre y apellido</span><input id="nu_n" required></label>
   <label class="field"><span>Usuario (para ingresar)</span><input id="nu_u" required pattern="[a-zA-Z0-9._\\-]{3,30}" title="3 a 30 letras, números, punto o guion" autocapitalize="none" placeholder="ej.: hugo.ortiz"></label>
   <label class="field"><span>Contraseña temporal</span><input id="nu_p" required minlength="6" value="${claveTemp()}"></label>
-  <label class="field"><span>Rol</span><select id="nu_r" onchange="$('#nu_mw').hidden=this.value!=='mecanico'"><option value="recepcion">Recepción</option><option value="mecanico">Mecánico</option><option value="admin">Administrador</option></select></label>
+  <label class="field"><span>Rol</span><select id="nu_r" onchange="$('#nu_mw').hidden=!TEC.includes(this.value);$('#nu_rd').textContent=ROL_DESC[this.value]||''">${Object.entries(ROLES).filter(([k])=>k!=='pendiente').map(([k,l])=>`<option value="${k}" ${k==='recepcion'?'selected':''}>${l}</option>`).join('')}</select><small class="sub" id="nu_rd">${ROL_DESC.recepcion}</small></label>
   <label class="field"><span>Sucursal</span><select id="nu_s">${db.sucursales.map(s=>`<option value="${s.id}">${esc(s.nombre)}</option>`).join('')}</select></label>
-  <label class="field" id="nu_mw" hidden><span>Mecánico vinculado</span><select id="nu_m"><option value="">—</option>${db.mecanicos.map(m=>`<option value="${m.id}">${esc(m.nombre)}</option>`).join('')}</select></label></div>
+  <label class="field" id="nu_mw" hidden><span>Técnico vinculado</span><select id="nu_m"><option value="">—</option>${db.mecanicos.map(m=>`<option value="${m.id}">${esc(m.nombre)}</option>`).join('')}</select></label></div>
   <div class="row"><button class="btn pri" id="nu_b">Crear usuario</button><button type="button" class="btn" onclick="closeM()">Cancelar</button></div></form>`)}
 async function crearUsuario(){const n=$('#nu_n').value.trim(),us=$('#nu_u').value.trim().toLowerCase(),pw=$('#nu_p').value,r=$('#nu_r').value,b=$('#nu_b');
   b.disabled=true;b.textContent='Creando…';
   try{const id=await crearCuentaAuth(us,pw);
-    await FS.collection('usuarios').doc(id).set({tallerId:st.tid,nombre:n,usuario:us,email:loginEmail(us),rol:r,sucursalId:$('#nu_s').value,mecanicoId:r==='mecanico'?$('#nu_m').value:'',activo:true,cambiarClave:true,creado:new Date().toISOString()});
+    await FS.collection('usuarios').doc(id).set({tallerId:st.tid,nombre:n,usuario:us,email:loginEmail(us),rol:r,sucursalId:$('#nu_s').value,mecanicoId:TEC.includes(r)?$('#nu_m').value:'',activo:true,cambiarClave:true,creado:new Date().toISOString()});
     const msg=`Hola ${n.split(' ')[0]}, ya tenés acceso al sistema de *${db.config.taller}*.\nIngresá en: ${appBase()}\nUsuario: ${us}\nContraseña temporal: ${pw}\nAl primer ingreso te va a pedir cambiarla.`;
     modalHTML(`<h2>Usuario creado</h2><p style="margin:0">Pasale estos datos a ${esc(n)}:</p><pre class="cred" id="wa_t">${esc(msg)}</pre><div class="row"><button class="btn" onclick="copiarTxt($('#wa_t').textContent,'Datos copiados')">Copiar</button><button class="btn pri" onclick="closeM()">Listo</button></div>`)}
   catch(e){b.disabled=false;b.textContent='Crear usuario';toast(e.code==='auth/email-already-in-use'?'Ese nombre de usuario ya existe. Elegí otro.':authMsg(e))}}
