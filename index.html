@@ -234,6 +234,41 @@ pre.code{background:var(--sunk);border:1px solid var(--line);border-radius:6px;p
 .sheet canvas{display:block}
 .sheet .qr{width:96px;height:96px;image-rendering:pixelated}
 #printhost{position:fixed;left:-10000px;top:0}
+/* Inspección con simbología */
+.insp{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:6px}
+.insp label{display:flex;justify-content:space-between;gap:8px;align-items:center;background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:5px 6px 5px 9px;font-size:13px}
+.insp select{width:auto;min-width:0;padding:4px 6px;font:600 13px var(--f-mono)}
+.insp select.v-x,.insp select.v-rot{color:var(--bad);border-color:var(--bad)}.insp select.v-ray{color:var(--warn);border-color:var(--warn)}.insp select.v-ok{color:var(--ok);border-color:var(--ok)}
+.inspg{margin:12px 0 6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.inspr{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:3px 12px;font-size:13px}
+.inspr span b{display:inline-block;min-width:18px;font-family:var(--f-mono)}
+/* Planilla completa (papel) */
+.pl-sheet{width:210mm;height:297mm;background:#fff;color:#111;box-sizing:border-box;padding:9mm 10mm;font:10px/1.32 "IBM Plex Sans",Arial,sans-serif;display:flex;flex-direction:column;gap:2.2mm;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pl-sheet h3{margin:0;font:700 17px "Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.02em}
+.pl-sheet .ph{display:grid;grid-template-columns:auto 1fr auto;gap:4mm;align-items:center;border-bottom:2px solid var(--cpa,#111);padding-bottom:2mm}
+.pl-sheet .ph img{max-height:17mm;max-width:34mm}
+.pl-sheet .tt{background:var(--cpa,#111);color:#fff;font:700 10px "IBM Plex Sans",sans-serif;text-transform:uppercase;letter-spacing:.08em;padding:1.1mm 2mm;border-radius:1mm}
+.pl-sheet .bx{border:1px solid #888;border-radius:1.2mm;padding:1.6mm 2.2mm}
+.pl-sheet .k{font-size:7.5px;text-transform:uppercase;letter-spacing:.07em;color:#555;font-weight:700}
+.pl-sheet .g2{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm}
+.pl-sheet .g3{display:grid;grid-template-columns:repeat(4,1fr);gap:.6mm 2.5mm}
+.pl-sheet .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:1mm 3mm}
+.pl-sheet .kv div b{display:block;font-size:10.5px;border-bottom:1px dotted #999;min-height:13px}
+.pl-sheet .si{display:flex;gap:1.5mm;align-items:center;font-size:9px}
+.pl-sheet .si i{font-style:normal;width:11px;height:11px;border:1px solid #111;display:inline-grid;place-items:center;font:700 8.5px "IBM Plex Mono",monospace;flex:none}
+.pl-sheet .si i.x,.pl-sheet .si i.rot{background:#fde2e2;border-color:#c00;color:#c00}
+.pl-sheet .tx{white-space:pre-wrap;min-height:12px}
+.pl-sheet .ln{border-bottom:1px solid #aaa;height:12px}
+.pl-sheet .legal{font-size:8.2px;color:#222;white-space:pre-wrap;line-height:1.35}
+.pl-sheet .firma{display:grid;grid-template-columns:1fr 1fr;gap:12mm;margin-top:7mm}
+.pl-sheet .firma div{border-top:1px solid #111;padding-top:1mm;text-align:center;font-size:8.5px}
+.pl-sheet .dg{display:grid;grid-template-columns:1fr 1fr;gap:2mm;align-items:start}
+.pl-sheet .dmg{max-width:none;background:#fafafa;border-color:#999;aspect-ratio:3/4;height:41mm;width:auto}
+.pl-sheet .dmg.moto{aspect-ratio:4/3;height:44mm}
+.pl-sheet .dmg svg g,.pl-sheet .dmg svg text{color:#666!important}
+.pl-sheet .dmg .pt{width:14px;height:14px;font-size:8px;border-width:1px}
+.pl-sheet table{width:100%;border-collapse:collapse;font-size:9px}.pl-sheet th,.pl-sheet td{border-bottom:1px solid #ccc;padding:.8mm 1mm;text-align:left}.pl-sheet th{font-size:7.5px;text-transform:uppercase;color:#555}.pl-sheet .n{text-align:right;font-variant-numeric:tabular-nums}
+.pl-sheet .ft{margin-top:auto;display:flex;justify-content:space-between;font:700 8px "IBM Plex Mono",monospace;letter-spacing:.1em;color:#555;text-transform:uppercase}
 /* Comprobantes (papel: siempre blanco) */
 .cp-sheet{background:#fff;color:#111;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .cp-doc::before{content:"";position:absolute;left:0;right:0;top:0;height:4mm;background:linear-gradient(90deg,var(--cpa) 0 62%,var(--cpb) 62% 82%,var(--cpa2) 82%)}
@@ -300,7 +335,7 @@ pre.code{background:var(--sunk);border:1px solid var(--line);border-radius:6px;p
   body>*:not(#printhost),body::before{display:none!important}
   #printhost{position:static}
   #printhost .sheet{transform:none!important}
-  #printhost .cp-sheet{page-break-after:always;break-after:page}
+  #printhost .cp-sheet,#printhost .pl-sheet{page-break-after:always;break-after:page}
   @page{size:A4;margin:0}
 }
 .plans{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
@@ -338,6 +373,32 @@ const CHECK_MOTO=['Casco','Espejos','Llave de contacto','Cédula verde','Herrami
 const VTIPOS={auto:'Auto',camioneta:'Camioneta',moto:'Moto',camion:'Camión'};
 const vtipoDe=v=>(v&&v.tipo)||'auto';
 const checkDe=t=>t==='moto'?CHECK_MOTO:CHECK;
+/* Inspección detallada con simbología (planilla de recepción) */
+const SIMB={ok:'✔',x:'X',ray:'—',rot:'*',no:'N'};
+const SIMB_TXT={ok:'Bien',x:'Defectuoso / no funciona',ray:'Rayones',rot:'Roto',no:'No tiene'};
+const INSP_AUTO=[['Exterior',['Espejo retrovisor izq.','Espejo retrovisor der.','Antena','Llantas','Emblemas','Luces frontales','Luces traseras','Señaleros','Antinieblas','Puerta trasera / baúl']],
+  ['Interior',['Radio / carátula','Parlantes delanteros','Parlantes traseros','Equipo de audio externo','Encendedor','Aire acondicionado','Alfombras','Luces internas','Tablero','Bocina','Tapizado de asientos','Techo','Bloqueo de puertas','Comando central','Levantavidrios','Llave del vehículo']],
+  ['Seguridad y herramientas',['Gato','Extintor','Llave de rueda','Triángulo','Rueda de auxilio','Herramientas']],
+  ['Luces testigo',['Testigo ABS','Testigo freno','Testigo airbag','Testigo check engine','Testigo batería','Testigo aceite','Testigo temperatura'],1]];
+const INSP_MOTO=[['Exterior',['Espejo izq.','Espejo der.','Luz delantera','Luz trasera / stop','Señaleros','Carenado','Guardabarros','Llantas','Emblemas / calcos','Cadena / transmisión']],
+  ['Mandos',['Tablero','Bocina','Llave de contacto','Arranque eléctrico','Manijas / palancas','Asiento']],
+  ['Accesorios',['Casco','Herramientas','Baúl / alforjas','Candado / traba']],
+  ['Luces testigo',['Testigo check / inyección','Testigo aceite','Testigo temperatura','Testigo batería'],1]];
+const inspDe=t=>t==='moto'?INSP_MOTO:INSP_AUTO;
+const LIMPIEZA=['Limpio','Regular','Sucio','Muy sucio'];
+const ENTREGA_CHK=['Explicación de labores realizadas','Revisión de resultados con el cliente','Inspección de carrocería','Inspección total del funcionamiento','Repuestos reemplazados mostrados','Explicación de costos','Recordatorio del próximo servicio','Conformidad del cliente'];
+const TERM_REC_DEF='• [Taller] no se responsabiliza por objetos de valor dejados dentro del vehículo sin declararlos en la recepción.\n• Si es necesario, el cliente autoriza al taller a realizar pruebas de manejo (con previo aviso) para verificar el funcionamiento del vehículo y los servicios realizados. [Taller] no se responsabiliza por daños o accidentes ocurridos durante las pruebas de manejo ni durante el servicio de búsqueda o envío del vehículo.\n• No se realizan trabajos sin la aprobación del presupuesto por parte del cliente.';
+const TERM_ENT_DEF='• Los repuestos usados solicitados por el cliente y los repuestos provistos por el cliente (nuevos o usados) no tienen garantía.\n• El cliente debe revisar su vehículo y reportar cualquier detalle al momento de la inspección y entrega dentro del local de [Taller]. Los reclamos por detalles visibles no reportados en la entrega no se atenderán una vez que el vehículo salga del local.\n• Al firmar este documento el cliente acepta estos términos y condiciones.';
+const GAR_COND_DEF='Presentando este documento, sobre la mano de obra y los repuestos provistos por el taller, con uso normal del vehículo.';
+const termTxt=t=>String(t||'').split('[Taller]').join(db.config.taller||'el taller');
+const miNombre=()=>{const u=me();return (u&&(u.nombre||u.usuario))||''};
+const horaAhora=()=>{const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+function inspGrid(data,tipo,attr){return inspDe(tipo).map(([g,L,tst])=>`<div class="inspg"><h3 style="margin:0;font-size:14px">${g}${tst?' <span class="sub" style="font-weight:400;font-size:12px">· ✔ apagado · X encendido</span>':''}</h3><button type="button" class="btn sm" onclick="inspTodo(this,'${attr}')">Todo ✔</button></div>
+  <div class="insp">${L.map(it=>{const v=data[it]||'';return `<label><span>${esc(it)}</span><select ${attr}="${esc(it)}" class="v-${v}" onchange="this.className='v-'+this.value" aria-label="${esc(it)}"><option value="">·</option>${Object.entries(SIMB).map(([k,x])=>`<option value="${k}" ${v===k?'selected':''}>${x} ${tst&&k==='x'?'Encendido':tst&&k==='ok'?'Apagado':SIMB_TXT[k]}</option>`).join('')}</select></label>`}).join('')}</div>`).join('')}
+function inspTodo(b,attr){let el=b.parentElement.nextElementSibling;el.querySelectorAll('select['+attr+']').forEach(s=>{if(!s.value){s.value='ok';s.className='v-ok'}})}
+function inspLeer(attr){const o={};document.querySelectorAll('select['+attr+']').forEach(s=>{if(s.value)o[s.getAttribute(attr)]=s.value});return o}
+function inspResumen(o,tipo){const d=o.insp||{};if(!Object.keys(d).length)return '<p class="sub" style="margin:4px 0">Sin inspección detallada.</p>';
+  return inspDe(tipo).map(([g,L])=>{const it=L.filter(k=>d[k]);return it.length?`<div class="k sub" style="margin-top:8px;font-size:12px;font-weight:600">${g}</div><div class="inspr">${it.map(k=>`<span style="color:${['x','rot'].includes(d[k])?'var(--bad)':d[k]==='ray'?'var(--warn)':'inherit'}"><b>${SIMB[d[k]]}</b> ${esc(k)}</span>`).join('')}</div>`:''}).join('')}
 const vtag=v=>vtipoDe(v)==='moto'?'<span class="tag moto">Moto</span>':vtipoDe(v)==='camion'?'<span class="tag">Camión</span>':'';
 const ROLES={admin:'Administrador',recepcion:'Recepción',mecanico:'Mecánico',pendiente:'Pendiente'};
 const NAVS={
@@ -521,7 +582,7 @@ const LAV_DEF=[{id:'lv1',nombre:'Lavado exterior',min:30,precios:{auto:30000,cam
  {id:'lv6',nombre:'Lavado de chasis',min:40,precios:{auto:50000,camioneta:70000,moto:0,camion:120000}}];
 const CAT_EGRESO=['Compra a proveedor','Sueldos y comisiones','Alquiler','Luz, agua e internet','Combustible','Impuestos','Otros'];
 const MEDIOS=['Efectivo','Transferencia','Tarjeta de débito','Tarjeta de crédito','Billetera (Tigo/Personal)','Cheque'];
-function defCfg(){return {taller:'Mi taller',ruc:'',dir:'',tel:'',timbrado:'',vigDesde:'',bono:5,garantiaDef:90,diasEstancado:90,coberturaDias:30,elevadores:4,telCompras:'',urlPublica:'',ejemplo:false,
+function defCfg(){return {termRecepcion:TERM_REC_DEF,termEntrega:TERM_ENT_DEF,garantiaCond:GAR_COND_DEF,taller:'Mi taller',ruc:'',dir:'',tel:'',timbrado:'',vigDesde:'',bono:5,garantiaDef:90,diasEstancado:90,coberturaDias:30,elevadores:4,telCompras:'',urlPublica:'',ejemplo:false,
   autoWA:{ingreso:true,presupuesto:true,retiro:true},plantillas:{...TPL_DEF},
   listas:LISTAS_DEF.map(x=>({...x})),servicios:SERV_DEF.map(x=>({...x})),proveedores:[],lavados:LAV_DEF.map(x=>({...x,precios:{...x.precios}})),lavadores:[]}}
 const emptyDB=()=>({clientes:[],vehiculos:[],stock:[],movs:[],mecanicos:[],ots:[],sucursales:[],usuarios:[],mensajes:[],alertas:[],ventas:[],egresos:[],config:defCfg(),nextOT:1});
@@ -859,10 +920,19 @@ const motoSVG=`<svg viewBox="0 0 400 300" aria-hidden="true"><g fill="none" stro
 <text x="40" y="26" font-size="13" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">TRASERA</text>
 <text x="360" y="26" text-anchor="end" font-size="13" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">FRENTE</text>
 <text x="200" y="292" text-anchor="middle" font-size="12" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">LADO IZQUIERDO · marcá también el lado derecho en la descripción</text></svg>`;
-function dmgMap(list,ro,tipo){const m=tipo==='moto';return `<div class="dmg${ro?' ro':''}${m?' moto':''}" ${ro?'':'id="dmg"'}>${m?motoSVG:carSVG}${list.map((d,i)=>`<span class="pt" style="left:${d.x}%;top:${d.y}%">${i+1}</span>`).join('')}</div>`}
-const RK=['chapa','chasis','marca','modelo','anio','color','cli','ruc','tel','dir','email','lista','km','tipo','mec','falla','entrega'];
+const intSVG=`<svg viewBox="0 0 300 400" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="3" style="color:var(--muted)">
+<rect x="50" y="30" width="200" height="340" rx="40"/><path d="M60 62 Q150 44 240 62 L240 96 L60 96Z"/><circle cx="105" cy="122" r="22"/><circle cx="105" cy="122" r="6"/>
+<rect x="134" y="100" width="32" height="46" rx="6"/><rect x="142" y="150" width="16" height="80" rx="5"/>
+<rect x="72" y="150" width="62" height="86" rx="14"/><rect x="78" y="236" width="50" height="16" rx="6"/><rect x="166" y="150" width="62" height="86" rx="14"/><rect x="172" y="236" width="50" height="16" rx="6"/>
+<rect x="68" y="272" width="164" height="70" rx="16"/><line x1="122" y1="276" x2="122" y2="338"/><line x1="178" y1="276" x2="178" y2="338"/><rect x="68" y="344" width="164" height="14" rx="6"/></g>
+<text x="150" y="18" text-anchor="middle" font-size="12" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">TABLERO · FRENTE</text>
+<text x="150" y="394" text-anchor="middle" font-size="12" fill="currentColor" style="color:var(--muted)" font-family="IBM Plex Sans, sans-serif">INTERIOR</text></svg>`;
+function dmgMap(list,ro,tipo,zona){const m=tipo==='moto',z=(!m&&zona==='i')?'i':'e';return `<div class="dmg${ro?' ro':''}${m?' moto':''}" ${ro?'':'id="dmg"'}>${m?motoSVG:z==='i'?intSVG:carSVG}${list.map((d,i)=>((d.z||'e')===z?`<span class="pt" style="left:${d.x}%;top:${d.y}%">${i+1}</span>`:'')).join('')}</div>`}
+const dnLbl=d=>d.z==='i'?' <span class="tag">Interior</span>':'';
+const RK=['chapa','chasis','marca','modelo','anio','color','cli','ruc','tel','dir','email','lista','km','tipo','mec','falla','entrega','hora','recibe','retiro','valores','obsTrab','matCli','matComp','limpieza','inspObs'];
 function recepcion(){
-  if(!st.rec) st.rec={danos:[],fotos:[],combustible:4,checklist:{}};
+  if(!st.rec) st.rec={danos:[],fotos:[],combustible:4,checklist:{},insp:{},hora:horaAhora(),recibe:miNombre(),dz:'e'};
+  if(!st.rec.insp)st.rec.insp={};
   const r=st.rec,ws=workSuc();
   return `<div class="row between"><h1>Recepción y checklist</h1><span class="sub">${esc(sucN(ws))} · ${fdate(hoy())}</span></div>
   <div id="r_gar"></div>
@@ -886,18 +956,31 @@ function recepcion(){
     <div class="panel"><h2>Ingreso</h2><div class="fields">
       <label class="field"><span>Kilometraje</span><input id="r_km" inputmode="numeric" placeholder="0"></label>
       <label class="field"><span>Tipo de orden</span><select id="r_tipo"><option value="tradicional">Tradicional</option><option value="express">Express (gomería, alineación…)</option></select></label>
-      <label class="field"><span>Mecánico</span><select id="r_mec">${db.mecanicos.filter(m=>m.sucursalId===ws).map(m=>`<option value="${m.id}">${esc(m.nombre)}</option>`).join('')}</select></label></div>
+      <label class="field"><span>Encargado del trabajo</span><select id="r_mec">${db.mecanicos.filter(m=>m.sucursalId===ws).map(m=>`<option value="${m.id}">${esc(m.nombre)}</option>`).join('')}</select></label>
+      <label class="field"><span>Hora de ingreso</span><input id="r_hora" type="time"></label>
+      <label class="field"><span>Recibido por</span><input id="r_recibe" placeholder="Quién recibe el vehículo"></label>
+      <label class="field"><span>Retirar el día</span><input id="r_retiro" type="date"></label></div>
     <div class="field" style="margin-top:12px"><span>Combustible: <b id="r_fuelv">${r.combustible}/8</b></span><div class="row"><input type="range" id="r_fuel" min="0" max="8" value="${r.combustible}" style="max-width:220px">${fuel(r.combustible)}</div></div>
-    <label class="field" style="margin-top:12px"><span>Falla reportada por el cliente</span><textarea id="r_falla" placeholder="Ej.: ruido en tren delantero al girar"></textarea></label></div>
+    <label class="field" style="margin-top:12px"><span>Trabajos solicitados / falla reportada</span><textarea id="r_falla" placeholder="Ej.: ruido en tren delantero al girar"></textarea></label>
+    <label class="field" style="margin-top:10px"><span>Observaciones a tener en cuenta para el trabajo</span><textarea id="r_obsTrab" placeholder="Ej.: el cliente pide conservar las piezas cambiadas"></textarea></label>
+    <label class="field" style="margin-top:10px"><span>Objetos de valor declarados</span><input id="r_valores" placeholder="Ej.: notebook en el baúl, lentes de sol"></label></div>
     <div class="panel"><h2>Checklist de accesorios${r.vtipo==='moto'?' · moto':''}</h2><div class="checks">${checkDe(r.vtipo).map(c=>`<label><input type="checkbox" data-ck="${esc(c)}" ${r.checklist[c]?'checked':''}> ${esc(c)}</label>`).join('')}</div></div>
   </div>
-  <div class="panel"><h2>Golpes y daños previos</h2><p class="sub" style="margin:0 0 10px">Tocá el diagrama donde está el daño y describilo.</p>
-    <div class="grid g2" style="align-items:start">${dmgMap(r.danos,0,r.vtipo)}<div class="dmglist">${r.danos.length?r.danos.map((d,i)=>`<div><b>${i+1}</b><input value="${esc(d.nota)}" data-dn="${i}" placeholder="Describir daño"><button class="btn sm danger" type="button" onclick="st.rec.danos.splice(${i},1);keepRec()">✕</button></div>`).join(''):'<p class="sub">Sin daños marcados.</p>'}</div></div>
+  <div class="panel"><div class="row between"><h2>Inspección del vehículo</h2><span class="sub" style="font-size:12px">${Object.entries(SIMB).map(([k,x])=>`<b class="mono">${x}</b> ${SIMB_TXT[k]}`).join(' · ')}</span></div>
+    <p class="note" style="margin:0">Dejá en “·” lo que no se revisó. “Todo ✔” marca como bien solo lo que está vacío.</p>
+    ${inspGrid(r.insp,r.vtipo,'data-in')}
+    <div class="fields" style="margin-top:12px"><label class="field"><span>Orden y limpieza del vehículo</span><select id="r_limpieza"><option value="">—</option>${LIMPIEZA.map(x=>`<option>${x}</option>`).join('')}</select></label>
+      <label class="field" style="grid-column:span 2"><span>Otros detalles encontrados (testigos, ruidos, faltantes)</span><input id="r_inspObs"></label></div></div>
+  <div class="panel"><div class="row between"><h2>Golpes y daños previos</h2>${r.vtipo==='moto'?'':`<div class="seg">${[['e','Exterior'],['i','Interior']].map(([k,l])=>`<button type="button" class="${(r.dz||'e')===k?'on':''}" onclick="readRec();st.rec.dz='${k}';render()">${l} (${r.danos.filter(d=>(d.z||'e')===k).length})</button>`).join('')}</div>`}</div><p class="sub" style="margin:0 0 10px">Tocá el diagrama donde está el daño y describilo.</p>
+    <div class="grid g2" style="align-items:start">${dmgMap(r.danos,0,r.vtipo,r.dz)}<div class="dmglist">${r.danos.length?r.danos.map((d,i)=>`<div><b>${i+1}</b><input value="${esc(d.nota)}" data-dn="${i}" placeholder="Describir daño${d.z==='i'?' (interior)':''}"><button class="btn sm danger" type="button" onclick="st.rec.danos.splice(${i},1);keepRec()">✕</button></div>`).join(''):'<p class="sub">Sin daños marcados.</p>'}</div></div>
     <h3 style="margin:14px 0 8px">Fotos</h3>
     <div class="photos">${r.fotos.map((f,i)=>`<figure><img src="${f}" alt="Foto ${i+1}"><button type="button" onclick="st.rec.fotos.splice(${i},1);keepRec()">✕</button></figure>`).join('')}
     <label class="btn" style="height:72px">+ Agregar fotos<input type="file" id="r_fotos" accept="image/*" multiple hidden></label></div></div>
+  <div class="panel"><h2>Materiales</h2><div class="fields"><label class="field"><span>Materiales proporcionados por el cliente</span><textarea id="r_matCli" placeholder="Ej.: 4 litros de aceite 10W40, filtro"></textarea></label>
+    <label class="field"><span>Materiales a utilizar o a comprar</span><textarea id="r_matComp" placeholder="Ej.: pastillas de freno delanteras"></textarea></label></div></div>
   <div class="panel"><h2>Conformidad</h2><div class="fields"><label class="field"><span>Entregado por</span><input id="r_entrega" placeholder="Nombre de quien deja el vehículo"></label></div>
-    <div class="checks" style="margin-top:10px;display:block"><label><input type="checkbox" id="r_conf"> El cliente está conforme con el estado registrado (km, combustible, accesorios y daños).</label></div>
+    <div class="legal-prev note" style="white-space:pre-wrap;margin-top:10px">${esc(termTxt(db.config.termRecepcion))}</div>
+    <div class="checks" style="margin-top:10px;display:block"><label><input type="checkbox" id="r_conf"> El cliente está conforme con el estado registrado (km, combustible, accesorios, inspección y daños) y acepta las condiciones de recepción.</label></div>
     <div class="row" style="margin-top:14px"><button class="btn pri" type="button" onclick="guardarRec()">Abrir orden de trabajo</button><button class="btn" type="button" onclick="st.rec=null;render()">Limpiar</button></div></div></form>`;
 }
 const rucBase=s=>String(s||'').replace(/[.\s]/g,'').split('-')[0].replace(/\D/g,'');
@@ -935,7 +1018,7 @@ function onRuc(){const v=$('#r_ruc').value.trim(),c=buscarCli(v);
   if(c){if(st.rec.cliId!==c.id){fillCli(c,true);const vs=db.vehiculos.filter(x=>x.clienteId===c.id);if(vs.length===1&&!$('#r_chapa').value.trim())pickVeh(vs[0].id);toast('Cliente encontrado: '+c.nombre)}}
   else cliNuevo(v)}
 function readRec(){const r=st.rec;if(!$('#recf'))return;RK.forEach(k=>r[k]=$('#r_'+k).value);r.conf=$('#r_conf').checked;
-  document.querySelectorAll('[data-ck]').forEach(c=>r.checklist[c.dataset.ck]=c.checked?1:0);document.querySelectorAll('[data-dn]').forEach(c=>r.danos[+c.dataset.dn].nota=c.value)}
+  document.querySelectorAll('[data-ck]').forEach(c=>r.checklist[c.dataset.ck]=c.checked?1:0);document.querySelectorAll('[data-dn]').forEach(c=>r.danos[+c.dataset.dn].nota=c.value);r.insp=inspLeer('data-in')}
 function keepRec(){readRec();render()}
 function bindRec(){
   const r=st.rec;RK.forEach(k=>{if(r[k]!=null)$('#r_'+k).value=r[k]});$('#r_conf').checked=!!r.conf;
@@ -952,7 +1035,7 @@ function bindRec(){
   $('#r_cli').onchange=()=>{const n=$('#r_cli').value.trim().toLowerCase(),c=db.clientes.find(x=>x.nombre.toLowerCase()===n);if(c&&st.rec.cliId!==c.id&&(!$('#r_ruc').value.trim()||buscarCli($('#r_ruc').value)?.id===c.id)){fillCli(c,true);const vs=db.vehiculos.filter(x=>x.clienteId===c.id);if(vs.length===1&&!$('#r_chapa').value.trim())pickVeh(vs[0].id)}};
   if(r.cliId){const c=db.clientes.find(x=>x.id===r.cliId);if(c)cliInfo(c)}else if(r.ruc)cliNuevo(r.ruc);
   $('#dmg').onclick=e=>{if(e.target.closest('.pt'))return;const b=e.currentTarget.getBoundingClientRect();readRec();
-    r.danos.push({x:Math.round((e.clientX-b.left)/b.width*100),y:Math.round((e.clientY-b.top)/b.height*100),nota:''});render();setTimeout(()=>{const i=document.querySelectorAll('[data-dn]');i[i.length-1]?.focus()},0)};
+    r.danos.push(Object.assign({x:Math.round((e.clientX-b.left)/b.width*100),y:Math.round((e.clientY-b.top)/b.height*100),nota:''},r.vtipo!=='moto'&&r.dz==='i'?{z:'i'}:{}));render();setTimeout(()=>{const i=document.querySelectorAll('[data-dn]');i[i.length-1]?.focus()},0)};
   $('#r_fotos').onchange=async e=>{readRec();for(const f of e.target.files){if(r.fotos.length>=6){toast('Máximo 6 fotos por orden.');break}r.fotos.push(await shrink(f))}render()};
 }
 function shrink(file){return new Promise(res=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,640/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.6))};im.src=fr.result};fr.readAsDataURL(file)})}
@@ -967,7 +1050,8 @@ async function guardarRec(){
   const g=garantiaPrev(v.id);
   st.guardando=true;const nro=await nuevoNro();st.guardando=false;
   const o={id:uid(),nro,tipo:r.tipo,sucursalId:workSuc(),vehiculoId:v.id,clienteId:c.id,fecha:hoy(),km:num(r.km),combustible:r.combustible,checklist:r.checklist,danos:r.danos,fotos:r.fotos,
-    falla:r.falla,mecanicoId:r.mec,estado:r.tipo==='express'?'reparacion':'diagnostico',items:[],aprob:r.tipo==='express'?'aprobado':'pendiente',token:uid()+uid(),pagos:[],factura:null,entrega:r.entrega,notas:'',
+    falla:r.falla,insp:r.insp||{},hora:r.hora||'',recibe:(r.recibe||'').trim(),retiro:r.retiro||'',valores:(r.valores||'').trim(),obsTrab:(r.obsTrab||'').trim(),matCli:(r.matCli||'').trim(),matComp:(r.matComp||'').trim(),limpieza:r.limpieza||'',inspObs:(r.inspObs||'').trim(),obsAd:'',trabAd:'',recom:'',
+    mecanicoId:r.mec,estado:r.tipo==='express'?'reparacion':'diagnostico',items:[],aprob:r.tipo==='express'?'aprobado':'pendiente',token:uid()+uid(),pagos:[],factura:null,entrega:r.entrega,notas:'',
     horasEst:r.tipo==='express'?1:0,horasReal:0,trabajando:null,garantiaDias:db.config.garantiaDef,proxServ:null,recordado:null,encuesta:null,garantiaDe:g?g.id:null};
   o.estadoDesde=new Date().toISOString();
   db.ots.push(o);st.rec=null;autoMsg(o,'ingreso');save();go('ot',o.id);toast(`OT #${o.nro} abierta`+(g?' · reingreso en garantía':''));imprimirOT(o.id);
@@ -997,7 +1081,7 @@ function otView(){
   const gp=o.garantiaDe&&db.ots.find(x=>x.id===o.garantiaDe);
   const h=horasOT(o),ef=o.horasEst&&h?o.horasEst/h*100:null;
   return `<div class="row between"><div class="row"><button class="btn sm" onclick="go('ots')">← ${M?'Mis tareas':'OTs'}</button><h1>OT #${o.nro}</h1>${o.tipo==='express'?'<span class="tag exp">Express</span>':'<span class="tag">Tradicional</span>'}<span class="sub">${esc(sucN(o.sucursalId))}</span></div>
-    <div class="row">${M?'':aprobChip(o.aprob)+(o.factura?`<span class="chip c-ok">Factura ${o.factura.nro}</span>`:'')}<button class="btn sm" onclick="imprimirOT('${o.id}')">Hoja A4 con QR</button>${M?'':`<button class="btn sm" onclick="lavNuevo('${o.id}')">Enviar al lavadero</button>`}${M?'':`<button class="btn sm" onclick="copiarTxt(appURL('seguimiento-'+ot().token),'Link de seguimiento copiado')">Link de seguimiento</button>`}</div></div>
+    <div class="row">${M?'':aprobChip(o.aprob)+(o.factura?`<span class="chip c-ok">Factura ${o.factura.nro}</span>`:'')}<button class="btn sm" onclick="imprimirOT('${o.id}')">Hoja A4 con QR</button>${M?'':`<button class="btn sm" onclick="plModal('${o.id}')">Planilla completa</button>`}${M?'':`<button class="btn sm" onclick="lavNuevo('${o.id}')">Enviar al lavadero</button>`}${M?'':`<button class="btn sm" onclick="copiarTxt(appURL('seguimiento-'+ot().token),'Link de seguimiento copiado')">Link de seguimiento</button>`}</div></div>
   ${o.estado==='repuestos'&&o.faltante?`<div class="alertbar" style="border-color:var(--orange)"><strong style="color:var(--orange)">Espera de repuestos</strong><span>${esc(o.faltante)}</span></div>`:''}
   ${gp?`<div class="alertbar"><strong>Reingreso en garantía</strong><span>Este vehículo volvió ${dias(gp.fecha,o.fecha)} días después de la OT #${gp.nro} (“${esc(gp.falla)}”, ${esc(mec(gp.mecanicoId))}). Revisá si la falla corresponde a esa pieza o reparación.</span>${M?'':`<button class="btn sm" onclick="go('ot','${gp.id}')">Ver OT #${gp.nro}</button>`}</div>`:''}
   <div class="steps">${ESTADOS.map(([k,l],i)=>`<button class="${i<idx?'done':''} ${i===idx?'on':''}" onclick="setEstado('${k}')" ${M&&['entregado','presupuesto','recepcion'].includes(k)?'disabled':''}>${l}</button>`).join('')}</div>
@@ -1018,9 +1102,10 @@ function otView(){
       <div><div class="sub" style="font-size:12px">COMBUSTIBLE ${o.combustible}/8</div>${fuel(o.combustible)}</div><div><div class="sub" style="font-size:12px">INGRESO</div><b>${fdate(o.fecha)}</b></div></div>
       <div style="margin-top:10px;font-size:13px"><b>Accesorios:</b> ${ck.length?esc(ck.join(', ')):'<span class="sub">ninguno registrado</span>'}</div>
       ${o.entrega?`<div class="note" style="margin-top:4px">Entregado por ${esc(o.entrega)} · conforme con el estado registrado</div>`:''}
-      <div class="grid g2" style="margin-top:12px;align-items:start">${dmgMap(o.danos,1,vtipoDe(v))}<div class="dmglist">${o.danos.length?o.danos.map((d,i)=>`<div><b>${i+1}</b>${esc(d.nota||'Sin descripción')}</div>`).join(''):'<p class="sub">Sin daños previos.</p>'}
+      <div class="grid g2" style="margin-top:12px;align-items:start"><div class="grid${o.danos.some(d=>d.z==='i')?' g2':''}" style="gap:8px">${dmgMap(o.danos,1,vtipoDe(v))}${o.danos.some(d=>d.z==='i')?dmgMap(o.danos,1,vtipoDe(v),'i'):''}</div><div class="dmglist">${o.danos.length?o.danos.map((d,i)=>`<div><b>${i+1}</b>${esc(d.nota||'Sin descripción')}${dnLbl(d)}</div>`).join(''):'<p class="sub">Sin daños previos.</p>'}
       ${o.fotos.length?`<div class="photos" style="margin-top:8px">${o.fotos.map(f=>`<figure><img src="${f}" alt="Foto de ingreso"></figure>`).join('')}</div>`:''}</div></div></div>
   </div>
+  ${planillaPanel(o,v,M)}
   <div class="panel"><div class="row between"><h2>${M?'Trabajos a realizar':'Presupuesto y trabajos'}</h2>${lock||M?(lock?'<span class="sub">Facturada: no se puede editar</span>':''):`<div class="row"><button class="btn sm" onclick="addMO()">+ Mano de obra</button><button class="btn sm" onclick="addRep()">+ Repuesto de stock</button><button class="btn sm" onclick="addRepLibre()">+ Repuesto externo</button></div>`}</div>
     <div class="tscroll"><table><tr><th>Tipo</th><th>Descripción</th><th class="n">Cant.</th>${M?'':`<th class="n">Precio</th><th class="n">Subtotal</th>${A?'<th class="n">Costo</th>':''}<th></th>`}</tr>
     ${o.items.map((i,k)=>`<tr><td><span class="tag">${i.tipo==='mo'?'M. obra':'Repuesto'}</span></td><td>${esc(i.desc)}</td><td class="n">${i.cant}</td>${M?'':`<td class="n">${gs(i.precio)}</td><td class="n">${gs(i.cant*i.precio)}</td>${A?`<td class="n sub">${i.tipo==='rep'?gs(i.cant*(i.costo??i.precio*.65)):'—'}</td>`:''}<td class="n">${lock?'':`<button class="btn sm danger" onclick="delItem(${k})" aria-label="Quitar">✕</button>`}</td>`}</tr>`).join('')||`<tr><td colspan="7" class="empty">${M?'Sin trabajos cargados todavía.':'Agregá mano de obra y repuestos para armar el presupuesto.'}</td></tr>`}</table></div>
@@ -1078,7 +1163,19 @@ function autoMsg(o,tipo,force){
   if(!force&&db.mensajes.some(m=>m.otId===o.id&&m.tipo===tipo&&m.estado!=='descartado'))return;
   const c=cli(o.clienteId);db.mensajes.push({id:uid(),fecha:new Date().toISOString(),otId:o.id,tipo,tel:c.tel,nombre:c.nombre,texto:fillTpl(db.config.plantillas[tipo],o),estado:'pendiente',enviado:null});
   toast(`WhatsApp “${TPL_TIPOS[tipo]}” en cola para ${nombrePila(c.nombre)}`)}
-function entregar(){const o=ot();if(o.trabajando){o.horasReal=Math.round(horasOT(o)*100)/100;o.trabajando=null}o.estado='entregado';o.fechaEntrega=hoy();if(!o.encuesta)o.encuesta={token:uid(),nota:null};save();render();enviarEncuesta(o.id)}
+function entregar(){const o=ot(),e=o.entregaInfo||{},chk=e.chk||{};
+  modalHTML(`<h2>Entrega del vehículo · OT #${o.nro}</h2><p class="note" style="margin:0">Orden de entrega y conformidad del cliente.</p>
+  <div class="checks" style="margin-top:6px">${ENTREGA_CHK.map((k,i)=>`<label><input type="checkbox" data-ek="${i}" ${chk[k]?'checked':''}> ${esc(k)}</label>`).join('')}</div>
+  <div class="row" style="margin-top:6px;gap:8px"><button type="button" class="btn sm" onclick="document.querySelectorAll('[data-ek]').forEach(c=>c.checked=true)">Marcar todo</button></div>
+  <div class="fields"><label class="field"><span>Reparación repetida</span><select id="en_rep"><option value="no">No</option><option value="si" ${(e.repetida||(o.garantiaDe?'si':'no'))==='si'?'selected':''}>Sí</option></select></label>
+    <label class="field"><span>Entregado y revisado por</span><input id="en_por" value="${esc(e.por||miNombre())}"></label>
+    <label class="field"><span>Garantía (días)</span><input id="en_gar" inputmode="numeric" value="${o.garantiaDias??db.config.garantiaDef}"></label></div>
+  <label class="field"><span>Recomendaciones post servicio</span><textarea id="en_rec" placeholder="Ej.: cambiar correa de distribución en 10.000 km">${esc(o.recom||'')}</textarea></label>
+  <label class="field"><span>Observaciones de entrega</span><textarea id="en_obs">${esc(e.obs||'')}</textarea></label>
+  <div class="row"><button class="btn pri" onclick="entregaOK()">Confirmar entrega</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
+function entregaOK(){const o=ot(),chk={};document.querySelectorAll('[data-ek]').forEach(c=>{if(c.checked)chk[ENTREGA_CHK[+c.dataset.ek]]=1});
+  o.entregaInfo={chk,repetida:$('#en_rep').value,por:$('#en_por').value.trim(),obs:$('#en_obs').value.trim(),hora:horaAhora()};o.recom=$('#en_rec').value.trim();o.garantiaDias=num($('#en_gar').value);closeM();entregarOK()}
+function entregarOK(){const o=ot();if(o.trabajando){o.horasReal=Math.round(horasOT(o)*100)/100;o.trabajando=null}o.estado='entregado';o.fechaEntrega=hoy();if(!o.encuesta)o.encuesta={token:uid(),nota:null};save();render();enviarEncuesta(o.id)}
 function enviarEncuesta(id){const o=db.ots.find(x=>x.id===id),c=cli(o.clienteId),v=veh(o.vehiculoId);
   const msg=`*${db.config.taller}*\nGracias por confiarnos su ${v.marca} ${v.modelo} (${v.chapa}). ¿Cómo fue su experiencia? Califíquenos en 10 segundos:\n${appURL('encuesta-'+o.encuesta.token)}`;
   const w=waLink(c.tel,msg);
@@ -1719,6 +1816,81 @@ function plantillasPanel(){const A=isA(),P=db.config.plantillas;
   <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Envío 100 % automático en el servidor (ejemplo)</summary><pre class="code" style="margin-top:8px">${esc(SERVER_SNIPPET)}</pre></details></div>`;
 }
 
+/* ---------- PLANILLA DE RECEPCIÓN COMPLETA ---------- */
+function planillaPanel(o,v,M){const t=vtipoDe(v),ro=M?'readonly':'',e=o.entregaInfo;
+  const fld=(k,l,ph,ta)=>ta?`<label class="field"><span>${l}</span><textarea ${ro} placeholder="${ph||''}" onchange="o_set('${k}',this.value.trim())">${esc(o[k]||'')}</textarea></label>`:`<label class="field"><span>${l}</span><input ${ro} value="${esc(o[k]||'')}" placeholder="${ph||''}" onchange="o_set('${k}',this.value.trim())"></label>`;
+  return `<div class="panel"><div class="row between"><h2>Planilla de recepción</h2>${M?'':`<div class="row"><button class="btn sm" onclick="inspEditar()">Editar inspección</button><button class="btn sm" onclick="plModal('${o.id}')">Imprimir planilla</button></div>`}</div>
+    <div class="row" style="gap:22px;font-size:13px"><div><div class="sub" style="font-size:12px">HORA</div><b>${esc(o.hora||'—')}</b></div><div><div class="sub" style="font-size:12px">RECIBIDO POR</div><b>${esc(o.recibe||'—')}</b></div><div><div class="sub" style="font-size:12px">RETIRAR EL DÍA</div><b>${o.retiro?fdate(o.retiro):'—'}</b></div><div><div class="sub" style="font-size:12px">LIMPIEZA</div><b>${esc(o.limpieza||'—')}</b></div></div>
+    ${inspResumen(o,t)}${o.inspObs?`<p class="note" style="margin:6px 0 0">Otros detalles: ${esc(o.inspObs)}</p>`:''}
+    <div class="grid g2" style="margin-top:12px;align-items:start"><div class="grid" style="gap:10px">
+      ${fld('valores','Objetos de valor declarados')}${fld('obsTrab','Observaciones para el trabajo','',1)}${fld('matCli','Materiales proporcionados por el cliente','',1)}${fld('matComp','Materiales a utilizar o comprar','',1)}</div>
+      <div class="grid" style="gap:10px">${fld('obsAd','Observaciones adicionales comunicadas al cliente','Lo que se encontró después de la recepción',1)}${fld('trabAd','Trabajos adicionales pedidos después de firmar','Uno por línea',1)}${fld('recom','Recomendaciones post servicio','',1)}
+      ${e?`<div class="note">Entregado ${o.fechaEntrega?fdate(o.fechaEntrega):''} ${esc(e.hora||'')} por ${esc(e.por||'—')} · ${Object.keys(e.chk||{}).length}/${ENTREGA_CHK.length} controles · Reparación repetida: ${e.repetida==='si'?'Sí':'No'}${e.obs?' · '+esc(e.obs):''}</div>`:''}</div></div></div>`}
+function inspEditar(){const o=ot(),t=vtipoDe(veh(o.vehiculoId));
+  modalHTML(`<div class="row between"><h2>Inspección · OT #${o.nro}</h2><button class="btn sm" onclick="closeM()">Cerrar</button></div>
+  ${inspGrid(o.insp||{},t,'data-ie')}
+  <div class="fields" style="margin-top:12px"><label class="field"><span>Orden y limpieza</span><select id="ie_l"><option value="">—</option>${LIMPIEZA.map(x=>`<option ${o.limpieza===x?'selected':''}>${x}</option>`).join('')}</select></label>
+  <label class="field" style="grid-column:span 2"><span>Otros detalles encontrados</span><input id="ie_o" value="${esc(o.inspObs||'')}"></label></div>
+  <div class="row"><button class="btn pri" onclick="const o=ot();o.insp=inspLeer('data-ie');o.limpieza=$('#ie_l').value;o.inspObs=$('#ie_o').value.trim();save();closeM();render();toast('Inspección guardada')">Guardar</button><button class="btn" onclick="closeM()">Cancelar</button></div>`)}
+function plPages(o){const v=veh(o.vehiculoId),c=cli(o.clienteId),cf=db.config,t=vtipoDe(v),nro=String(o.nro).padStart(6,'0'),d=o.insp||{},e=o.entregaInfo||{};
+  const kv=(k,x)=>`<div><span class="k">${k}</span><b>${x||'&nbsp;'}</b></div>`;
+  const hd=tit=>`<div class="ph">${cf.logo?`<img src="${cf.logo}" alt="">`:'<span></span>'}<div><h3>${esc(cf.taller)}</h3><div>${cf.ruc?'RUC '+esc(cf.ruc)+' · ':''}${esc(cf.dir||'')}${cf.tel?' · Tel. '+esc(cf.tel):''}</div><div class="tt" style="display:inline-block;margin-top:1mm">${tit}</div></div>
+    <div style="text-align:right"><div class="k">Orden de trabajo</div><div style="font:700 16px 'IBM Plex Mono',monospace">Nº ${nro}</div><canvas class="qr" data-qr="${esc(appURL('seguimiento-'+o.token))}" style="width:18mm;height:18mm;margin-left:auto;image-rendering:pixelated"></canvas></div></div>`;
+  const ins=inspDe(t).map(([g,L,tst])=>`<div><div class="k" style="margin:1mm 0 .6mm">${g}${tst?' (✔ apagado · X encendido)':''}</div><div class="g3">${L.map(k=>`<div class="si"><i class="${d[k]||''}">${d[k]?SIMB[d[k]]:''}</i>${esc(k)}</div>`).join('')}</div></div>`).join('');
+  const dn=o.danos.length?o.danos.map((x,i)=>`${i+1}. ${esc(x.nota||'Sin descripción')}${x.z==='i'?' (interior)':''}`).join('<br>'):'Sin daños registrados.';
+  const tot=total(o),pg=pagado(o),medios=[...new Set((o.pagos||[]).map(p=>p.medio))];
+  const fp=['Contado','Transferencia','Crédito'].map(m=>`<span class="si" style="display:inline-flex;margin-right:3mm"><i>${(m==='Contado'&&medios.some(x=>x!=='Transferencia'))||(m==='Transferencia'&&medios.includes('Transferencia'))||(m==='Crédito'&&tot-pg>0)?'✔':''}</i>${m}</span>`).join('');
+  const lines=(txt,n)=>txt?`<div class="tx">${esc(txt)}</div>`:Array.from({length:n},()=>'<div class="ln"></div>').join('');
+  const p1=`<div class="pl-sheet" style="${cpVars()}">${hd('Planilla de recepción y trabajos a realizar')}
+    <div class="g2"><div class="bx"><div class="k" style="color:#111">Recepción</div><div class="kv">${kv('Fecha de ingreso',fdate(o.fecha))}${kv('Hora',esc(o.hora||''))}${kv('Recibido por',esc(o.recibe||''))}${kv('Retirar el día',o.retiro?fdate(o.retiro):'')}${kv('Encargado',esc(mec(o.mecanicoId)))}${kv('Tipo',o.tipo==='express'?'Express':'Tradicional')}</div></div>
+      <div class="bx"><div class="k" style="color:#111">Datos del cliente</div><div class="kv" style="grid-template-columns:2fr 1fr">${kv('Nombre',esc(c.nombre))}${kv('RUC / CI',esc(c.ruc||''))}${kv('Dirección',esc(c.dir||''))}${kv('Teléfono',esc(c.tel||''))}</div></div></div>
+    <div class="bx"><div class="k" style="color:#111">Datos del vehículo</div><div class="kv" style="grid-template-columns:repeat(7,auto)">${kv('Marca',esc(v.marca))}${kv('Modelo',esc(v.modelo))}${kv('Año',esc(v.anio||''))}${kv('Color',esc(v.color||''))}${kv('Chapa',esc(v.chapa))}${kv('Kilómetros',fmt(o.km))}${kv('Combustible',o.combustible+'/8')}</div></div>
+    <div class="g2"><div class="bx"><div class="k">Trabajos solicitados</div>${lines(o.falla,2)}</div><div class="bx"><div class="k">Observaciones a tener en cuenta para el trabajo</div>${lines(o.obsTrab,2)}</div></div>
+    <div class="bx"><div class="k">Objetos de valor</div>${lines(o.valores,1)}</div>
+    <div class="bx"><div style="display:flex;justify-content:space-between"><div class="k" style="color:#111">Detalles encontrados en el vehículo</div><div style="font-size:8px">Simbología: ✔ bien · X defectuoso o sin funcionar · — rayones · * roto · N no tiene</div></div>${ins}
+      <div class="kv" style="grid-template-columns:1fr 3fr;margin-top:1mm">${kv('Orden y limpieza',esc(o.limpieza||''))}${kv('Obs.',esc(o.inspObs||''))}</div></div>
+    <div class="dg" style="grid-template-columns:auto 1fr"><div class="bx"><div class="k">Daños registrados</div><div style="display:flex;gap:2mm;margin-top:1mm">${dmgMap(o.danos,1,t)}${t==='moto'?'':dmgMap(o.danos,1,t,'i')}</div></div><div class="bx" style="height:100%;box-sizing:border-box"><div class="k">Descripción de daños</div><div style="font-size:9px">${dn}</div></div></div>
+    <div class="g2"><div class="bx"><div class="k">Materiales proporcionados por el cliente</div>${lines(o.matCli,2)}</div><div class="bx"><div class="k">Materiales a utilizar o ser comprados</div>${lines(o.matComp,2)}</div></div>
+    <div class="legal">${esc(termTxt(cf.termRecepcion))}</div>
+    <div class="firma"><div>Firma de conformidad y aprobación del cliente para realizar el trabajo</div><div>Firma, aclaración y C.I. del cliente</div></div>
+    <div class="ft"><span>Hoja 1 de 2 · Recepción</span><span>${sheetId(o)}</span></div></div>`;
+  const items=o.items.length?`<table><tr><th>Trabajo / repuesto</th><th class="n">Cant.</th><th class="n">Subtotal</th></tr>${o.items.map(i=>`<tr><td>${esc(i.desc)}</td><td class="n">${i.cant}</td><td class="n">${gs(i.cant*i.precio)}</td></tr>`).join('')}<tr><td colspan="2"><b>Costo total${o.factura?' facturado · Factura '+esc(o.factura.nro):''}</b></td><td class="n"><b>${gs(tot)}</b></td></tr></table>`:lines('',3);
+  const p2=`<div class="pl-sheet" style="${cpVars()}">${hd('Orden de entrega del vehículo y conformidad del cliente')}
+    <div class="bx"><div class="kv" style="grid-template-columns:2fr 1fr 1fr 1fr">${kv('Cliente',esc(c.nombre))}${kv('Vehículo',esc(v.marca+' '+v.modelo))}${kv('Chapa',esc(v.chapa))}${kv('Fecha de entrega',o.fechaEntrega?fdate(o.fechaEntrega):'')}</div></div>
+    <div class="bx"><div class="k">Observaciones adicionales a la recepción (comunicadas al cliente después de recibir el vehículo)</div>${lines(o.obsAd,2)}</div>
+    <div class="bx"><div class="k">Trabajos adicionales solicitados por el cliente después de la firma y recepción</div>${lines(o.trabAd,2)}</div>
+    <div class="bx"><div class="k">Trabajos realizados</div>${items}</div>
+    <div class="g2"><div class="bx"><div class="k">Recomendaciones post servicio para el cliente</div>${lines(o.recom,3)}</div>
+      <div class="bx"><div class="k">Forma de pago</div><div style="margin:1mm 0">${fp}</div><div class="kv" style="grid-template-columns:1fr 1fr">${kv('Costo total facturado',gs(tot))}${kv('Saldo',gs(tot-pg))}</div>
+      <div class="k" style="margin-top:1.5mm">Reparación repetida</div><div><span class="si" style="display:inline-flex;margin-right:4mm"><i>${e.repetida==='si'?'✔':''}</i>Sí</span><span class="si" style="display:inline-flex"><i>${e.repetida==='no'?'✔':''}</i>No</span></div></div></div>
+    <div class="bx"><div class="k" style="color:#111">Observaciones de entrega</div><div class="g3" style="grid-template-columns:1fr 1fr;margin-top:1mm">${ENTREGA_CHK.map(k=>`<div class="si"><i>${(e.chk||{})[k]?'✔':''}</i>${esc(k)}</div>`).join('')}</div>
+      <div class="kv" style="grid-template-columns:2fr 1fr;margin-top:1.5mm">${kv('Obs.',esc(e.obs||''))}${kv('Entregado y revisado por',esc(e.por||''))}</div></div>
+    <div class="bx"><div class="k" style="color:#111">Términos y condiciones</div><div class="legal">${esc(termTxt(cf.termEntrega))}</div>
+      <div class="legal" style="margin-top:1mm">• Las reparaciones o servicios realizados tienen una garantía de <b>${o.garantiaDias??cf.garantiaDef} días</b>. Condiciones: ${esc(termTxt(cf.garantiaCond))}</div></div>
+    <div class="bx"><div class="k" style="color:#111">Firma de finalización del trabajo y conformidad del cliente</div><div class="legal">El cliente declara haber recibido el vehículo en perfectas condiciones, con los trabajos totalmente finalizados y explicados paso a paso, y queda conforme con dichos trabajos.</div>
+      <div class="firma" style="margin-top:12mm"><div>Firma del cliente y C.I.</div><div>Entregado por (taller)</div></div></div>
+    <div class="ft"><span>Hoja 2 de 2 · Entrega</span><span>${sheetId(o)}</span></div></div>`;
+  return [p1,p2]}
+function plModal(id){const o=db.ots.find(x=>x.id===id);st.plId=id;
+  modalHTML(`<div class="row between"><h2>Planilla completa · OT #${o.nro}</h2><button class="btn sm" onclick="closeM()">Cerrar</button></div>
+  <p class="note" style="margin:0">Hoja 1: recepción y firma de aprobación. Hoja 2: entrega, términos y firma de conformidad. Los campos vacíos salen con líneas para completar a mano.</p>
+  <div class="row"><button class="btn pri" onclick="plImprimir()">Imprimir</button><button class="btn" id="plPdf" onclick="plPDF()">Descargar PDF</button></div>
+  <div class="cp-prev" id="plPrev">${plPages(o).map(h=>`<div class="pv">${h}</div>`).join('')}</div>`);
+  const box=$('#plPrev'),wpx=210*3.7795,sc=Math.min(1,(box.clientWidth-24)/wpx);drawCodes(box);
+  box.querySelectorAll('.pv').forEach(pv=>{const sh=pv.firstElementChild;sh.style.transform=`scale(${sc})`;sh.style.transformOrigin='top left';pv.style.width=wpx*sc+'px';pv.style.height=297*3.7795*sc+'px'})}
+function plImprimir(){const o=db.ots.find(x=>x.id===st.plId),ph=$('#printhost');ph.innerHTML=plPages(o).join('');drawCodes(ph);
+  let stl=$('#cpPage');if(!stl){stl=document.createElement('style');stl.id='cpPage';document.head.appendChild(stl)}stl.textContent='@page{size:210mm 297mm;margin:0}';
+  imprimirAhora('Planilla OT '+o.nro,()=>{ph.innerHTML='';stl.textContent=''})}
+async function plPDF(){const o=db.ots.find(x=>x.id===st.plId),b=$('#plPdf');
+  if(!window.html2canvas||!window.jspdf)return toast('No se pudo cargar el generador de PDF. Revisá la conexión.');
+  b.disabled=true;b.textContent='Generando PDF…';const ph=$('#printhost');
+  try{ph.innerHTML=plPages(o).join('');drawCodes(ph);if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),els=[...ph.querySelectorAll('.pl-sheet')];
+    for(let k=0;k<els.length;k++){const cv=await html2canvas(els[k],{scale:2.2,backgroundColor:'#ffffff',logging:false,useCORS:true});if(k)pdf.addPage('a4');pdf.addImage(cv.toDataURL('image/jpeg',.92),'JPEG',0,0,210,297)}
+    await guardarArchivo(pdf.output('blob'),`Planilla_${sheetId(o)}_${veh(o.vehiculoId).chapa.replace(/\s/g,'')}.pdf`);toast('PDF descargado')}
+  catch(e){console.error(e);toast('No se pudo generar el PDF.')}
+  finally{ph.innerHTML='';b.disabled=false;b.textContent='Descargar PDF'}}
+
 /* ---------- HOJA A4 ---------- */
 const sheetId=o=>'OT-'+String(o.nro).padStart(6,'0');
 const inArt=()=>!!(window.claude&&window.claude.use);
@@ -1985,6 +2157,11 @@ function configView(){const c=db.config;
   <div class="row" style="margin-top:10px"><button class="btn" onclick="(db.config.lavados=db.config.lavados||[]).push({id:uid(),nombre:'Nuevo servicio',min:30,precios:{auto:0,camioneta:0,moto:0,camion:0}});save();render()">+ Agregar servicio de lavado</button></div>
   <h3 style="margin:14px 0 6px">Lavadores</h3><div class="tscroll"><table><tr><th>Nombre</th><th class="n">Comisión %</th><th></th></tr>${(c.lavadores||[]).map((x,i)=>`<tr><td><input value="${esc(x.nombre)}" onchange="db.config.lavadores[${i}].nombre=this.value;save()"></td><td class="n"><input value="${x.comision||0}" inputmode="numeric" style="width:80px;text-align:right" onchange="db.config.lavadores[${i}].comision=num(this.value);save()"></td><td><button class="btn sm danger" onclick="db.config.lavadores.splice(${i},1);save();render()" aria-label="Quitar">✕</button></td></tr>`).join('')||'<tr><td colspan="3" class="empty">Sin lavadores.</td></tr>'}</table></div>
   <div class="row" style="margin-top:10px"><button class="btn" onclick="(db.config.lavadores=db.config.lavadores||[]).push({nombre:'Nuevo lavador',comision:20});save();render()">+ Agregar lavador</button></div></div>
+  <div class="panel"><h2>Planilla de recepción: términos y condiciones</h2><p class="note" style="margin:-4px 0 8px">Salen impresos en la planilla completa. Usá <span class="mono">[Taller]</span> para el nombre del taller.</p>
+    <label class="field"><span>Condiciones al recibir el vehículo (objetos de valor, prueba de manejo…)</span><textarea style="min-height:110px" ${isA()?'':'readonly'} onchange="db.config.termRecepcion=this.value;save()">${esc(c.termRecepcion)}</textarea></label>
+    <label class="field" style="margin-top:10px"><span>Términos y condiciones de entrega</span><textarea style="min-height:110px" ${isA()?'':'readonly'} onchange="db.config.termEntrega=this.value;save()">${esc(c.termEntrega)}</textarea></label>
+    <label class="field" style="margin-top:10px"><span>Condiciones de la garantía</span><input value="${esc(c.garantiaCond)}" ${isA()?'':'readonly'} onchange="db.config.garantiaCond=this.value;save()"></label>
+    ${isA()?`<div class="row" style="margin-top:10px"><button class="btn sm" onclick="Object.assign(db.config,{termRecepcion:TERM_REC_DEF,termEntrega:TERM_ENT_DEF,garantiaCond:GAR_COND_DEF});save();render()">Restaurar textos originales</button></div>`:''}</div>
   <div class="panel"><h2>Proveedores</h2><div class="tscroll"><table><tr><th>Proveedor</th><th>WhatsApp</th><th></th></tr>${(c.proveedores||[]).map((x,i)=>`<tr><td><input value="${esc(x.nombre)}" onchange="db.config.proveedores[${i}].nombre=this.value;save()"></td><td><input value="${esc(x.tel)}" inputmode="tel" onchange="db.config.proveedores[${i}].tel=this.value;save()"></td><td><button class="btn sm danger" onclick="db.config.proveedores.splice(${i},1);save();render()" aria-label="Quitar">✕</button></td></tr>`).join('')||'<tr><td colspan="3" class="empty">Sin proveedores.</td></tr>'}</table></div>
   <div class="row" style="margin-top:10px"><button class="btn" onclick="(db.config.proveedores=db.config.proveedores||[]).push({nombre:'Nuevo proveedor',tel:''});save();render()">+ Agregar proveedor</button></div></div>
   <div class="panel"><h2>Sucursales</h2><div class="tscroll"><table><tr><th>Nombre</th><th>Establecimiento</th><th>Punto exp.</th><th>Próx. factura</th></tr>
