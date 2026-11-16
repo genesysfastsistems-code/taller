@@ -18,10 +18,11 @@ service cloud.firestore {
     function plat() { return get(/databases/$(database)/documents/plataforma/config).data; }
     function tallerPath(tid) { return /databases/$(database)/documents/talleres/$(tid); }
 
-    // Membresía vigente: no suspendido y dentro del vencimiento + días de gracia
+    // Membresía vigente: no bloqueado, dentro del vencimiento + días de gracia y sin modo solo lectura
     function vigente(tid) {
       return get(tallerPath(tid)).data.estado != 'suspendido'
-        && get(tallerPath(tid)).data.limiteTs > request.time;
+        && get(tallerPath(tid)).data.limiteTs > request.time
+        && get(tallerPath(tid)).data.get('soloLectura', false) != true;
     }
     function staffDe(tid) { return esStaff() && perfil().tallerId == tid; }
     function leeTaller(tid) { return esDev() || staffDe(tid); }

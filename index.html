@@ -19,22 +19,26 @@
 <style>
 /* Layout: header con usuario/sucursal + tabs por rol; tablero operativo; kanban horizontal para OTs */
 :root{
-  --bg:#EDF0F2; --surface:#FFFFFF; --sunk:#F5F7F8; --ink:#16202A; --muted:#5B6875; --line:#D6DDE3;
+  --bg:#F2F4F8; --surface:#FFFFFF; --sunk:#F7F8FB; --ink:#111827; --muted:#5E6A7D; --line:#E3E7EE;
   --accent:#F2B705; --accent-ink:#1A1400; --blue:#1D4E89;
-  --ok:#1F8A4C; --warn:#B86E00; --bad:#C2362B; --info:#2C6FB7; --orange:#D9661A;
+  --ok:#16874A; --warn:#B26B00; --bad:#C8352B; --info:#2563B8; --orange:#D9661A;
+  --side:#0C1420; --side2:#152131; --side-ink:#AEB9C7;
+  --sh:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.08); --sh2:0 20px 48px rgba(16,24,40,.22);
   --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
-  --r:8px;
+  --r:12px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#11161B; --surface:#1A2128; --sunk:#151B21; --ink:#E6EBEF; --muted:#93A1AE; --line:#2B3540;
+  --bg:#0A1017; --surface:#111923; --sunk:#0D141C; --ink:#E8EDF3; --muted:#94A3B6; --line:#222F3E;
   --accent:#F2B705; --accent-ink:#1A1400; --blue:#4F86C6;
-  --ok:#46B57A; --warn:#E39A2D; --bad:#E06357; --info:#6AA5E6; --orange:#E8833A; color-scheme:dark}}
+  --ok:#46B57A; --warn:#E39A2D; --bad:#E06357; --info:#6AA5E6; --orange:#E8833A;
+  --side:#070B11; --side2:#101A26; --side-ink:#9AA8B9; --sh:0 1px 2px rgba(0,0,0,.35); --sh2:0 20px 48px rgba(0,0,0,.55); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#11161B; --surface:#1A2128; --sunk:#151B21; --ink:#E6EBEF; --muted:#93A1AE; --line:#2B3540;
+  --bg:#0A1017; --surface:#111923; --sunk:#0D141C; --ink:#E8EDF3; --muted:#94A3B6; --line:#222F3E;
   --accent:#F2B705; --accent-ink:#1A1400; --blue:#4F86C6;
-  --ok:#46B57A; --warn:#E39A2D; --bad:#E06357; --info:#6AA5E6; --orange:#E8833A; color-scheme:dark}
+  --ok:#46B57A; --warn:#E39A2D; --bad:#E06357; --info:#6AA5E6; --orange:#E8833A;
+  --side:#070B11; --side2:#101A26; --side-ink:#9AA8B9; --sh:0 1px 2px rgba(0,0,0,.35); --sh2:0 20px 48px rgba(0,0,0,.55); color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
@@ -347,6 +351,95 @@ pre.code{background:var(--sunk);border:1px solid var(--line);border-radius:6px;p
 .devtag{background:var(--accent);color:var(--accent-ink);font:700 11px var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px}
 @media (max-width:520px){h1{font-size:25px}.kpi b{font-size:26px}.kpi b.m{font-size:19px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ===== Apariencia profesional ===== */
+body{-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+body::before{background:var(--side)}
+header.top{background:var(--side);color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.04)}
+.brand{font-size:22px;color:#fff}
+.brand img{border-radius:10px}
+.ic{width:18px;height:18px;flex:none;display:block}
+nav.tabs button{display:inline-flex;align-items:center;gap:8px;color:var(--side-ink);opacity:1;border-radius:8px;padding:8px 12px;transition:background .15s,color .15s}
+nav.tabs button:hover{background:var(--side2);color:#fff}
+nav.tabs button.on{background:color-mix(in srgb,var(--accent) 16%,transparent);color:#FFD34D;box-shadow:inset 3px 0 0 var(--accent)}
+nav.tabs .badge{margin-left:auto}
+.who{color:var(--side-ink)}
+.who b{color:#fff}
+.who select,.who .out{border-color:rgba(255,255,255,.16);color:#E6EBF1;border-radius:8px}
+.who .out:hover{background:var(--side2)}
+.who .out{display:inline-flex;align-items:center;gap:6px;justify-content:center}
+main .wrap{padding-block:22px 64px;gap:18px}
+h1{font-size:28px;letter-spacing:.03em}
+h2{font-size:19px;letter-spacing:.03em}
+.panel{border-radius:var(--r);box-shadow:var(--sh);padding:18px 20px;border-color:var(--line)}
+.kpi{border-radius:var(--r);box-shadow:var(--sh);padding:14px 16px;gap:6px;position:relative;overflow:hidden}
+.kpi::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--line)}
+.kpi.alert::after{background:var(--bad)} .kpi.good::after{background:var(--ok)}
+.kpi.alert{border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.kpi span{font-size:11px;font-weight:600}
+button.btn,label.btn,a.btn{border-radius:8px;transition:background .15s,border-color .15s,box-shadow .15s,filter .15s;box-shadow:0 1px 1px rgba(16,24,40,.04)}
+button.btn:hover,label.btn:hover,a.btn:hover{border-color:color-mix(in srgb,var(--ink) 30%,var(--line))}
+.btn.pri{box-shadow:0 1px 2px rgba(178,124,0,.35)}
+.btn.pri:hover{filter:brightness(.96);border-color:var(--accent)}
+.btn.dark:hover{filter:brightness(1.25)}
+.btn.danger:hover{background:color-mix(in srgb,var(--bad) 8%,var(--surface))}
+.btn.sm{border-radius:7px}
+input,select,textarea{background:var(--surface);border-radius:8px;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.field>span{font-size:11px;letter-spacing:.06em}
+.chip{border-color:color-mix(in srgb,currentColor 30%,transparent);background:color-mix(in srgb,currentColor 9%,transparent);padding:3px 9px}
+.tag{border-radius:6px}
+th{background:var(--sunk);border-bottom-color:var(--line)}
+tr:hover>td{background:color-mix(in srgb,var(--sunk) 70%,transparent)}
+.panel[style*="padding:0"] table th:first-child{border-top-left-radius:var(--r)}
+.card{border-radius:10px;box-shadow:var(--sh);transition:border-color .15s,box-shadow .15s}
+.card:hover{border-color:color-mix(in srgb,var(--ink) 35%,var(--line));box-shadow:0 4px 14px rgba(16,24,40,.08)}
+.lane,.col{border-radius:var(--r)}
+.modal{background:rgba(8,12,18,.55);backdrop-filter:blur(3px)}
+.modal .box{border-radius:16px;box-shadow:var(--sh2);padding:22px 24px}
+.toast{border-radius:10px;box-shadow:var(--sh2)}
+.alertbar{border-radius:var(--r)}
+.devtag{border-radius:6px}
+.av{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font:700 13px var(--f-body);color:#fff;flex:none;letter-spacing:.02em}
+.tcell{display:flex;gap:10px;align-items:center}
+.dtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:-4px 0 4px;overflow-x:auto}
+.dtabs button{background:none;border:0;border-bottom:2px solid transparent;padding:9px 12px;font:600 13px var(--f-body);color:var(--muted);cursor:pointer;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.dtabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.opt{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}
+.opt:last-child{border-bottom:0}
+.opt b{display:block;font-size:14px}
+.opt small{color:var(--muted);font-size:12.5px}
+.sw{position:relative;display:inline-block;vertical-align:middle;width:42px;height:24px;flex:none}
+.sw input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;z-index:1}
+.sw span{position:absolute;inset:0;border-radius:99px;background:var(--line);transition:background .15s}
+.sw span::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.sw input:checked+span{background:var(--ok)}
+.sw input:checked+span::after{transform:translateX(18px)}
+.sw input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.danger-zone{border:1px solid color-mix(in srgb,var(--bad) 45%,var(--line));border-radius:var(--r);padding:14px 16px;background:color-mix(in srgb,var(--bad) 4%,var(--surface))}
+.kbar{display:flex;gap:6px;flex-wrap:nowrap;justify-content:flex-end}
+.ibtn{width:32px;height:32px;padding:0!important;justify-content:center}
+@media (max-width:1099px){
+  .who{flex:1 1 100%;flex-wrap:nowrap}
+  .who>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .who select{max-width:46%}
+  .who .out{font-size:0;padding:6px 8px;gap:0}
+  .who .out .ic{width:17px;height:17px}
+  nav.tabs{margin:0 -4px}
+}
+@media (min-width:1100px){
+  body.sb{padding-left:256px}
+  body.sb::before{display:none}
+  body.sb header.top{position:fixed;top:0;left:0;bottom:0;width:256px;overflow-y:auto;scrollbar-width:thin;border-right:1px solid rgba(255,255,255,.05)}
+  body.sb header.top .wrap{flex-direction:column;align-items:stretch;flex-wrap:nowrap;min-height:100%;padding:20px 14px 16px;gap:14px;max-width:none}
+  body.sb .brand{margin:0 0 8px;padding:0 6px}
+  body.sb nav.tabs{order:1;flex-direction:column;flex:1 1 auto;overflow:visible;gap:2px}
+  body.sb nav.tabs button{padding:10px 12px;font-size:14px;justify-content:flex-start;width:100%}
+  body.sb .who{order:2;flex-wrap:wrap;gap:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px;font-size:12.5px}
+  body.sb .who>span,body.sb .who select{flex:1 1 100%}
+  body.sb .who .out{flex:1 1 0;padding:7px 9px}
+  body.sb main .wrap{max-width:1380px;padding-inline:28px}
+}
 </style>
 
 <header class="top"><div class="wrap">
@@ -688,6 +781,7 @@ function remoteRender(){clearTimeout(pendRender);pendRender=setTimeout(()=>{cons
 function save(){
   if(!FS||st.fase!=='app')return;
   if(!st.soporte&&!memb(st.taller).ok)return toast('La membresía no está activa. No se guardan cambios.');
+  if(!st.soporte&&st.taller&&st.taller.soloLectura)return toast('Acceso limitado a solo lectura. Contactá al proveedor del sistema.');
   const ops=[];
   COLS.forEach(c=>{const cur={};(db[c]||[]).forEach(x=>{if(!x.id)x.id=uid();cur[x.id]=stable(x)});const prev=last[c]||{};
     Object.keys(cur).forEach(id=>{if(cur[id]!==prev[id]){const d=JSON.parse(cur[id]);delete d.id;ops.push(['set',ref(c,id),d]);
@@ -756,19 +850,51 @@ function mov(stockId,sucId,cant,tipo,ref){db.movs.push({id:uid(),fecha:hoy(),sto
 
 /* ---------- NAVEGACIÓN ---------- */
 const PUB=['cliente','encuesta','seguimiento'];
+const IC={tablero:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+  recepcion:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+  pos:'<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.7 12.4a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/>',
+  lavadero:'<path d="M12 2.7S6 9.3 6 14a6 6 0 0 0 12 0c0-4.7-6-11.3-6-11.3z"/><path d="M9.5 15.5a2.6 2.6 0 0 0 2.5 2"/>',
+  ots:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/><path d="M5.5 8h1M11.5 12h1M17.5 7h1"/>',
+  produccion:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8z"/>',
+  historial:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>',
+  stock:'<path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+  mensajes:'<path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/>',
+  crm:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  reportes:'<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx=".5"/><rect x="12" y="8" width="3" height="10" rx=".5"/><rect x="17" y="5" width="3" height="13" rx=".5"/>',
+  finanzas:'<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/>',
+  config:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  talleres:'<path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/>',
+  pagos:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h3"/>',
+  planes:'<path d="m12 2 10 5-10 5L2 7l10-5z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/>',
+  plataforma:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
+  salir:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  clave:'<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>',
+  lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  unlock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  wa:'<path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/>',
+  login:'<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>',
+  dots:'<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  cash:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>'};
+const ico=(k,sz)=>IC[k]?`<svg class="ic" viewBox="0 0 24 24" ${sz?`style="width:${sz}px;height:${sz}px"`:''} fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`:'';
+const navItems=()=>(NAVS[rol()]||[]).filter(n=>!(((st.taller||{}).modulosOff)||[]).includes(n[0]));
 function navBadge(k){const n=k==='mensajes'?db.mensajes.filter(m=>m.estado==='pendiente').length:k==='stock'?db.alertas.filter(a=>!a.resuelta).length:k==='produccion'?(()=>{const a=avisosEntrega();return a.atr.length+a.hoyE.length+pedPend().length})():0;return n?`<span class="badge">${n}</span>`:''}
-function allowed(v){if(PUB.includes(v))return true;if(!me()||!NAVS[rol()])return false;if(v==='ot')return true;return NAVS[rol()].some(n=>n[0]===v)}
-function go(v,p){if(!allowed(v)){if(!NAVS[rol()])return;v=NAVS[rol()][0][0];p=null}st.view=v;st.param=p??null;render();window.scrollTo(0,0)}
+function allowed(v){if(PUB.includes(v))return true;if(!me()||!NAVS[rol()])return false;if(v==='ot')return !((st.taller||{}).modulosOff||[]).includes('ots');return navItems().some(n=>n[0]===v)}
+function go(v,p){if(!allowed(v)){if(!NAVS[rol()]||!navItems().length)return;v=navItems()[0][0];p=null}st.view=v;st.param=p??null;render();window.scrollTo(0,0)}
 function render(){
   const pub=PUB.includes(st.view);
   if(!pub&&st.fase==='dev'){renderDev();return}
-  if(!pub&&st.fase!=='app'){$('#who').innerHTML=['inactivo','sinTaller','error','bloqueado','clave'].includes(st.fase)?'<button class="out" onclick="salir()">Salir</button>':'';$('#nav').innerHTML='';$('#app').innerHTML=faseView();return}
+  if(!pub&&st.fase!=='app'){document.body.classList.remove('sb');$('#who').innerHTML=['inactivo','sinTaller','error','bloqueado','clave'].includes(st.fase)?`<button class="out" onclick="salir()">${ico('salir',15)}Salir</button>`:'';$('#nav').innerHTML='';$('#app').innerHTML=faseView();return}
   if(me()&&!pub){
     const u=me();
     $('#who').innerHTML=`${st.soporte?`<span class="devtag">Soporte</span><button class="out" onclick="volverDev()">← Panel desarrollador</button>`:''}${isA()?`<select aria-label="Sucursal" onchange="st.suc=this.value;saveSes();render()"><option value="*" ${st.suc==='*'?'selected':''}>Todas las sucursales</option>${db.sucursales.map(s=>`<option value="${s.id}" ${st.suc===s.id?'selected':''}>${esc(s.nombre)}</option>`).join('')}</select>`:`<span>${esc(sucN(u.sucursalId))}</span>`}
-      <span><b>${esc(u.nombre)}</b> · ${ROLES[u.rol]||''}</span>${st.soporte?'':'<button class="out" onclick="cambiarClaveModal()">Clave</button>'}<button class="out" onclick="salir()">Salir</button>`;
-    $('#nav').innerHTML=NAVS[u.rol].map(([k,l])=>`<button class="${st.view===k||(st.view==='ot'&&k==='ots')?'on':''}" onclick="go('${k}')">${l}${isM()?'':navBadge(k)}</button>`).join('');
-  } else {$('#who').innerHTML='';$('#nav').innerHTML=''}
+      <span><b>${esc(u.nombre)}</b> · ${ROLES[u.rol]||''}</span>${st.soporte?'':`<button class="out" onclick="cambiarClaveModal()">${ico('clave',15)}Clave</button>`}<button class="out" onclick="salir()">${ico('salir',15)}Salir</button>`;
+    $('#nav').innerHTML=navItems().map(([k,l])=>`<button class="${st.view===k||(st.view==='ot'&&k==='ots')?'on':''}" onclick="go('${k}')">${ico(k)}<span>${l}</span>${isM()?'':navBadge(k)}</button>`).join('');
+    document.body.classList.add('sb');
+  } else {$('#who').innerHTML='';$('#nav').innerHTML='';document.body.classList.remove('sb')}
   const V={tablero,recepcion,ots:otsView,ot:otView,historial,stock:stockView,crm:crmView,reportes:reportesView,finanzas,pos:posView,lavadero:lavaderoView,produccion:produccionView,config:configView,cliente:clienteView,encuesta:encuestaView,seguimiento:seguimientoView,mensajes:mensajesView}[st.view]||tablero;
   $('#app').innerHTML=(pub?'':membBanner()+entBanner())+(db.config.ejemplo&&!pub&&isAdm()?`<div class="banner row between"><span>Hay datos de ejemplo cargados.</span><button class="btn sm" onclick="confirmLimpiar()">Borrar datos de ejemplo</button></div>`:'')+V();
   if(st.view==='recepcion') bindRec();
@@ -873,7 +999,7 @@ function cargarEjemplo(){const D=seed();['clientes','vehiculos','stock','movs','
   Object.assign(db.config,D.config,{taller:db.config.taller,ejemplo:true});save();T('meta').doc('contadores').set({nextOT:D.nextOT});closeM();go('tablero');toast('Datos de ejemplo cargados.')}
 
 /* ---------- MEMBRESÍA (lado taller) ---------- */
-function membBanner(){const t=st.taller;if(!t||st.soporte)return '';const m=memb(t),p=planDe(t.plan);
+function membBanner(){const t=st.taller;if(!t||st.soporte)return '';if(t.soloLectura)return `<div class="alertbar">${ico('lock')}<strong>Solo lectura</strong><span>El acceso de este taller está limitado: podés consultar pero no guardar cambios. ${t.motivoBloqueo?esc(t.motivoBloqueo)+'. ':''}Contactá a KEVANIX para habilitarlo.</span></div>`;const m=memb(t),p=planDe(t.plan);
   if(m.motivo==='gracia')return `<div class="alertbar"><strong>Membresía vencida</strong><span>Venció el ${fdate(t.vence)}. El sistema se bloquea en ${P().diasGracia+m.dias+1} día(s).${isA()?'':' Avisá al administrador.'}</span>${isA()?`<button class="btn sm pri" onclick="go('config')">Renovar</button>`:''}</div>`;
   if(!isAdm())return '';
   if(t.estado==='prueba')return `<div class="banner row between" style="border-style:solid;border-color:var(--info)"><span><b style="color:var(--info)">Prueba gratis</b> · ${diasTxt(m.dias)} (hasta ${fdate(t.vence)}).</span><button class="btn sm pri" onclick="go('config')">Ver planes</button></div>`;
@@ -889,7 +1015,9 @@ function pedirPlan(pid){const p=planDe(pid),t=st.taller||{},w=P().waVentas;
   <p class="note">Después de pagar, enviá el comprobante. Tu membresía se activa en cuanto se confirme el pago.</p>
   <div class="row">${l?`<a class="btn wa" href="${l}" target="_blank" rel="noopener">Enviar comprobante por WhatsApp</a>`:`<span class="sub">WhatsApp de ventas no configurado.</span>`}<button class="btn" onclick="closeM()">Cerrar</button></div>`)}
 function bloqueadoView(){const t=st.taller||{},m=memb(st.taller),adm=(st.perfil||{}).rol==='admin';
-  return `<div class="login" style="max-width:820px"><div><h1>${m.motivo==='suspendido'?'Taller suspendido':'Membresía vencida'}</h1>
+  const wv=P().waVentas?waLink(P().waVentas,`Hola, soy de ${t.nombre||'mi taller'}. Quiero regularizar el pago de KEVANIX Taller.`):'';
+  return `<div class="login" style="max-width:820px"><div><h1>${m.motivo==='suspendido'?'Acceso bloqueado':'Membresía vencida'}</h1>
+  ${m.motivo==='suspendido'?`<div class="alertbar" style="margin-top:10px">${ico('lock')}<span>${esc(t.motivoBloqueo||'El acceso fue bloqueado por falta de pago.')} Comunicate con KEVANIX para regularizar y reactivar el sistema.</span>${wv?`<a class="btn wa sm" href="${wv}" target="_blank" rel="noopener">${ico('wa',15)}Escribir por WhatsApp</a>`:''}</div>`:''}
   <p class="sub" style="margin:4px 0 0">${esc(t.nombre||'')} · Plan ${esc(planDe(t.plan).nombre)}${t.vence?' · venció el '+fdate(t.vence):''}. Tus datos están guardados y vuelven a estar disponibles al renovar.</p></div>
   ${adm?`<h2>Elegí un plan para reactivar</h2>${planesCards(t.plan==='prueba'?null:t.plan)}<div class="panel"><h3>Datos para el pago</h3><pre class="cred" style="margin-top:6px">${esc(P().datosPago)}</pre></div>`:'<div class="panel"><p style="margin:0">Avisá al administrador del taller para renovar la membresía.</p></div>'}</div>`}
 function miMembresia(){const t=st.taller;if(!t||!isAdm())return '';const m=memb(t),p=planDe(t.plan);
@@ -900,7 +1028,7 @@ function miMembresia(){const t=st.taller;if(!t||!isAdm())return '';const m=memb(
   <div class="kpi ${nu>=p.maxUsuarios?'alert':''}"><b>${nu}/${p.maxUsuarios}</b><span>Usuarios activos</span></div><div class="kpi ${ns>=p.maxSucursales?'alert':''}"><b>${ns}/${p.maxSucursales}</b><span>Sucursales</span></div></div>
   <h3 style="margin:14px 0 8px">${t.estado==='prueba'?'Elegí tu plan':'Planes disponibles'}</h3>${planesCards(t.plan)}
   ${st.misPagos&&st.misPagos.length?`<h3 style="margin:14px 0 6px">Pagos registrados</h3><div class="tscroll"><table><tr><th>Fecha</th><th>Plan</th><th>Método</th><th>Válido hasta</th><th class="n">Monto</th></tr>${st.misPagos.map(x=>`<tr><td>${fdate(x.fecha)}</td><td>${esc(x.planNombre)}</td><td>${esc(x.metodo)}</td><td>${x.hasta?fdate(x.hasta):'Sin vencimiento'}</td><td class="n">${gs(x.monto)}</td></tr>`).join('')}</table></div>`:''}</div>`}
-const limiteUsuarios=()=>planDe(st.taller?.plan).maxUsuarios, limiteSucursales=()=>planDe(st.taller?.plan).maxSucursales;
+const limiteUsuarios=()=>num(st.taller?.maxUsuarios)||planDe(st.taller?.plan).maxUsuarios, limiteSucursales=()=>num(st.taller?.maxSucursales)||planDe(st.taller?.plan).maxSucursales;
 function addSucursal(){const n=$('#ns').value.trim();if(!n)return;if(!st.soporte&&db.sucursales.length>=limiteSucursales())return toast(`Tu plan permite ${limiteSucursales()} sucursal(es). Cambiá de plan para agregar más.`);
   const e=String(db.sucursales.length+1).padStart(3,'0');db.sucursales.push({id:uid(),nombre:n,est:e,pto:'001',nextFac:1});save();render()}
 
@@ -2089,12 +2217,14 @@ async function abrirDev(){st.fase='cargando';render();
 function soporte(tid){const t=dv.talleres.find(x=>x.id===tid);stopSync();db=emptyDB();st.soporte=true;st.perfil={rol:'admin',nombre:'Soporte',sucursalId:'central',tallerId:tid,activo:true};st.authUser=AUTH.currentUser;st.misPagosTid=null;entrarTaller(tid);toast('Modo soporte: '+(t?t.nombre:''))}
 function volverDev(){closeM();stopSync();db=emptyDB();Object.assign(st,{soporte:false,tid:null,taller:null,perfil:null,view:'tablero'});abrirDev()}
 function renderDev(){
-  const tabs=[['talleres','Talleres'],['pagos','Pagos'],['planes','Planes'],['plataforma','Plataforma']];
-  $('#who').innerHTML=`<span class="devtag">Desarrollador</span><span class="mono">${esc(DEV_EMAIL)}</span><button class="out" onclick="cambiarClaveModal()">Clave</button><button class="out" onclick="salir()">Salir</button>`;
-  $('#nav').innerHTML=tabs.map(([k,l])=>`<button class="${st.dtab===k?'on':''}" onclick="st.dtab='${k}';renderDev()">${l}</button>`).join('');
+  const tabs=[['talleres','Talleres'],['pagos','Pagos'],['planes','Planes'],['plataforma','Plataforma']];document.body.classList.add('sb');
+  $('#who').innerHTML=`<span class="devtag">Desarrollador</span><span class="mono" style="font-size:11.5px;word-break:break-all">${esc(DEV_EMAIL)}</span><button class="out" onclick="cambiarClaveModal()">${ico('clave',15)}Clave</button><button class="out" onclick="salir()">${ico('salir',15)}Salir</button>`;
+  $('#nav').innerHTML=tabs.map(([k,l])=>`<button class="${st.dtab===k?'on':''}" onclick="st.dtab='${k}';renderDev()">${ico(k)}<span>${l}</span></button>`).join('');
   $('#app').innerHTML=({talleres:devTalleres,pagos:devPagos,planes:devPlanes,plataforma:devPlataforma}[st.dtab]||devTalleres)();
 }
-function estadoT(t){const m=memb(t);if(t.estado==='suspendido')return ['Suspendido','c-bad','susp'];if(!m.ok)return ['Vencido','c-bad','venc'];if(m.motivo==='gracia')return ['En gracia','c-bad','venc'];
+const AVC=['#1D4E89','#16874A','#B26B00','#7C3AED','#C8352B','#0E7490','#9D174D','#4D7C0F'];
+const avatar=n=>{const w=(n||'?').trim().split(/\s+/),i=((w[0]||'')[0]||'?')+((w[1]||'')[0]||'');let h=0;for(const c of n||'')h=(h*31+c.charCodeAt(0))>>>0;return `<span class="av" style="background:${AVC[h%AVC.length]}">${esc(i.toUpperCase())}</span>`};
+function estadoT(t){const m=memb(t);if(t.estado==='suspendido')return ['Bloqueado','c-bad','susp'];if(!m.ok)return ['Vencido','c-bad','venc'];if(m.motivo==='gracia')return ['En gracia','c-bad','venc'];
   if(t.estado==='prueba')return ['Prueba','c-info','prueba'];if(m.dias<=7)return ['Por vencer','c-warn','porvencer'];return ['Activo','c-ok','activo']}
 const mesDe=f=>(f||'').slice(0,7);
 function devTalleres(){const T0=dv.talleres,q=(st.dq||'').toLowerCase(),f=st.df||'todos',mes=hoy().slice(0,7);
@@ -2105,17 +2235,17 @@ function devTalleres(){const T0=dv.talleres,q=(st.dq||'').toLowerCase(),f=st.df|
   const list=T0.filter(t=>(f==='todos'||(f==='venc'?['venc','susp'].includes(k(t)):k(t)===f))&&(!q||(t.nombre+' '+(t.propietario||'')+' '+(t.tel||'')+' '+(t.email||'')).toLowerCase().includes(q)))
     .sort((a,b)=>(a.vence||LEJOS).localeCompare(b.vence||LEJOS));
   const nU=tid=>dv.usuarios.filter(u=>u.tallerId===tid&&u.activo).length;
-  return `<div class="row between"><h1>Talleres</h1><button class="btn pri" onclick="nuevoTallerModal()">+ Nuevo taller</button></div>
+  return `<div class="row between"><div><h1>Talleres</h1><div class="sub" style="margin-top:2px">${T0.length} cliente${T0.length===1?'':'s'} · gestioná cobros, accesos y usuarios</div></div><button class="btn pri" onclick="nuevoTallerModal()">${ico('plus',16)}Nuevo taller</button></div>
   <div class="grid kpis"><div class="kpi good"><b>${cuenta(['activo','porvencer'])}</b><span>Clientes activos</span></div><div class="kpi"><b>${cuenta(['prueba'])}</b><span>En prueba</span></div>
     <div class="kpi ${cuenta(['porvencer'])?'alert':''}"><b>${cuenta(['porvencer'])}</b><span>Vencen en 7 días</span></div><div class="kpi ${cuenta(['venc','susp'])?'alert':''}"><b>${cuenta(['venc','susp'])}</b><span>Vencidos o suspendidos</span></div>
     <div class="kpi"><b class="m">${gs(cobrado)}</b><span>Cobrado este mes</span></div><div class="kpi"><b class="m">${gs(mrr)}</b><span>Ingreso mensual recurrente</span></div></div>
-  <div class="row between"><div class="row">${[['todos','Todos'],['activo','Activos'],['prueba','Prueba'],['porvencer','Por vencer'],['venc','Vencidos']].map(([x,l])=>`<button class="btn sm ${f===x?'dark':''}" onclick="st.df='${x}';renderDev()">${l}</button>`).join('')}</div>
+  <div class="row between"><div class="row">${[['todos','Todos'],['activo','Activos'],['prueba','Prueba'],['porvencer','Por vencer'],['venc','Vencidos y bloqueados']].map(([x,l])=>`<button class="btn sm ${f===x?'dark':''}" onclick="st.df='${x}';renderDev()">${l}</button>`).join('')}</div>
     <input id="dq" placeholder="Buscar taller, dueño o teléfono" value="${esc(st.dq||'')}" oninput="st.dq=this.value;clearTimeout(window._dq);window._dq=setTimeout(()=>{renderDev();const i=$('#dq');i.focus();i.setSelectionRange(i.value.length,i.value.length)},250)" style="max-width:300px"></div>
   <div class="panel" style="padding:0"><div class="tscroll"><table><tr><th>Taller</th><th>Contacto</th><th>Plan</th><th>Estado</th><th>Vence</th><th class="n">Usuarios</th><th></th></tr>
-  ${list.map(t=>{const [el,ec]=estadoT(t),m=memb(t),p=planDe(t.plan);return `<tr><td><b>${esc(t.nombre)}</b><div class="sub" style="font-size:12px">${esc(t.propietario||'')}${t.ruc?' · RUC '+esc(t.ruc):''}</div></td>
-    <td class="mono" style="font-size:12px">${esc(t.tel||'')}<div class="sub">${esc(t.email&&!interno(t.email)?t.email:'')}</div></td><td>${esc(p.nombre)}</td><td><span class="chip ${ec}">${el}</span></td>
-    <td>${t.vence?fdate(t.vence):'—'}<div class="sub" style="font-size:12px">${diasTxt(m.dias)}</div></td><td class="n">${nU(t.id)}/${p.maxUsuarios}</td>
-    <td><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm pri" onclick="cobrarModal('${t.id}')">Cobrar</button><button class="btn sm" onclick="recordarTaller('${t.id}')">WhatsApp</button><button class="btn sm" onclick="editarTallerModal('${t.id}')">Editar</button><button class="btn sm dark" onclick="soporte('${t.id}')">Entrar</button></div></td></tr>`}).join('')||'<tr><td colspan="7" class="empty">No hay talleres en esta lista.</td></tr>'}</table></div></div>`}
+  ${list.map(t=>{const [el,ec]=estadoT(t),m=memb(t),p=planDe(t.plan);return `<tr><td><div class="tcell">${avatar(t.nombre)}<div><b>${esc(t.nombre)}</b><div class="sub" style="font-size:12px">${esc(t.propietario||'')}${t.ruc?' · RUC '+esc(t.ruc):''}</div></div></div></td>
+    <td class="mono" style="font-size:12px">${esc(t.tel||'')}<div class="sub">${esc(t.email&&!interno(t.email)?t.email:'')}</div></td><td>${esc(p.nombre)}</td><td><span class="chip ${ec}">${el}</span>${t.soloLectura?' <span class="chip c-warn">Solo lectura</span>':''}${(t.modulosOff||[]).length?` <span class="chip c-mut">${t.modulosOff.length} módulo${t.modulosOff.length>1?'s':''} off</span>`:''}</td>
+    <td>${t.vence?fdate(t.vence):'—'}<div class="sub" style="font-size:12px">${diasTxt(t.vence?dias(hoy(),t.vence):Infinity)}</div></td><td class="n">${nU(t.id)}/${num(t.maxUsuarios)||p.maxUsuarios}</td>
+    <td><div class="kbar"><button class="btn sm pri" onclick="cobrarModal('${t.id}')">${ico('cash',15)}Cobrar</button><button class="btn sm" onclick="gestionarModal('${t.id}')">${ico('shield',15)}Gestionar</button><button class="btn sm ibtn" title="WhatsApp" aria-label="WhatsApp" onclick="recordarTaller('${t.id}')">${ico('wa',16)}</button><button class="btn sm ibtn dark" title="Entrar como soporte" aria-label="Entrar" onclick="soporte('${t.id}')">${ico('login',16)}</button></div></td></tr>`}).join('')||'<tr><td colspan="7" class="empty">No hay talleres en esta lista.</td></tr>'}</table></div></div>`}
 function nuevoTallerModal(){const pl=P().planes.filter(p=>p.activo!==false);
   modalHTML(`<h2>Nuevo taller</h2><form class="grid" onsubmit="event.preventDefault();crearTallerDev()"><div class="fields">
   <label class="field"><span>Nombre del taller</span><input id="nt_t" required></label><label class="field"><span>Propietario</span><input id="nt_o" required></label>
@@ -2175,10 +2305,66 @@ function editarTallerModal(tid){const t=dv.talleres.find(x=>x.id===tid),adm=dv.u
   <label class="field"><span>Vence (vacío = sin vencimiento)</span><input id="et_vence" type="date" value="${t.vence||''}"></label></div>
   <label class="field"><span>Notas internas</span><textarea id="et_notas">${esc(t.notas||'')}</textarea></label>
   <p class="note">Administrador: <span class="mono">${esc(adm?(adm.usuario||adm.email):'—')}</span> · Alta: ${fdate(t.creado)} · Origen: ${esc(t.origen||'—')}</p>
-  <div class="row"><button class="btn pri">Guardar</button><button type="button" class="btn" onclick="closeM()">Cancelar</button>${t.estado==='suspendido'?'':`<button type="button" class="btn danger" onclick="suspender('${tid}')">Suspender</button>`}</div></form>`)}
+  <div class="row"><button class="btn pri">Guardar</button><button type="button" class="btn" onclick="closeM()">Cancelar</button><button type="button" class="btn" onclick="gestionarModal('${tid}')">${ico('shield',15)}Accesos y usuarios</button></div></form>`)}
 async function guardarTaller(tid){const g=k=>$('#et_'+k).value.trim(),v=g('vence')||null;
   const d={nombre:g('nombre'),propietario:g('propietario'),tel:g('tel'),ruc:g('ruc'),email:g('email'),plan:g('plan'),estado:g('estado'),vence:v,limiteTs:limiteDe(v),notas:g('notas')};
   try{await FS.collection('talleres').doc(tid).update(d);closeM();toast('Taller actualizado')}catch(e){toast('No se pudo guardar: '+(e.code||e.message))}}
+const MODULOS=[['recepcion','Recepción'],['pos','Mostrador'],['lavadero','Lavadero'],['ots','Semáforo / OTs'],['produccion','En taller'],['historial','Historial'],['stock','Stock'],['mensajes','WhatsApp'],['crm','Postventa'],['reportes','Reportes'],['finanzas','Caja y facturas']];
+function gestionarModal(tid,tab){const t=dv.talleres.find(x=>x.id===tid);if(!t)return;st.gt=tab||st.gt||'acceso';const g=st.gt,p=planDe(t.plan),[el,ec]=estadoT(t),U=dv.usuarios.filter(u=>u.tallerId===tid),off=t.modulosOff||[],bloq=t.estado==='suspendido';
+  const head=`<div class="row between"><div class="tcell">${avatar(t.nombre)}<div><h2 style="margin:0">${esc(t.nombre)}</h2><div class="sub" style="font-size:12.5px">${esc(t.propietario||'')} · ${esc(p.nombre)} · <span class="chip ${ec}">${el}</span></div></div></div><button class="btn sm" onclick="closeM()">Cerrar</button></div>
+  <div class="dtabs">${[['acceso','Bloqueo y acceso','lock'],['usuarios','Usuarios y contraseñas','users'],['peligro','Eliminar','trash']].map(([k,l,i])=>`<button class="${g===k?'on':''}" onclick="gestionarModal('${tid}','${k}')">${ico(i,15)}${l}</button>`).join('')}</div>`;
+  let body='';
+  if(g==='acceso')body=`<div class="${bloq?'danger-zone':'panel'}" style="box-shadow:none"><div class="opt" style="border:0;padding:0"><div><b>${bloq?'Acceso bloqueado':'Bloquear por falta de pago'}</b><small>${bloq?'Nadie del taller puede ingresar. Ven una pantalla con el motivo y un botón para escribirte por WhatsApp. Los datos se conservan.':'Corta el acceso de todos los usuarios del taller al instante. Los datos se conservan y se reactiva con un clic o al registrar un pago.'}</small>
+      ${bloq?`<div style="margin-top:6px;font-size:13px">Motivo: <b>${esc(t.motivoBloqueo||'—')}</b>${t.bloqueadoEl?' · desde '+fdate(t.bloqueadoEl.slice(0,10)):''}</div>`:`<input id="gm_mot" style="margin-top:8px" value="Falta de pago de la membresía" aria-label="Motivo del bloqueo">`}</div>
+      ${bloq?`<button class="btn pri" onclick="desbloquear('${tid}')">${ico('unlock',15)}Desbloquear</button>`:`<button class="btn danger" onclick="bloquear('${tid}')">${ico('lock',15)}Bloquear</button>`}</div></div>
+    <div><h3 style="margin:4px 0 2px">Limitar acceso</h3>
+    <div class="opt"><div><b>Solo lectura</b><small>Pueden entrar y consultar, pero no guardar ni modificar nada. Útil como aviso antes de bloquear.</small></div><label class="sw"><input type="checkbox" id="gm_ro" ${t.soloLectura?'checked':''} aria-label="Solo lectura"><span></span></label></div>
+    <div class="opt"><div><b>Usuarios y sucursales</b><small>Límite propio para este taller. Vacío = lo que da el plan (${p.maxUsuarios} usuarios · ${p.maxSucursales} sucursal${p.maxSucursales>1?'es':''}).</small></div>
+      <div class="row" style="flex-wrap:nowrap"><input id="gm_mu" inputmode="numeric" placeholder="${p.maxUsuarios}" value="${t.maxUsuarios||''}" style="width:80px" aria-label="Máximo de usuarios"><input id="gm_ms" inputmode="numeric" placeholder="${p.maxSucursales}" value="${t.maxSucursales||''}" style="width:80px" aria-label="Máximo de sucursales"></div></div>
+    <div class="opt" style="display:block"><b>Módulos habilitados</b><small>Desmarcá lo que el taller no puede usar.</small>
+      <div class="checks" style="margin-top:8px">${MODULOS.map(([k,l])=>`<label><input type="checkbox" data-mod="${k}" ${off.includes(k)?'':'checked'}> ${l}</label>`).join('')}</div></div>
+    <div class="row" style="margin-top:6px"><button class="btn pri" onclick="guardarLimites('${tid}')">Guardar límites</button></div></div>`;
+  if(g==='usuarios')body=`<p class="note" style="margin:0">Las cuentas con correo real reciben un enlace para crear una contraseña nueva. Las cuentas con usuario (sin correo) reciben un acceso nuevo con contraseña temporal para mandarle por WhatsApp.</p>
+    <div class="tscroll"><table><tr><th>Usuario</th><th>Rol</th><th>Acceso</th><th></th></tr>${U.map(u=>`<tr><td><div class="tcell">${avatar(u.nombre)}<div><b>${esc(u.nombre)}</b><div class="sub mono" style="font-size:12px">${esc(u.usuario||u.email||'')}${u.id===t.ownerUid?' · dueño':''}</div></div></div></td><td>${ROLES[u.rol]||u.rol}</td>
+      <td><label class="sw"><input type="checkbox" ${u.activo?'checked':''} onchange="usrActivo('${u.id}',this.checked)" aria-label="Acceso de ${esc(u.nombre)}"><span></span></label></td>
+      <td class="n"><button class="btn sm" onclick="resetClave('${tid}','${u.id}')">${ico('clave',15)}Recuperar contraseña</button></td></tr>`).join('')||'<tr><td colspan="4" class="empty">Sin usuarios.</td></tr>'}</table></div>`;
+  if(g==='peligro')body=`<div class="danger-zone"><b style="color:var(--bad)">Eliminar el taller definitivamente</b><p class="note" style="margin:6px 0 10px">Borra clientes, vehículos, órdenes, stock, ventas, caja, configuración y usuarios de <b>${esc(t.nombre)}</b>. No se puede deshacer. Si solo querés cortar el acceso, usá “Bloquear”.</p>
+    <label class="row" style="gap:6px;font-size:13px;margin-bottom:10px"><input type="checkbox" id="gm_pg" style="width:auto"> Borrar también su historial de pagos</label>
+    <label class="field"><span>Escribí el nombre del taller para confirmar</span><input id="gm_cf" autocomplete="off" placeholder="${esc(t.nombre)}"></label>
+    <div class="row" style="margin-top:10px"><button class="btn danger" id="gm_del" onclick="eliminarTaller('${tid}')">${ico('trash',15)}Eliminar definitivamente</button></div></div>`;
+  modalHTML(head+body);const b=$('#modal .box');if(b)b.style.maxWidth='860px'}
+async function bloquear(tid){const mot=($('#gm_mot')||{}).value||'Falta de pago de la membresía';
+  try{await FS.collection('talleres').doc(tid).update({estado:'suspendido',motivoBloqueo:mot.trim(),bloqueadoEl:new Date().toISOString()});toast('Taller bloqueado');setTimeout(()=>gestionarModal(tid,'acceso'),300)}catch(e){toast('No se pudo bloquear: '+(e.code||e.message))}}
+async function desbloquear(tid){const t=dv.talleres.find(x=>x.id===tid);
+  try{await FS.collection('talleres').doc(tid).update({estado:t.plan==='prueba'?'prueba':'activo',motivoBloqueo:'',bloqueadoEl:null});toast('Acceso reactivado'+(memb(Object.assign({},t,{estado:'activo'})).ok?'':' · ojo: la membresía está vencida, registrá el cobro'));setTimeout(()=>gestionarModal(tid,'acceso'),300)}catch(e){toast(e.code||e.message)}}
+async function guardarLimites(tid){const off=[...document.querySelectorAll('[data-mod]')].filter(c=>!c.checked).map(c=>c.dataset.mod);
+  const d={soloLectura:$('#gm_ro').checked,maxUsuarios:num($('#gm_mu').value)||null,maxSucursales:num($('#gm_ms').value)||null,modulosOff:off};
+  try{await FS.collection('talleres').doc(tid).update(d);toast('Límites guardados')}catch(e){toast('No se pudo guardar: '+(e.code||e.message))}}
+async function usrActivo(uid,v){try{await FS.collection('usuarios').doc(uid).update({activo:v});toast(v?'Acceso habilitado':'Acceso desactivado')}catch(e){toast(e.code||e.message)}}
+function resetClave(tid,uid){const u=dv.usuarios.find(x=>x.id===uid),t=dv.talleres.find(x=>x.id===tid),mail=u.email&&!interno(u.email)?u.email:'';
+  if(mail){AUTH.sendPasswordResetEmail(mail).then(()=>toast('Enlace enviado a '+mail),e=>toast(authMsg(e)));return}
+  const base=(u.usuario||userName(u.email)||'usuario').replace(/\d+$/,'');let n=2,sug=base+n;while(dv.usuarios.some(x=>(x.usuario||'')===sug))sug=base+(++n);
+  modalHTML(`<h2>Recuperar contraseña · ${esc(u.nombre)}</h2><p class="note" style="margin:0">Esta cuenta no tiene correo. Se crea un acceso nuevo con los mismos datos, rol y permisos, y el usuario anterior queda desactivado.</p>
+  <div class="fields"><label class="field"><span>Nuevo usuario</span><input id="rc_u" value="${esc(sug)}" autocapitalize="none"></label><label class="field"><span>Contraseña temporal</span><input id="rc_k" value="${claveTemp()}"></label></div>
+  <div class="row"><button class="btn pri" id="rc_b" onclick="nuevoAcceso('${tid}','${uid}')">Crear acceso nuevo</button><button class="btn" onclick="gestionarModal('${tid}','usuarios')">Volver</button></div>`)}
+async function nuevoAcceso(tid,uid){const u=dv.usuarios.find(x=>x.id===uid),t=dv.talleres.find(x=>x.id===tid),us=$('#rc_u').value.trim().toLowerCase(),pw=$('#rc_k').value,b=$('#rc_b');
+  if(!us||pw.length<6)return toast('Usuario y contraseña de al menos 6 caracteres.');b.disabled=true;b.textContent='Creando…';
+  try{const id=await crearCuentaAuth(us,pw),bt=FS.batch(),d=Object.assign({},u);delete d.id;
+    bt.set(FS.collection('usuarios').doc(id),Object.assign(d,{usuario:userName(loginEmail(us)),email:loginEmail(us),activo:true,cambiarClave:true,reemplazaA:uid}));
+    bt.update(FS.collection('usuarios').doc(uid),{activo:false,reemplazadoPor:id});
+    if(t.ownerUid===uid)bt.update(FS.collection('talleres').doc(tid),{ownerUid:id});await bt.commit();
+    devMsgModal('Acceso nuevo creado',t.tel,`Hola ${(u.nombre||'').split(' ')[0]}, te dejo tu nuevo acceso a KEVANIX Taller:\nEnlace: ${appBase()}\nUsuario: ${userName(loginEmail(us))}\nContraseña temporal: ${pw}\nAl ingresar te va a pedir que la cambies.`)}
+  catch(e){b.disabled=false;b.textContent='Crear acceso nuevo';toast(e.code==='auth/email-already-in-use'?'Ese usuario ya existe. Probá otro.':authMsg(e))}}
+async function eliminarTaller(tid){const t=dv.talleres.find(x=>x.id===tid);if($('#gm_cf').value.trim()!==t.nombre.trim())return toast('El nombre no coincide.');
+  const b=$('#gm_del'),pg=$('#gm_pg').checked;b.disabled=true;b.textContent='Eliminando…';
+  try{const refs=[],tr=FS.collection('talleres').doc(tid);
+    for(const c of COLS.filter(c=>c!=='usuarios').concat(['meta'])){const s=await tr.collection(c).get();s.docs.forEach(d=>refs.push(d.ref))}
+    (await FS.collection('usuarios').where('tallerId','==',tid).get()).docs.forEach(d=>refs.push(d.ref));
+    (await FS.collection('publico').where('tallerId','==',tid).get()).docs.forEach(d=>refs.push(d.ref));
+    if(pg)(await FS.collection('pagos').where('tallerId','==',tid).get()).docs.forEach(d=>refs.push(d.ref));
+    for(let i=0;i<refs.length;i+=400){const bt=FS.batch();refs.slice(i,i+400).forEach(r=>bt.delete(r));await bt.commit();b.textContent=`Eliminando… ${Math.min(i+400,refs.length)}/${refs.length}`}
+    await tr.delete();closeM();toast(`${t.nombre} eliminado`)}
+  catch(e){console.error(e);b.disabled=false;b.textContent='Eliminar definitivamente';toast('No se pudo eliminar: '+(e.code||e.message))}}
 async function suspender(tid){try{await FS.collection('talleres').doc(tid).update({estado:'suspendido'});closeM();toast('Taller suspendido')}catch(e){toast(e.code||e.message)}}
 function devPagos(){const mes=st.dm||hoy().slice(0,7),ps=dv.pagos.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)),T=hoy();
   const meses=Array.from({length:12},(_,i)=>{const d=new Date(T+'T12:00:00');d.setDate(1);d.setMonth(d.getMonth()-i);return d.toISOString().slice(0,7)});
