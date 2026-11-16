@@ -352,6 +352,54 @@ pre.code{background:var(--sunk);border:1px solid var(--line);border-radius:6px;p
 @media (max-width:520px){h1{font-size:25px}.kpi b{font-size:26px}.kpi b.m{font-size:19px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
+
+/* ===== Pantalla de ingreso ===== */
+body.auth header.top,body.auth::before{display:none}
+body.auth main .wrap{max-width:none;padding:0}
+.auth{position:fixed;inset:0;z-index:4;overflow-y:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);background:#fff;color:#111827}
+@media (max-width:900px){.auth{display:block}}
+.auth-side{position:relative;overflow:hidden;color:#fff;padding:44px 48px 32px;display:flex;flex-direction:column;gap:28px;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(242,183,5,.22) 0%,rgba(242,183,5,0) 55%),linear-gradient(150deg,#070B12 0%,#0D1726 55%,#13233A 100%)}
+.auth-side::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.025) 0 2px,transparent 2px 14px);pointer-events:none}
+.auth-side>*{position:relative;z-index:1}
+.auth-brand{display:flex;align-items:center;gap:12px;font:700 19px var(--f-body);letter-spacing:.01em}
+.auth-brand img{width:46px;height:46px;border-radius:50%;box-shadow:0 0 0 2px rgba(242,183,5,.35)}
+.auth-brand em{font-style:normal;color:#F7C934}
+.auth-hero{margin-top:auto;display:grid;gap:14px;max-width:520px}
+.auth-hero h1{font:800 44px/1.08 var(--f-body);letter-spacing:-.02em;text-transform:none;color:#fff}
+.auth-hero p{margin:0;color:#B6C2D1;font-size:16px;line-height:1.55}
+.auth-feats{display:grid;gap:18px;margin-bottom:auto;max-width:520px}
+.auth-feats div{display:grid;grid-template-columns:24px 1fr;gap:4px 12px;align-items:start}
+.auth-feats .ic{color:#F7C934;width:20px;height:20px;margin-top:1px}
+.auth-feats b{font-size:15px;color:#fff}
+.auth-feats span{grid-column:2;color:#AEB9C7;font-size:14px}
+.auth-foot{color:#7F8DA0;font-size:12.5px}
+.auth-main{display:grid;place-items:center;padding:40px 24px;background:#fff}
+.auth-card{width:100%;max-width:400px;display:grid;gap:18px}
+.auth-card h2{font:700 27px var(--f-body);letter-spacing:-.01em;text-transform:none;color:#111827}
+.auth-card .lead{margin:6px 0 0;color:#5E6A7D;font-size:14.5px}
+.auth-card .field>span{font:600 13.5px var(--f-body);text-transform:none;letter-spacing:0;color:#1F2937}
+.auth-card input{background:#F6F7F9;border:1px solid #E3E6EB;border-radius:10px;padding:12px 14px;font-size:15px;color:#111827}
+.auth-card input:focus{background:#fff;border-color:#C99400;box-shadow:0 0 0 3px rgba(242,183,5,.25)}
+.pw{position:relative}.pw input{padding-right:46px}
+.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:#6B7685;cursor:pointer;padding:6px;border-radius:8px;display:grid}
+.pw button:hover{color:#111827;background:#EEF0F3}
+.auth-btn{width:100%;border:0;border-radius:10px;padding:13px 16px;font:700 15.5px var(--f-body);color:#1A1400;cursor:pointer;
+  background:linear-gradient(90deg,#F7C934 0%,#F2B705 55%,#D99A00 100%);box-shadow:0 8px 20px rgba(217,154,0,.32);transition:filter .15s,transform .1s}
+.auth-btn:hover{filter:brightness(1.04)}.auth-btn:active{transform:translateY(1px)}
+.auth-link{background:none;border:0;color:#8A6400;font:600 14px var(--f-body);cursor:pointer;justify-self:center;padding:4px}
+.auth-link:hover{text-decoration:underline}
+.auth-note{text-align:center;color:#8B95A3;font-size:12.5px;margin:6px 0 0}
+.auth-alt{border:1px solid #E3E6EB;border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:13.5px;color:#374151}
+.auth-alt .btn{background:#111827;color:#fff;border-color:#111827}
+.auth .instalar{border:1px solid #E3E6EB;border-radius:12px;padding:10px 12px;color:#374151}
+@media (max-width:900px){
+  .auth{grid-template-columns:1fr}
+  .auth-side{padding:28px 22px;gap:18px}
+  .auth-hero{margin-top:6px}.auth-hero h1{font-size:30px}.auth-hero p{font-size:14.5px}
+  .auth-feats,.auth-foot{display:none}
+  .auth-main{padding:28px 20px 40px;place-items:start center}
+}
 /* ===== Apariencia profesional ===== */
 body{-webkit-font-smoothing:antialiased;letter-spacing:.005em}
 body::before{background:var(--side)}
@@ -878,6 +926,8 @@ const IC={tablero:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14"
   login:'<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>',
   dots:'<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
+  eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff:'<path d="M9.9 4.2A10 10 0 0 1 12 4c6.4 0 10 8 10 8a17 17 0 0 1-2.2 3.2M6.6 6.6A17 17 0 0 0 2 12s3.6 8 10 8a9.7 9.7 0 0 0 5.4-1.6M14.1 14.1a3 3 0 1 1-4.2-4.2M2 2l20 20"/>',
   cash:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>'};
 const ico=(k,sz)=>IC[k]?`<svg class="ic" viewBox="0 0 24 24" ${sz?`style="width:${sz}px;height:${sz}px"`:''} fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`:'';
 const navItems=()=>(NAVS[rol()]||[]).filter(n=>!(((st.taller||{}).modulosOff)||[]).includes(n[0]));
@@ -887,13 +937,13 @@ function go(v,p){if(!allowed(v)){if(!NAVS[rol()]||!navItems().length)return;v=na
 function render(){
   const pub=PUB.includes(st.view);
   if(!pub&&st.fase==='dev'){renderDev();return}
-  if(!pub&&st.fase!=='app'){document.body.classList.remove('sb');$('#who').innerHTML=['inactivo','sinTaller','error','bloqueado','clave'].includes(st.fase)?`<button class="out" onclick="salir()">${ico('salir',15)}Salir</button>`:'';$('#nav').innerHTML='';$('#app').innerHTML=faseView();return}
+  if(!pub&&st.fase!=='app'){document.body.classList.remove('sb');document.body.classList.toggle('auth',['login','alta'].includes(st.fase));$('#who').innerHTML=['inactivo','sinTaller','error','bloqueado','clave'].includes(st.fase)?`<button class="out" onclick="salir()">${ico('salir',15)}Salir</button>`:'';$('#nav').innerHTML='';$('#app').innerHTML=faseView();return}
   if(me()&&!pub){
     const u=me();
     $('#who').innerHTML=`${st.soporte?`<span class="devtag">Soporte</span><button class="out" onclick="volverDev()">← Panel desarrollador</button>`:''}${isA()?`<select aria-label="Sucursal" onchange="st.suc=this.value;saveSes();render()"><option value="*" ${st.suc==='*'?'selected':''}>Todas las sucursales</option>${db.sucursales.map(s=>`<option value="${s.id}" ${st.suc===s.id?'selected':''}>${esc(s.nombre)}</option>`).join('')}</select>`:`<span>${esc(sucN(u.sucursalId))}</span>`}
       <span><b>${esc(u.nombre)}</b> · ${ROLES[u.rol]||''}</span>${st.soporte?'':`<button class="out" onclick="cambiarClaveModal()">${ico('clave',15)}Clave</button>`}<button class="out" onclick="salir()">${ico('salir',15)}Salir</button>`;
     $('#nav').innerHTML=navItems().map(([k,l])=>`<button class="${st.view===k||(st.view==='ot'&&k==='ots')?'on':''}" onclick="go('${k}')">${ico(k)}<span>${l}</span>${isM()?'':navBadge(k)}</button>`).join('');
-    document.body.classList.add('sb');
+    document.body.classList.add('sb');document.body.classList.remove('auth');
   } else {$('#who').innerHTML='';$('#nav').innerHTML='';document.body.classList.remove('sb')}
   const V={tablero,recepcion,ots:otsView,ot:otView,historial,stock:stockView,crm:crmView,reportes:reportesView,finanzas,pos:posView,lavadero:lavaderoView,produccion:produccionView,config:configView,cliente:clienteView,encuesta:encuestaView,seguimiento:seguimientoView,mensajes:mensajesView}[st.view]||tablero;
   $('#app').innerHTML=(pub?'':membBanner()+entBanner())+(db.config.ejemplo&&!pub&&isAdm()?`<div class="banner row between"><span>Hay datos de ejemplo cargados.</span><button class="btn sm" onclick="confirmLimpiar()">Borrar datos de ejemplo</button></div>`:'')+V();
@@ -928,6 +978,14 @@ function instalarBox(){if(enApp())return '';
   return ''}
 async function instalarApp(){if(!INSTALL)return;INSTALL.prompt();try{await INSTALL.userChoice}catch(e){}INSTALL=null;render()}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+function authShell(inner){return `<div class="auth"><aside class="auth-side">
+  <div class="auth-brand"><img src="img/emblema-96.png" alt="" width="46" height="46"><span>KEVANIX <em>Taller</em></span></div>
+  <div class="auth-hero"><h1>Tu taller,<br>todo bajo control.</h1><p>Gestión completa del taller: recepción, órdenes de trabajo, stock, caja, lavadero y clientes en un solo lugar.</p></div>
+  <div class="auth-feats"><div>${ico('recepcion')}<b>Recepción digital</b><span>Checklist, daños y firma del cliente en minutos.</span></div>
+    <div>${ico('ots')}<b>Órdenes y entregas a tiempo</b><span>Cada vehículo con su etapa, su mecánico y su fecha de entrega.</span></div>
+    <div>${ico('reportes')}<b>Stock, caja y reportes</b><span>Repuestos, facturación y ganancias sin errores.</span></div></div>
+  <div class="auth-foot">© KEVANIX · Sistemas a medida y soporte técnico</div></aside>
+  <section class="auth-main"><div class="auth-card">${inner}</div></section></div>`}
 function faseView(){
   const f=st.fase,p=P();
   if(f==='setup')return `<div class="login"><h1>Falta conectar Firebase</h1><p>Abrí <span class="mono">index.html</span> en GitHub (ícono del lápiz), buscá <span class="mono">FIREBASE_CONFIG</span> y pegá los datos de tu proyecto. Los pasos completos están en <span class="mono">LEEME.md</span>.</p></div>`;
@@ -943,20 +1001,22 @@ function faseView(){
     <form class="grid" style="max-width:420px" onsubmit="event.preventDefault();st.alta={taller:$('#a_t').value.trim(),nombre:$('#a_n').value.trim(),tel:$('#a_w').value.trim()};crearTallerPrueba()">
     <label class="field"><span>Nombre del taller</span><input id="a_t" required value="${esc(a.taller||'')}"></label><label class="field"><span>Tu nombre</span><input id="a_n" required value="${esc(a.nombre||'')}"></label>
     <label class="field"><span>WhatsApp</span><input id="a_w" inputmode="tel" value="${esc(a.tel||'')}" placeholder="0981 000 000"></label><div class="row"><button class="btn pri">Crear taller</button></div></form></div>`}
-  if(f==='alta')return `<div class="login"><img class="hero-logo" src="img/logo.jpg" alt="KEVANIX Taller mecánico"><div><h1>Probá ${esc(p.marca)} gratis</h1><p class="sub" style="margin:4px 0 0">${p.diasPrueba} días con todas las funciones. Sin tarjeta.</p></div>
-    <form class="grid" style="max-width:420px" onsubmit="event.preventDefault();altaPrueba()">
+  if(f==='alta')return authShell(`<div><h2>Probá ${esc(p.marca)} gratis</h2><p class="lead">${p.diasPrueba} días con todas las funciones. Sin tarjeta.</p></div>
+    <form class="grid" style="gap:14px" onsubmit="event.preventDefault();altaPrueba()">
     <label class="field"><span>Nombre del taller</span><input id="a_t" required></label><label class="field"><span>Tu nombre</span><input id="a_n" required autocomplete="name"></label>
     <label class="field"><span>WhatsApp</span><input id="a_w" inputmode="tel" placeholder="0981 000 000" required></label>
     <label class="field"><span>Correo (para ingresar y recuperar la contraseña)</span><input id="a_e" type="email" required autocomplete="email"></label>
     <label class="field"><span>Contraseña</span><input id="a_p" type="password" minlength="6" required autocomplete="new-password"></label>
-    <div class="row"><button class="btn pri">Crear mi taller</button><button type="button" class="btn" onclick="st.fase='login';render()">Ya tengo cuenta</button></div></form>
-    ${planesCards(null,true)}</div>`;
-  return `<div class="login"><img class="hero-logo" src="img/logo.jpg" alt="KEVANIX Taller mecánico">${instalarBox()}<div><h1>Ingresar</h1><p class="sub" style="margin:4px 0 0">${st.pendOT?'Código escaneado: ingresá para abrir la orden.':'Usá el usuario o correo que te dio el administrador.'}</p></div>
-  <form class="grid" style="max-width:380px" onsubmit="event.preventDefault();entrar()">
-    <label class="field"><span>Usuario o correo</span><input id="l_e" required autocomplete="username" autocapitalize="none"></label>
-    <label class="field"><span>Contraseña</span><input id="l_p" type="password" required autocomplete="current-password"></label>
-    <div class="row"><button class="btn pri">Entrar</button><button type="button" class="btn sm" onclick="recuperar()">Olvidé mi contraseña</button></div></form>
-  ${plat&&p.registroAbierto?`<div class="panel row between" style="max-width:520px"><span><b>¿Tenés un taller?</b><br><span class="sub">Probá el sistema gratis ${p.diasPrueba} días.</span></span><button class="btn pri" onclick="st.fase='alta';render()">Crear mi taller gratis</button></div>`:''}</div>`;
+    <button class="auth-btn">Crear mi taller</button><button type="button" class="auth-link" onclick="st.fase='login';render()">Ya tengo cuenta</button></form>`);
+  return authShell(`<div><h2>Iniciar sesión</h2><p class="lead">${st.pendOT?'Código escaneado: ingresá para abrir la orden.':'Ingresá con tu usuario y contraseña.'}</p></div>
+  <form class="grid" style="gap:16px" onsubmit="event.preventDefault();entrar()">
+    <label class="field"><span>Usuario</span><input id="l_e" required autocomplete="username" autocapitalize="none" placeholder="Tu usuario o correo"></label>
+    <label class="field"><span>Contraseña</span><div class="pw"><input id="l_p" type="password" required autocomplete="current-password" placeholder="••••••"><button type="button" aria-label="Mostrar contraseña" onclick="const i=$('#l_p');i.type=i.type==='password'?'text':'password';this.innerHTML=ico(i.type==='password'?'eye':'eyeoff',20)">${ico('eye',20)}</button></div></label>
+    <button class="auth-btn">Entrar</button>
+    <button type="button" class="auth-link" onclick="recuperar()">Olvidé mi contraseña</button></form>
+  ${plat&&p.registroAbierto?`<div class="auth-alt"><span><b>¿Tenés un taller?</b> Probalo gratis ${p.diasPrueba} días.</span><button class="btn sm" onclick="st.fase='alta';render()">Crear mi taller</button></div>`:''}
+  ${instalarBox()}
+  <p class="auth-note">KEVANIX Taller · Tu taller, todo bajo control</p>`);
 }
 const AUTH_ERR={'auth/invalid-credential':'Usuario o contraseña incorrectos.','auth/invalid-login-credentials':'Usuario o contraseña incorrectos.','auth/wrong-password':'Usuario o contraseña incorrectos.','auth/user-not-found':'Usuario o contraseña incorrectos.','auth/email-already-in-use':'Ese usuario o correo ya existe. Elegí otro.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.','auth/invalid-email':'El usuario o correo no es válido.','auth/too-many-requests':'Demasiados intentos. Esperá unos minutos.','auth/unauthorized-domain':'Este dominio no está autorizado en Firebase Authentication.','auth/network-request-failed':'Sin conexión a internet.','auth/requires-recent-login':'Por seguridad, salí y volvé a ingresar antes de cambiar la contraseña.'};
 const authMsg=e=>AUTH_ERR[e.code]||('Error: '+(e.code||e.message));
